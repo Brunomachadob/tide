@@ -2,9 +2,10 @@
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
+import { safeReadJSON, atomicWriteJSON } from './io.js'
 
 const TIDE_DIR = path.join(os.homedir(), '.tide')
-const TASKS_DIR = path.join(TIDE_DIR, 'tasks')
+export const TASKS_DIR = path.join(TIDE_DIR, 'tasks')
 
 export function taskDir(id) {
   return path.join(TASKS_DIR, id)
@@ -19,27 +20,13 @@ function ensureTaskDir(id) {
   fs.mkdirSync(path.join(TASKS_DIR, id, 'results'), { recursive: true })
 }
 
-function ensureNotificationsFile() {
-  const notifFile = path.join(TIDE_DIR, 'pending-notifications.json')
-  if (!fs.existsSync(notifFile)) {
-    fs.writeFileSync(notifFile, '[]')
-  }
-}
-
 /** Read a single task by ID. Returns null if not found. */
 export function readTask(id) {
-  const file = taskFile(id)
-  if (!fs.existsSync(file)) return null
-  try {
-    return JSON.parse(fs.readFileSync(file, 'utf8'))
-  } catch {
-    return null
-  }
+  return safeReadJSON(taskFile(id))
 }
 
 /** Read all tasks, sorted by createdAt ascending. */
 export function readTasks() {
-  ensureNotificationsFile()
   if (!fs.existsSync(TASKS_DIR)) return { tasks: [] }
 
   const tasks = fs.readdirSync(TASKS_DIR)
@@ -53,10 +40,7 @@ export function readTasks() {
 /** Write (create or replace) a single task's task.json. */
 export function writeTask(task) {
   ensureTaskDir(task.id)
-  const file = taskFile(task.id)
-  const tmp = file + '.tmp'
-  fs.writeFileSync(tmp, JSON.stringify(task, null, 2))
-  fs.renameSync(tmp, file)
+  atomicWriteJSON(taskFile(task.id), task)
 }
 
 /** Resolve task name or ID → full task object, or null if not found */

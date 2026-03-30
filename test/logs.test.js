@@ -21,11 +21,11 @@ after(() => {
   fs.rmSync(TMP, { recursive: true, force: true })
 })
 
-describe('getOutputLog / getStdoutLog / getStderrLog', () => {
+describe('log readers', () => {
   test('returns null when file does not exist', () => {
-    assert.equal(getOutputLog(TASK_ID), null)
-    assert.equal(getStdoutLog(TASK_ID), null)
-    assert.equal(getStderrLog(TASK_ID), null)
+    assert.equal(getOutputLog('nonexistent-task'), null)
+    assert.equal(getStdoutLog('nonexistent-task'), null)
+    assert.equal(getStderrLog('nonexistent-task'), null)
   })
 
   test('returns empty string for an empty file', () => {
@@ -41,11 +41,10 @@ describe('getOutputLog / getStdoutLog / getStderrLog', () => {
   test('returns last N lines', () => {
     const content = Array.from({ length: 10 }, (_, i) => `line${i + 1}`).join('\n')
     fs.writeFileSync(path.join(LOGS_DIR, 'stderr.log'), content)
-    const result = getStderrLog(TASK_ID, 3)
-    assert.equal(result, 'line8\nline9\nline10')
+    assert.equal(getStderrLog(TASK_ID, 3), 'line8\nline9\nline10')
   })
 
-  test('trailing newline is trimmed from line count', () => {
+  test('ignores trailing newline when counting lines', () => {
     fs.writeFileSync(path.join(LOGS_DIR, 'output.log'), 'a\nb\nc\n')
     assert.equal(getOutputLog(TASK_ID, 2), 'b\nc')
   })

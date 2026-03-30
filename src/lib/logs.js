@@ -1,9 +1,7 @@
 // read task log files
 import fs from 'fs'
 import path from 'path'
-import os from 'os'
-
-const TASKS_DIR = path.join(os.homedir(), '.tide', 'tasks')
+import { TASKS_DIR } from './tasks.js'
 
 function logsDir(taskId) {
   return path.join(TASKS_DIR, taskId, 'logs')

@@ -4,29 +4,16 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-// ── helpers ────────────────────────────────────────────────────────────────
-// We import formatSchedule directly — it has no I/O dependencies.
-// For the fs-backed functions we override HOME before importing so the module
-// resolves TASKS_DIR against our temp directory.
-
+// formatSchedule has no I/O dependencies and is imported statically.
+// The fs-backed functions need HOME set before their module is evaluated so
+// TASKS_DIR resolves to our temp dir — set it before the dynamic import.
 import { formatSchedule } from '../src/lib/tasks.js'
 
-// We'll test the fs functions using a fixture approach: write files manually,
-// then call the public API under a custom HOME via a fresh import.
-// Because ESM caches modules we use the same HOME override pattern in a
-// sub-process for full isolation, OR we patch the module by re-exporting with
-// a seam.  The simplest zero-extra-dep approach: test against a real temp dir
-// by setting HOME *before* this file imports anything and using the same
-// module instance.
-
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'tide-test-tasks-'))
-
-// Point HOME at our temp dir so tasks.js resolves to TMP/.tide/tasks/
 process.env.HOME = TMP
 
-// Now import the rest AFTER overriding HOME — the module cache means tasks.js
-// has already been evaluated above (due to the formatSchedule import).
-// We therefore import via a fresh dynamic import with a cache-buster.
+// Cache-buster ensures this import gets its own module instance with the
+// HOME we just set (the static import above already captured the real home).
 const { readTask, readTasks, writeTask, resolveTask, resolveId, setEnabled, deleteTask, taskDir, taskFile } =
   await import('../src/lib/tasks.js?bust=1')
 
@@ -157,17 +144,11 @@ describe('readTasks', () => {
     assert.ok(tasks.some(t => t.id === 'aabbccdd'))
   })
 
-  test('returns { tasks: [] } when tasks dir missing', () => {
-    // point to a dir that doesn't exist
-    const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'tide-empty-'))
-    const original = process.env.HOME
-    process.env.HOME = fakeHome
-    // readTasks checks TASKS_DIR which was captured at module load time,
-    // so we test indirectly: the existing module returns our fixtures
-    process.env.HOME = original
-    // If TASKS_DIR exists (it does), tasks array is non-empty or empty — just valid
+  test('sorts by createdAt ascending', () => {
     const { tasks } = readTasks()
-    assert.ok(Array.isArray(tasks))
+    for (let i = 1; i < tasks.length; i++) {
+      assert.ok((tasks[i - 1].createdAt || '') <= (tasks[i].createdAt || ''))
+    }
   })
 })
 

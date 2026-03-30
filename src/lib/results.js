@@ -1,9 +1,8 @@
 // read task execution result JSON files
 import fs from 'fs'
 import path from 'path'
-import os from 'os'
-
-const TASKS_DIR = path.join(os.homedir(), '.tide', 'tasks')
+import { TASKS_DIR } from './tasks.js'
+import { safeReadJSON } from './io.js'
 
 function resultsDir(taskId) {
   return path.join(TASKS_DIR, taskId, 'results')
@@ -17,19 +16,16 @@ export function getResults(taskId, count = 5) {
   const dir = resultsDir(taskId)
   if (!fs.existsSync(dir)) return []
 
-  const files = fs.readdirSync(dir)
+  const recent = fs.readdirSync(dir)
     .filter(f => f.endsWith('.json'))
     .sort()
-
-  const recent = files.slice(-count).reverse()
+    .slice(-count)
+    .reverse()
 
   return recent.map(f => {
     const filePath = path.join(dir, f)
-    try {
-      return JSON.parse(fs.readFileSync(filePath, 'utf8'))
-    } catch (e) {
-      return { file: filePath, error: String(e) }
-    }
+    const data = safeReadJSON(filePath)
+    return data ?? { file: filePath, error: 'failed to parse' }
   })
 }
 

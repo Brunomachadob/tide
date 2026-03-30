@@ -1,8 +1,8 @@
-import fs from 'fs'
 import os from 'os'
 import path from 'path'
-export const SETTINGS_FILE = path.join(os.homedir(), '.tide', 'settings.json')
+import { safeReadJSON, atomicWriteJSON } from './io.js'
 
+export const SETTINGS_FILE = path.join(os.homedir(), '.tide', 'settings.json')
 
 const DEFAULTS = {
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -12,18 +12,11 @@ const DEFAULTS = {
 }
 
 export function readSettings() {
-  if (!fs.existsSync(SETTINGS_FILE)) return { ...DEFAULTS }
-  try {
-    return { ...DEFAULTS, ...JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')) }
-  } catch {
-    return { ...DEFAULTS }
-  }
+  return { ...DEFAULTS, ...(safeReadJSON(SETTINGS_FILE) ?? {}) }
 }
 
 export function writeSettings(settings) {
-  const tmp = SETTINGS_FILE + '.tmp'
-  fs.writeFileSync(tmp, JSON.stringify(settings, null, 2))
-  fs.renameSync(tmp, SETTINGS_FILE)
+  atomicWriteJSON(SETTINGS_FILE, settings)
 }
 
 export function formatDate(isoString, settings) {
