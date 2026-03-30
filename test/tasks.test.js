@@ -4,11 +4,6 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-// formatSchedule has no I/O dependencies and is imported statically.
-// The fs-backed functions need HOME set before their module is evaluated so
-// TASKS_DIR resolves to our temp dir — set it before the dynamic import.
-import { formatSchedule } from '../src/lib/tasks.js'
-
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'tide-test-tasks-'))
 process.env.HOME = TMP
 
@@ -36,58 +31,6 @@ function makeTask(overrides = {}) {
     ...overrides,
   }
 }
-
-// ── formatSchedule ─────────────────────────────────────────────────────────
-
-describe('formatSchedule', () => {
-  test('returns "unknown" for falsy input', () => {
-    assert.equal(formatSchedule(null), 'unknown')
-    assert.equal(formatSchedule(undefined), 'unknown')
-  })
-
-  test('interval – seconds < 60', () => {
-    assert.equal(formatSchedule({ type: 'interval', intervalSeconds: 30 }), 'every 30s')
-  })
-
-  test('interval – seconds < 3600', () => {
-    assert.equal(formatSchedule({ type: 'interval', intervalSeconds: 90 }), 'every 1m')
-    assert.equal(formatSchedule({ type: 'interval', intervalSeconds: 150 }), 'every 2m')
-  })
-
-  test('interval – whole hours', () => {
-    assert.equal(formatSchedule({ type: 'interval', intervalSeconds: 7200 }), 'every 2h')
-  })
-
-  test('interval – hours and minutes', () => {
-    assert.equal(formatSchedule({ type: 'interval', intervalSeconds: 5400 }), 'every 1h 30m')
-  })
-
-  test('interval – legacy .seconds field', () => {
-    assert.equal(formatSchedule({ type: 'interval', seconds: 60 }), 'every 1m')
-  })
-
-  test('calendar – daily default', () => {
-    assert.equal(formatSchedule({ type: 'calendar', hour: 9, minute: 0 }), 'daily 09:00')
-  })
-
-  test('calendar – pads hour and minute', () => {
-    assert.equal(formatSchedule({ type: 'calendar', hour: 8, minute: 5 }), 'daily 08:05')
-  })
-
-  test('calendar – with specific weekdays', () => {
-    const result = formatSchedule({ type: 'calendar', hour: 10, minute: 0, days: [1, 3, 5] })
-    assert.equal(result, 'Mon,Wed,Fri 10:00')
-  })
-
-  test('calendar – legacy weekdays field', () => {
-    const result = formatSchedule({ type: 'calendar', hour: 9, minute: 0, weekdays: [0, 6] })
-    assert.equal(result, 'Sun,Sat 09:00')
-  })
-
-  test('calendar – defaults hour=9 minute=0 when omitted', () => {
-    assert.equal(formatSchedule({ type: 'calendar' }), 'daily 09:00')
-  })
-})
 
 // ── taskDir / taskFile ─────────────────────────────────────────────────────
 

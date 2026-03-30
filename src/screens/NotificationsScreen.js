@@ -6,7 +6,8 @@ import Header from '../components/Header.js'
 import ConfirmDialog from '../components/ConfirmDialog.js'
 import Toast from '../components/Toast.js'
 import KeyHints from '../components/KeyHints.js'
-import { formatDate, readSettings } from '../lib/settings.js'
+import { readSettings } from '../lib/settings.js'
+import { formatDate } from '../lib/format.js'
 
 export default function NotificationsScreen({ navigate, goBack }) {
   const settings = readSettings()

@@ -6,7 +6,8 @@ import { useNotifications } from '../hooks/useNotifications.js'
 import Header from '../components/Header.js'
 import ResultBadge from '../components/ResultBadge.js'
 import KeyHints from '../components/KeyHints.js'
-import { formatDate, readSettings } from '../lib/settings.js'
+import { readSettings } from '../lib/settings.js'
+import { formatDate } from '../lib/format.js'
 
 const COUNT_OPTIONS = [5, 10, 25, 50]
 
