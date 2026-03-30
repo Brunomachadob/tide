@@ -12,7 +12,7 @@ import ResultBadge from '../components/ResultBadge.js'
 import ConfirmDialog from '../components/ConfirmDialog.js'
 import Toast from '../components/Toast.js'
 import KeyHints from '../components/KeyHints.js'
-import { formatDate, readSettings } from '../lib/settings.js'
+import { formatDate, formatRelativeTime, readSettings } from '../lib/settings.js'
 import { bootout, bootstrap, kickstart, plistPath } from '../lib/launchd.js'
 import { setEnabled, deleteTask } from '../lib/tasks.js'
 
@@ -163,7 +163,7 @@ export default function TaskListScreen({ navigate }) {
         )
       : tasks.map((task, i) => {
           const isSelected = i === selectedIdx
-          const lastRun = formatDate(task.lastResult?.completedAt, settings)
+          const lastRun = formatRelativeTime(task.lastResult?.completedAt)
           return React.createElement(
             Box,
             { key: task.id, paddingX: 1, backgroundColor: isSelected ? 'blue' : undefined },

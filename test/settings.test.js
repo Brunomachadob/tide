@@ -7,7 +7,7 @@ import path from 'node:path'
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'tide-test-settings-'))
 process.env.HOME = TMP
 
-const { readSettings, writeSettings, formatDate, SETTINGS_FILE } =
+const { readSettings, writeSettings, formatDate, formatRelativeTime, SETTINGS_FILE } =
   await import('../src/lib/settings.js?bust=1')
 
 const TIDE_DIR = path.join(TMP, '.tide')
@@ -106,5 +106,44 @@ describe('formatDate', () => {
     const iso = d.toISOString()
     const result = formatDate(iso, { dateFormat: 'YYYY-MM-DD' })
     assert.match(result, /\d{4}-01-05 08:05/)
+  })
+})
+
+// ── formatRelativeTime ─────────────────────────────────────────────────────
+
+describe('formatRelativeTime', () => {
+  const ago = secs => new Date(Date.now() - secs * 1000).toISOString()
+
+  test('returns "never" for falsy input', () => {
+    assert.equal(formatRelativeTime(null), 'never')
+    assert.equal(formatRelativeTime(''), 'never')
+    assert.equal(formatRelativeTime(undefined), 'never')
+  })
+
+  test('seconds ago', () => {
+    assert.equal(formatRelativeTime(ago(30)), '30s ago')
+  })
+
+  test('minutes ago', () => {
+    assert.equal(formatRelativeTime(ago(90)), '1m ago')
+    assert.equal(formatRelativeTime(ago(150)), '2m ago')
+  })
+
+  test('hours ago', () => {
+    assert.equal(formatRelativeTime(ago(3600)), '1h ago')
+    assert.equal(formatRelativeTime(ago(7200)), '2h ago')
+  })
+
+  test('days ago', () => {
+    assert.equal(formatRelativeTime(ago(86400)), '1d ago')
+    assert.equal(formatRelativeTime(ago(86400 * 3)), '3d ago')
+  })
+
+  test('months ago', () => {
+    assert.equal(formatRelativeTime(ago(86400 * 31)), '1mo ago')
+  })
+
+  test('years ago', () => {
+    assert.equal(formatRelativeTime(ago(86400 * 366)), '1y ago')
   })
 })
