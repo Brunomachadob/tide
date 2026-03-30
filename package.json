@@ -8,7 +8,13 @@
   },
   "scripts": {
     "start": "node index.js",
-    "test": "node --test test/**/*.test.js"
+    "test": "node --test test/**/*.test.js",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.4"
   },
   "dependencies": {
     "ink": "^5.2.0",

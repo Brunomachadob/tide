@@ -1,6 +1,6 @@
 # Tide — Claude Code Notes
 
-For user-facing docs, data model, and configuration see [README.md](README.md).
+User-facing docs live in `docs/` and are published to GitHub Pages via VitePress. The README links to them. After any code change, check whether the affected area is documented in `docs/guide/` or `docs/reference/` and update those pages if they are now inaccurate.
 
 ## Architecture
 
