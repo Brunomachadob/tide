@@ -17,10 +17,7 @@ Tide solves this by using **macOS launchd** (`~/Library/LaunchAgents`) as the ex
 
 ### Limitations
 
-**macOS sleep affects calendar and interval tasks differently:**
-
-- **Calendar tasks** (`StartCalendarInterval`): if your Mac is asleep at the scheduled time, that run is skipped entirely — no catch-up on wake.
-- **Interval tasks** (`StartInterval`): launchd catches up on wake — if the interval has elapsed while the machine was asleep, the task fires once immediately on wake.
+**macOS sleep:** launchd catches up on wake — if the interval has elapsed while the machine was asleep, the task fires once immediately on wake. A per-task jitter (randomly assigned at creation) spreads tasks out so they don't all fire simultaneously after wake.
 
 ### Notification Design
 
@@ -31,7 +28,7 @@ Completed tasks are never silently discarded. Each run appends an entry to `pend
 Launch with:
 
 ```sh
-npx .
+npx github:Brunomachadob/tide
 ```
 
 | Screen | What you can do |

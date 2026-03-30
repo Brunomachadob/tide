@@ -7,7 +7,7 @@ import TextInput from '../components/TextInput.js'
 import Toast from '../components/Toast.js'
 import KeyHints from '../components/KeyHints.js'
 import { readSettings } from '../lib/settings.js'
-import { createTask } from '../lib/create.js'
+import { createTask, updateTask } from '../lib/create.js'
 
 const INTERVAL_OPTIONS = [
   { label: '15 min',  seconds: 900 },
@@ -19,15 +19,27 @@ const INTERVAL_OPTIONS = [
   { label: '24 hours',seconds: 86400 },
 ]
 
-const STEPS = ['Name', 'Argument', 'Schedule', 'Working Dir', 'Review']
+const STEPS = ['Name', 'Argument', 'Schedule', 'Working Dir', 'Command', 'Review']
 
+function intervalIdxForSeconds(secs) {
+  const idx = INTERVAL_OPTIONS.findIndex(o => o.seconds === secs)
+  return idx >= 0 ? idx : 2
+}
 
-export default function CreateTaskScreen({ goBack }) {
+export default function CreateTaskScreen({ task: existingTask, goBack }) {
+  const isEdit = !!existingTask
   const [step, setStep] = useState(0)
-  const [name, setName] = useState('')
-  const [argument, setArgument] = useState('')
-  const [intervalIdx, setIntervalIdx] = useState(2) // default 1h
-  const [workingDir, setWorkingDir] = useState(() => readSettings().defaultWorkingDirectory || os.homedir())
+  const [name, setName] = useState(existingTask?.name ?? '')
+  const [argument, setArgument] = useState(existingTask?.argument ?? '')
+  const [intervalIdx, setIntervalIdx] = useState(
+    existingTask ? intervalIdxForSeconds(existingTask.schedule?.intervalSeconds) : 2
+  )
+  const [workingDir, setWorkingDir] = useState(
+    existingTask?.workingDirectory ?? readSettings().defaultWorkingDirectory ?? os.homedir()
+  )
+  const [command, setCommand] = useState(
+    existingTask?.command ?? readSettings().command ?? ''
+  )
   const [toast, setToast] = useState(null)
   const [error, setError] = useState(null)
 
@@ -37,20 +49,22 @@ export default function CreateTaskScreen({ goBack }) {
     else setStep(s => s - 1)
   }, [step, goBack])
 
-  const handleCreate = useCallback(() => {
+  const handleSave = useCallback(() => {
     try {
-      createTask({
-        name: name.trim(),
-        argument: argument.trim(),
-        schedule: { type: 'interval', intervalSeconds: INTERVAL_OPTIONS[intervalIdx].seconds },
-        workingDirectory: workingDir.replace(/^~/, os.homedir()),
-      })
-      setToast({ message: `Task "${name.trim()}" created`, type: 'success' })
+      const schedule = { type: 'interval', intervalSeconds: INTERVAL_OPTIONS[intervalIdx].seconds }
+      const resolvedDir = workingDir.replace(/^~/, os.homedir())
+      if (isEdit) {
+        updateTask(existingTask, { name: name.trim(), argument: argument.trim(), schedule, workingDirectory: resolvedDir, command: command.trim() })
+        setToast({ message: `Task "${name.trim()}" updated`, type: 'success' })
+      } else {
+        createTask({ name: name.trim(), argument: argument.trim(), schedule, workingDirectory: resolvedDir, command: command.trim() })
+        setToast({ message: `Task "${name.trim()}" created`, type: 'success' })
+      }
       setTimeout(goBack, 1500)
     } catch (e) {
       setError(e.message)
     }
-  }, [name, argument, intervalIdx, workingDir, goBack])
+  }, [isEdit, existingTask, name, argument, intervalIdx, workingDir, goBack])
 
   useInput((input, key) => {
     if (toast) return
@@ -84,13 +98,19 @@ export default function CreateTaskScreen({ goBack }) {
       return
     }
 
-    // Step 4: Review
+    // Step 4: Command
     if (step === 4) {
-      if (key.return) handleCreate()
+      if (key.tab && command.trim()) nextStep()
+      return
+    }
+
+    // Step 5: Review
+    if (step === 5) {
+      if (key.return) handleSave()
     }
   })
 
-  const stepTitle = `New Task — ${STEPS[step]} (${step + 1}/${STEPS.length})`
+  const stepTitle = `${isEdit ? 'Edit Task' : 'New Task'} — ${STEPS[step]} (${step + 1}/${STEPS.length})`
 
   // ── Step renderers ──────────────────────────────────────────────
 
@@ -157,7 +177,20 @@ export default function CreateTaskScreen({ goBack }) {
       )
     }
 
-    // Step 4: Review
+    if (step === 4) {
+      return React.createElement(
+        Box, { flexDirection: 'column', paddingX: 1 },
+        React.createElement(FieldBox, { label: 'Command', active: true },
+          React.createElement(TextInput, {
+            value: command, onChange: setCommand, active: true,
+            placeholder: '/opt/homebrew/bin/claude --permission-mode bypassPermissions -p',
+          }),
+        ),
+        React.createElement(Text, { color: 'gray' }, 'Tab to continue'),
+      )
+    }
+
+    // Step 5: Review
     const schedSummary = `Every ${INTERVAL_OPTIONS[intervalIdx].label}`
 
     return React.createElement(
@@ -177,6 +210,10 @@ export default function CreateTaskScreen({ goBack }) {
           React.createElement(Box, { width: 18 }, React.createElement(Text, { color: 'gray' }, 'Working dir:')),
           React.createElement(Text, null, workingDir),
         ),
+        React.createElement(Box, { gap: 2 },
+          React.createElement(Box, { width: 18 }, React.createElement(Text, { color: 'gray' }, 'Command:')),
+          React.createElement(Text, null, command),
+        ),
         React.createElement(Box, { marginTop: 1, flexDirection: 'column' },
           React.createElement(Text, { color: 'gray' }, 'Argument:'),
           React.createElement(
@@ -188,18 +225,18 @@ export default function CreateTaskScreen({ goBack }) {
 
       error
         ? React.createElement(Text, { color: 'red' }, 'Error: ' + error)
-        : React.createElement(Text, { color: 'green' }, 'Press Enter to create task'),
+        : React.createElement(Text, { color: 'green' }, `Press Enter to ${isEdit ? 'save changes' : 'create task'}`),
     )
   }
 
   const keyHints = [
-    step < 4
+    step < 5
       ? (step === 1
           ? [['↵', 'newline'], ['Tab', 'next'], ['Esc', 'back']]
           : step === 2
             ? [['↑↓', 'select'], ['Tab', 'next'], ['Esc', 'back']]
             : [['Tab', 'next'], ['Esc', 'back']])
-      : [['↵', 'create'], ['Esc', 'back']],
+      : [['↵', isEdit ? 'save' : 'create'], ['Esc', 'back']],
   ].flat()
 
   return React.createElement(

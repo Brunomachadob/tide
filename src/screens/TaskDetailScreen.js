@@ -54,6 +54,7 @@ export default function TaskDetailScreen({ taskId, navigate, goBack }) {
       const action = task.enabled ? 'disable' : 'enable'
       setConfirm({ action, message: `${action === 'enable' ? 'Enable' : 'Disable'} "${task.name}"?` })
     }
+    if (input === 'E' && task) navigate('edit', { task })
     if (input === 'd') setConfirm({ action: 'delete', message: `Delete "${task?.name}"? This cannot be undone.` })
     if (input === 'l') navigate('logs', { taskId })
     if (input === 'x') navigate('results', { taskId })
@@ -127,7 +128,6 @@ export default function TaskDetailScreen({ taskId, navigate, goBack }) {
       ),
       React.createElement(Field, { label: 'ID',         value: task.id }),
       React.createElement(Field, { label: 'Schedule',   value: task.scheduleLabel }),
-      React.createElement(Field, { label: 'Permission', value: task.permissionMode }),
       React.createElement(Field, { label: 'Command',    value: task.command }),
       task.extraArgs?.length
         ? React.createElement(Field, { label: 'Extra args', value: task.extraArgs.join(' ') })
@@ -169,6 +169,7 @@ export default function TaskDetailScreen({ taskId, navigate, goBack }) {
         ['Esc/q', 'back'],
         ['r', 'run'],
         ['e', 'en/disable'],
+        ['E', 'edit'],
         ['l', 'logs'],
         ['x', 'results'],
         ['d', 'delete'],

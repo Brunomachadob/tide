@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react'
 import { Box, useInput, useApp } from 'ink'
-import fs from 'fs'
-import { readSettings, SETTINGS_FILE } from './lib/settings.js'
+import { readSettings } from './lib/settings.js'
 import TaskListScreen from './screens/TaskListScreen.js'
 import TaskDetailScreen from './screens/TaskDetailScreen.js'
 import LogsScreen from './screens/LogsScreen.js'
@@ -12,7 +11,6 @@ import CreateTaskScreen from './screens/CreateTaskScreen.js'
 
 
 function isFirstRun() {
-  if (!fs.existsSync(SETTINGS_FILE)) return true
   return !readSettings().command
 }
 
@@ -53,6 +51,8 @@ export default function App() {
     case 'setup':
       return React.createElement(SettingsScreen, { ...screenProps, onSave: () => navigate('list'), ...current.props })
     case 'create':
+      return React.createElement(CreateTaskScreen, { ...screenProps, ...current.props })
+    case 'edit':
       return React.createElement(CreateTaskScreen, { ...screenProps, ...current.props })
     default:
       return React.createElement(TaskListScreen, screenProps)

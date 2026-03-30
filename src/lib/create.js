@@ -77,10 +77,21 @@ ${timeoutXml}
 `
 }
 
+function writePlist(taskId, config) {
+  const plist = plistPath(taskId)
+  fs.writeFileSync(plist, generatePlist(taskId, config))
+  const lint = spawnSync('plutil', ['-lint', plist], { encoding: 'utf8' })
+  if (lint.status !== 0) {
+    fs.unlinkSync(plist)
+    throw new Error(`Generated plist is invalid: ${lint.stdout || lint.stderr}`)
+  }
+  return plist
+}
+
 /**
  * Create a new task.
  * config: { name, argument, schedule, command, extraArgs, workingDirectory,
- *           maxRetries, permissionMode, env, id?, createdAt? }
+ *           maxRetries, env, id?, createdAt? }
  * Returns the created task object.
  */
 export function createTask(config) {
@@ -102,16 +113,7 @@ export function createTask(config) {
   fs.mkdirSync(path.join(tDir, 'logs'), { recursive: true })
   fs.mkdirSync(path.join(tDir, 'results'), { recursive: true })
 
-  const plist = plistPath(taskId)
-  const plistContent = generatePlist(taskId, { ...config, command, workingDirectory, schedule })
-  fs.writeFileSync(plist, plistContent)
-
-  const lint = spawnSync('plutil', ['-lint', plist], { encoding: 'utf8' })
-  if (lint.status !== 0) {
-    fs.unlinkSync(plist)
-    throw new Error(`Generated plist is invalid: ${lint.stdout || lint.stderr}`)
-  }
-
+  const plist = writePlist(taskId, { ...config, command, workingDirectory, schedule, jitterSeconds })
   bootstrap(taskId)
 
   const task = {
@@ -133,4 +135,29 @@ export function createTask(config) {
   writeTask(task)
 
   return { task, plistPath: plist }
+}
+
+/**
+ * Update an existing task's editable fields and re-register with launchd.
+ * Preserves id, createdAt, jitterSeconds, enabled.
+ */
+export function updateTask(existing, changes) {
+  const command = changes.command || existing.command || readSettings().command
+  const schedule = changes.schedule || existing.schedule
+  const workingDirectory = changes.workingDirectory || existing.workingDirectory
+
+  const task = {
+    ...existing,
+    name: changes.name ?? existing.name,
+    argument: changes.argument ?? existing.argument,
+    command,
+    schedule,
+    workingDirectory,
+  }
+
+  writePlist(task.id, { ...task, command, workingDirectory, schedule })
+  if (task.enabled) bootstrap(task.id)
+  writeTask(task)
+
+  return task
 }
