@@ -78,4 +78,3 @@ export function deleteTask(id) {
   }
 }
 
-export { formatSchedule } from './format.js'

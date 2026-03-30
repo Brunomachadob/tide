@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { readTasks, formatSchedule } from '../lib/tasks.js'
+import { readTasks } from '../lib/tasks.js'
+import { formatSchedule } from '../lib/format.js'
 import { getStatus } from '../lib/launchd.js'
 import { getLatestResult } from '../lib/results.js'
 
