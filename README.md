@@ -119,6 +119,6 @@ All data lives in `~/.tide/`:
 
 ### Code Quality
 - [ ] **Convert to JSX** — all screens use `React.createElement()` directly; adding a build step (e.g. esbuild) would allow JSX and make the UI code significantly more readable
-- [ ] **Fix missing `path` import in `TaskListScreen`** — `path.join()` is called on delete but `path` is never imported; currently masked because delete hasn't been exercised in tests
-- [ ] **Remove unused `os` imports** — `CreateTaskScreen`, `TaskDetailScreen`, `TaskListScreen`, and `SettingsScreen` all import `os` but don't use it
-- [ ] **Replace `createRequire` in `App.js`** — the only file still using `createRequire` + `require('fs')` instead of `import fs from 'fs'`
+- [x] **Fix missing `path` import in `TaskListScreen`** — `path.join()` is called on delete but `path` is never imported
+- [x] **Remove unused `os` import in `TaskDetailScreen`**
+- [x] **Replace `createRequire` in `App.js`** — now uses `import fs from 'fs'`
