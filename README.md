@@ -108,5 +108,3 @@ All data lives in `~/.tide/`:
 - [ ] **Chain tasks** — `onSuccess: <task-id>` to trigger another task on success
 - [ ] **Export/import** — dump all tasks as JSON for backup or migration
 
-### Code Quality
-- [ ] **Convert to JSX** — all screens use `React.createElement()` directly; adding a build step (e.g. esbuild) would allow JSX and make the UI code significantly more readable
