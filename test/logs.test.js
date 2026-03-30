@@ -7,7 +7,7 @@ import path from 'node:path'
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'tide-test-logs-'))
 process.env.HOME = TMP
 
-const { getOutputLog, getStderrLog, getStdoutLog } = await import('../src/lib/logs.js?bust=1')
+const { getOutputLog, getStderrLog } = await import('../src/lib/logs.js?bust=1')
 
 const TASKS_DIR = path.join(TMP, '.tide', 'tasks')
 const TASK_ID = 'log-task'
@@ -24,18 +24,12 @@ after(() => {
 describe('log readers', () => {
   test('returns null when file does not exist', () => {
     assert.equal(getOutputLog('nonexistent-task'), null)
-    assert.equal(getStdoutLog('nonexistent-task'), null)
     assert.equal(getStderrLog('nonexistent-task'), null)
   })
 
   test('returns empty string for an empty file', () => {
     fs.writeFileSync(path.join(LOGS_DIR, 'output.log'), '')
     assert.equal(getOutputLog(TASK_ID), '')
-  })
-
-  test('returns full content when line count is within limit', () => {
-    fs.writeFileSync(path.join(LOGS_DIR, 'stdout.log'), 'line1\nline2\nline3')
-    assert.equal(getStdoutLog(TASK_ID, 10), 'line1\nline2\nline3')
   })
 
   test('returns last N lines', () => {

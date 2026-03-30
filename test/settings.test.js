@@ -7,10 +7,11 @@ import path from 'node:path'
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'tide-test-settings-'))
 process.env.HOME = TMP
 
-const { readSettings, writeSettings, SETTINGS_FILE } =
+const { readSettings, writeSettings } =
   await import('../src/lib/settings.js?bust=1')
 
 const TIDE_DIR = path.join(TMP, '.tide')
+const SETTINGS_FILE = path.join(TIDE_DIR, 'settings.json')
 
 after(() => {
   fs.rmSync(TMP, { recursive: true, force: true })

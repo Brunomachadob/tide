@@ -2,7 +2,7 @@ import os from 'os'
 import path from 'path'
 import { safeReadJSON, atomicWriteJSON } from './io.js'
 
-export const SETTINGS_FILE = path.join(os.homedir(), '.tide', 'settings.json')
+const SETTINGS_FILE = path.join(os.homedir(), '.tide', 'settings.json')
 
 const DEFAULTS = {
   dateFormat: 'YYYY-MM-DD',

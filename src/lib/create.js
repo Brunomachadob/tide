@@ -16,6 +16,15 @@ function generateId() {
   return crypto.randomBytes(4).toString('hex')
 }
 
+function xmlEscape(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+}
+
 function buildScheduleXml(schedule) {
   const secs = schedule.intervalSeconds || 3600
   return `  <key>StartInterval</key>\n  <integer>${secs}</integer>`
@@ -23,7 +32,7 @@ function buildScheduleXml(schedule) {
 
 function buildEnvXml(env) {
   if (!env || !Object.keys(env).length) return ''
-  return Object.entries(env).map(([k, v]) => `    <key>${k}</key>\n    <string>${v}</string>`).join('\n')
+  return Object.entries(env).map(([k, v]) => `    <key>${xmlEscape(k)}</key>\n    <string>${xmlEscape(v)}</string>`).join('\n')
 }
 
 function generatePlist(taskId, config) {
@@ -47,31 +56,31 @@ function generatePlist(taskId, config) {
 <plist version="1.0">
 <dict>
   <key>Label</key>
-  <string>${taskLabel}</string>
+  <string>${xmlEscape(taskLabel)}</string>
   <key>ProgramArguments</key>
   <array>
-    <string>${runner}</string>
-    <string>${taskId}</string>
+    <string>${xmlEscape(runner)}</string>
+    <string>${xmlEscape(taskId)}</string>
   </array>
   <key>EnvironmentVariables</key>
   <dict>
     <key>TIDE_TASK_ID</key>
-    <string>${taskId}</string>
+    <string>${xmlEscape(taskId)}</string>
     <key>HOME</key>
-    <string>${os.homedir()}</string>
+    <string>${xmlEscape(os.homedir())}</string>
     <key>PATH</key>
     <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
 ${extraEnv}  </dict>
 ${buildScheduleXml(config.schedule)}
 ${timeoutXml}
   <key>StandardOutPath</key>
-  <string>${logStdout}</string>
+  <string>${xmlEscape(logStdout)}</string>
   <key>StandardErrorPath</key>
-  <string>${logStderr}</string>
+  <string>${xmlEscape(logStderr)}</string>
   <key>RunAtLoad</key>
   <false/>
   <key>WorkingDirectory</key>
-  <string>${workDir}</string>
+  <string>${xmlEscape(workDir)}</string>
 </dict>
 </plist>
 `
@@ -113,9 +122,6 @@ export function createTask(config) {
   fs.mkdirSync(path.join(tDir, 'logs'), { recursive: true })
   fs.mkdirSync(path.join(tDir, 'results'), { recursive: true })
 
-  const plist = writePlist(taskId, { ...config, command, workingDirectory, schedule, jitterSeconds })
-  bootstrap(taskId)
-
   const task = {
     id: taskId,
     name: config.name,
@@ -133,6 +139,9 @@ export function createTask(config) {
     resultRetentionDays,
   }
   writeTask(task)
+
+  const plist = writePlist(taskId, { ...config, command, workingDirectory, schedule, jitterSeconds })
+  bootstrap(taskId)
 
   return { task, plistPath: plist }
 }
@@ -155,9 +164,9 @@ export function updateTask(existing, changes) {
     workingDirectory,
   }
 
+  writeTask(task)
   writePlist(task.id, { ...task, command, workingDirectory, schedule })
   if (task.enabled) bootstrap(task.id)
-  writeTask(task)
 
   return task
 }

@@ -9,7 +9,7 @@ process.env.HOME = TMP
 
 // Cache-buster ensures this import gets its own module instance with the
 // HOME we just set (the static import above already captured the real home).
-const { readTask, readTasks, writeTask, resolveTask, resolveId, setEnabled, deleteTask, taskDir, taskFile } =
+const { readTask, readTasks, writeTask, setEnabled, deleteTask, taskDir, taskFile } =
   await import('../src/lib/tasks.js?bust=1')
 
 const TASKS_DIR = path.join(TMP, '.tide', 'tasks')
@@ -111,38 +111,6 @@ describe('writeTask', () => {
     const task = makeTask({ id: 'writetest', name: 'Updated Name' })
     writeTask(task)
     assert.equal(readTask('writetest').name, 'Updated Name')
-  })
-})
-
-// ── resolveTask ────────────────────────────────────────────────────────────
-
-describe('resolveTask', () => {
-  test('resolves by exact id', () => {
-    assert.equal(resolveTask('aabbccdd')?.id, 'aabbccdd')
-  })
-
-  test('resolves by id prefix', () => {
-    assert.equal(resolveTask('aabb')?.id, 'aabbccdd')
-  })
-
-  test('resolves by name (case-insensitive)', () => {
-    assert.equal(resolveTask('my task')?.id, 'aabbccdd')
-  })
-
-  test('returns null for unknown identifier', () => {
-    assert.equal(resolveTask('zzzzzzz'), null)
-  })
-})
-
-// ── resolveId ─────────────────────────────────────────────────────────────
-
-describe('resolveId', () => {
-  test('returns id string for known task', () => {
-    assert.equal(resolveId('aabbccdd'), 'aabbccdd')
-  })
-
-  test('throws for unknown task', () => {
-    assert.throws(() => resolveId('unknown'), /No task found/)
   })
 })
 

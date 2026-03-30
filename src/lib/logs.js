@@ -40,7 +40,3 @@ export function getOutputLogLineCount(taskId) {
 export function getStderrLogLineCount(taskId) {
   return countLines(path.join(logsDir(taskId), 'stderr.log'))
 }
-
-export function getStdoutLog(taskId, lines = 50) {
-  return readLastLines(path.join(logsDir(taskId), 'stdout.log'), lines)
-}

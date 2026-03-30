@@ -43,27 +43,6 @@ export function writeTask(task) {
   atomicWriteJSON(taskFile(task.id), task)
 }
 
-/** Resolve task name or ID → full task object, or null if not found */
-export function resolveTask(nameOrId) {
-  const needle = nameOrId.toLowerCase()
-
-  const exact = readTask(nameOrId)
-  if (exact) return exact
-
-  const { tasks } = readTasks()
-  const byPrefix = tasks.find(t => t.id.startsWith(needle))
-  if (byPrefix) return byPrefix
-
-  return tasks.find(t => (t.name || '').toLowerCase() === needle) || null
-}
-
-/** Resolve to ID string, throws if not found */
-export function resolveId(nameOrId) {
-  const task = resolveTask(nameOrId)
-  if (!task) throw new Error(`No task found matching '${nameOrId}'. Run /tide list to see available tasks.`)
-  return task.id
-}
-
 export function setEnabled(id, enabled) {
   const task = readTask(id)
   if (!task) throw new Error(`Task ${id} not found`)
