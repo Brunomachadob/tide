@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { readTasks } from '../lib/tasks.js'
 import { formatSchedule } from '../lib/format.js'
 import { getStatus } from '../lib/launchd.js'
-import { getLatestResult } from '../lib/results.js'
+import { getLatestResult, getResults } from '../lib/results.js'
 
 function loadTasks() {
   const { tasks } = readTasks()
@@ -17,7 +17,8 @@ function loadTasks() {
       status = 'not loaded'
     }
     const lastResult = getLatestResult(task.id)
-    return { ...task, status, lastResult, scheduleLabel: formatSchedule(task.schedule) }
+    const recentResults = getResults(task.id, 5)
+    return { ...task, status, lastResult, recentResults, scheduleLabel: formatSchedule(task.schedule) }
   })
 }
 

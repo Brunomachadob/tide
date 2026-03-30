@@ -42,6 +42,11 @@ fi
 # Read config via Node
 eval "$(node "${SCRIPT_DIR}/task-postprocess.js" config "${TASK_FILE}")"
 
+# Jitter: spread tasks after wake so they don't all fire simultaneously
+if [[ ${JITTER_SECONDS} -gt 0 ]]; then
+  sleep ${JITTER_SECONDS}
+fi
+
 STARTED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 echo "=== ${STARTED_AT} ===" >> "${OUTPUT_LOG}"
 echo "=== ${STARTED_AT} ===" >> "${STDERR_LOG}"

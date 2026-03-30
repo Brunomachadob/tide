@@ -27,7 +27,6 @@ describe('readSettings', () => {
     const s = readSettings()
     assert.equal(s.dateFormat, 'YYYY-MM-DD')
     assert.equal(s.command, '')
-    assert.ok(s.timezone)
     assert.ok(s.defaultWorkingDirectory)
   })
 
@@ -37,7 +36,6 @@ describe('readSettings', () => {
     const s = readSettings()
     assert.equal(s.dateFormat, 'DD.MM.YYYY')
     assert.equal(s.command, 'my-cmd')
-    assert.ok(s.timezone)
   })
 
   test('returns defaults when file contains corrupt JSON', () => {
@@ -55,15 +53,15 @@ describe('writeSettings', () => {
   })
 
   test('writes and reads back', () => {
-    writeSettings({ dateFormat: 'MM/DD/YYYY', command: 'node', timezone: 'UTC', defaultWorkingDirectory: '/tmp' })
+    writeSettings({ dateFormat: 'MM/DD/YYYY', command: 'node', defaultWorkingDirectory: '/tmp' })
     const s = readSettings()
     assert.equal(s.dateFormat, 'MM/DD/YYYY')
     assert.equal(s.command, 'node')
   })
 
   test('is atomic (uses tmp rename)', () => {
-    writeSettings({ dateFormat: 'YYYY-MM-DD', command: '', timezone: 'UTC', defaultWorkingDirectory: '/tmp' })
-    writeSettings({ dateFormat: 'DD.MM.YYYY', command: 'x', timezone: 'UTC', defaultWorkingDirectory: '/tmp' })
+    writeSettings({ dateFormat: 'YYYY-MM-DD', command: '', defaultWorkingDirectory: '/tmp' })
+    writeSettings({ dateFormat: 'DD.MM.YYYY', command: 'x', defaultWorkingDirectory: '/tmp' })
     assert.equal(readSettings().dateFormat, 'DD.MM.YYYY')
   })
 })

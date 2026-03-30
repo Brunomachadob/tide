@@ -7,19 +7,33 @@ import TextInput from '../components/TextInput.js'
 import Toast from '../components/Toast.js'
 import KeyHints from '../components/KeyHints.js'
 import { readSettings, writeSettings } from '../lib/settings.js'
-import { DATE_FORMATS, TIMEZONES } from '../lib/constants.js'
+import { DATE_FORMATS } from '../lib/constants.js'
 
-const FIELDS = ['command', 'workingDir', 'dateFormat', 'timezone']
+const FIELDS = ['command', 'workingDir', 'dateFormat']
 
-function PickerOptions({ items, selectedIdx }) {
+function formatDateExample(fmt) {
+  const d = new Date()
+  const pad = n => String(n).padStart(2, '0')
+  const year = d.getFullYear()
+  const month = pad(d.getMonth() + 1)
+  const day = pad(d.getDate())
+  if (fmt === 'DD.MM.YYYY') return `${day}.${month}.${year}`
+  if (fmt === 'MM/DD/YYYY') return `${month}/${day}/${year}`
+  return `${year}-${month}-${day}`
+}
+
+function PickerOptions({ items, selectedIdx, showExamples }) {
   return React.createElement(
     Box, { gap: 2 },
     items.map((item, i) =>
-      React.createElement(Box, { key: item },
+      React.createElement(Box, { key: item, gap: 1 },
         React.createElement(Text,
           { color: i === selectedIdx ? 'cyan' : 'gray', bold: i === selectedIdx },
           i === selectedIdx ? `[${item}]` : ` ${item} `,
         ),
+        showExamples
+          ? React.createElement(Text, { color: 'gray' }, `→ ${formatDateExample(item)}`)
+          : null,
       ),
     ),
   )
@@ -32,7 +46,6 @@ export default function SettingsScreen({ goBack, navigate, onSave }) {
   const [command, setCommand] = useState(saved.command || '')
   const [workingDir, setWorkingDir] = useState(saved.defaultWorkingDirectory || os.homedir())
   const [dateFormatIdx, setDateFormatIdx] = useState(Math.max(0, DATE_FORMATS.indexOf(saved.dateFormat)))
-  const [tzIdx, setTzIdx] = useState(Math.max(0, TIMEZONES.indexOf(saved.timezone)))
   const [toast, setToast] = useState(null)
 
   useInput((input, key) => {
@@ -47,16 +60,11 @@ export default function SettingsScreen({ goBack, navigate, onSave }) {
       if (key.leftArrow || input === 'h') setDateFormatIdx(i => Math.max(0, i - 1))
       else if (key.rightArrow || input === 'l') setDateFormatIdx(i => Math.min(DATE_FORMATS.length - 1, i + 1))
     }
-    if (field === 'timezone') {
-      if (key.leftArrow || key.upArrow || input === 'h' || input === 'k') setTzIdx(i => Math.max(0, i - 1))
-      else if (key.rightArrow || key.downArrow || input === 'l' || input === 'j') setTzIdx(i => Math.min(TIMEZONES.length - 1, i + 1))
-    }
     if (key.return) {
       writeSettings({
         command: command.trim(),
         defaultWorkingDirectory: workingDir.trim() || os.homedir(),
         dateFormat: DATE_FORMATS[dateFormatIdx],
-        timezone: TIMEZONES[tzIdx],
       })
       setToast({ message: 'Settings saved', type: 'success' })
       if (onSave) setTimeout(onSave, 1500)
@@ -75,11 +83,7 @@ export default function SettingsScreen({ goBack, navigate, onSave }) {
         React.createElement(TextInput, { value: workingDir, onChange: setWorkingDir, active: field === 'workingDir', placeholder: os.homedir() }),
       ),
       React.createElement(FieldBox, { label: 'Date Format', active: field === 'dateFormat' },
-        React.createElement(PickerOptions, { items: DATE_FORMATS, selectedIdx: dateFormatIdx }),
-        React.createElement(Text, { color: 'gray' }, 'Use ←→ to change'),
-      ),
-      React.createElement(FieldBox, { label: 'Timezone', active: field === 'timezone' },
-        React.createElement(PickerOptions, { items: TIMEZONES, selectedIdx: tzIdx }),
+        React.createElement(PickerOptions, { items: DATE_FORMATS, selectedIdx: dateFormatIdx, showExamples: true }),
         React.createElement(Text, { color: 'gray' }, 'Use ←→ to change'),
       ),
     ),

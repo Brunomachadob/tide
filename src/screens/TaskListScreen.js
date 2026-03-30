@@ -123,8 +123,17 @@ export default function TaskListScreen({ navigate }) {
     { label: 'SCHEDULE', width: 18 },
     { label: 'STATUS',   width: 14 },
     { label: 'LAST RUN', width: 17 },
-    { label: 'RESULT',   width: 12 },
+    { label: 'RESULT',   width: 18 },
   ]
+
+  function Sparkline({ results, isSelected }) {
+    if (!results || results.length === 0) return React.createElement(Text, { color: 'gray' }, '-')
+    const dots = [...results].reverse().map((r, i) => {
+      const ok = r.exitCode === 0
+      return React.createElement(Text, { key: i, color: ok ? 'green' : 'red' }, ok ? '✓' : '✗')
+    })
+    return React.createElement(Box, { gap: 0 }, ...dots)
+  }
 
   const pad = (str, w) => {
     const s = String(str || '')
@@ -187,7 +196,7 @@ export default function TaskListScreen({ navigate }) {
               ),
             ),
             React.createElement(Box, { width: COLS[4].width },
-              React.createElement(ResultBadge, { result: task.lastResult }),
+              React.createElement(Sparkline, { results: task.recentResults, isSelected }),
             ),
           )
         }),

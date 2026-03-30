@@ -5,7 +5,6 @@ import { safeReadJSON, atomicWriteJSON } from './io.js'
 export const SETTINGS_FILE = path.join(os.homedir(), '.tide', 'settings.json')
 
 const DEFAULTS = {
-  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   dateFormat: 'YYYY-MM-DD',
   command: '',
   defaultWorkingDirectory: os.homedir(),

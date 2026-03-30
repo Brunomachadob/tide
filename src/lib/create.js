@@ -17,19 +17,8 @@ function generateId() {
 }
 
 function buildScheduleXml(schedule) {
-  if (schedule.type === 'interval') {
-    const secs = schedule.intervalSeconds || 3600
-    return `  <key>StartInterval</key>\n  <integer>${secs}</integer>`
-  }
-  const hour = schedule.hour ?? 9
-  const minute = schedule.minute ?? 0
-  const days = schedule.days
-  if (days && days.length) {
-    return days.map(day =>
-      `  <key>StartCalendarInterval</key>\n  <dict>\n    <key>Weekday</key><integer>${day}</integer>\n    <key>Hour</key><integer>${hour}</integer>\n    <key>Minute</key><integer>${minute}</integer>\n  </dict>`
-    ).join('\n')
-  }
-  return `  <key>StartCalendarInterval</key>\n  <dict>\n    <key>Hour</key><integer>${hour}</integer>\n    <key>Minute</key><integer>${minute}</integer>\n  </dict>`
+  const secs = schedule.intervalSeconds || 3600
+  return `  <key>StartInterval</key>\n  <integer>${secs}</integer>`
 }
 
 function buildEnvXml(env) {
@@ -46,8 +35,11 @@ function generatePlist(taskId, config) {
   const workDir = config.workingDirectory || os.homedir()
   const extraEnv = buildEnvXml(config.env)
 
-  const timeoutXml = config.timeoutSeconds
-    ? `  <key>TimeOut</key>\n  <integer>${config.timeoutSeconds}</integer>`
+  const effectiveTimeout = config.timeoutSeconds
+    ? config.timeoutSeconds + (config.jitterSeconds ?? 0)
+    : null
+  const timeoutXml = effectiveTimeout
+    ? `  <key>TimeOut</key>\n  <integer>${effectiveTimeout}</integer>`
     : ''
 
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -100,7 +92,9 @@ export function createTask(config) {
   const command = config.command || readSettings().command
   const workingDirectory = config.workingDirectory || os.homedir()
   const maxRetries = config.maxRetries ?? 0
-  const schedule = config.schedule || { type: 'calendar', hour: 9, minute: 0 }
+  const schedule = config.schedule || { type: 'interval', intervalSeconds: 3600 }
+  const intervalSeconds = schedule.intervalSeconds || 3600
+  const jitterSeconds = config.jitterSeconds ?? Math.floor(Math.random() * Math.min(intervalSeconds / 4, 300))
   const timeoutSeconds = config.timeoutSeconds ?? null
   const resultRetentionDays = config.resultRetentionDays ?? 30
 
@@ -130,6 +124,7 @@ export function createTask(config) {
     command,
     extraArgs: config.extraArgs || [],
     schedule,
+    jitterSeconds,
     createdAt,
     enabled: true,
     maxRetries,

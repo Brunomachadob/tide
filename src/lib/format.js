@@ -40,24 +40,13 @@ export function formatDate(isoString, settings) {
   return `${datePart} ${hours}:${mins}`
 }
 
-/** Format a schedule object for display (e.g. "every 2h", "Mon,Wed 09:00"). */
+/** Format a schedule object for display (e.g. "every 2h"). */
 export function formatSchedule(schedule) {
   if (!schedule) return 'unknown'
-  if (schedule.type === 'interval') {
-    const secs = schedule.intervalSeconds || schedule.seconds || 3600
-    if (secs < 60) return `every ${secs}s`
-    if (secs < 3600) return `every ${Math.floor(secs / 60)}m`
-    const h = Math.floor(secs / 3600)
-    const m = Math.floor((secs % 3600) / 60)
-    return `every ${h}h` + (m ? ` ${m}m` : '')
-  }
-  const hour = schedule.hour ?? 9
-  const minute = schedule.minute ?? 0
-  const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
-  const days = schedule.days || schedule.weekdays
-  if (days && days.length) {
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-    return `${days.map(d => dayNames[d]).join(',')} ${timeStr}`
-  }
-  return `daily ${timeStr}`
+  const secs = schedule.intervalSeconds || schedule.seconds || 3600
+  if (secs < 60) return `every ${secs}s`
+  if (secs < 3600) return `every ${Math.floor(secs / 60)}m`
+  const h = Math.floor(secs / 3600)
+  const m = Math.floor((secs % 3600) / 60)
+  return `every ${h}h` + (m ? ` ${m}m` : '')
 }

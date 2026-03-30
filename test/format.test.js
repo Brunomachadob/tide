@@ -100,23 +100,4 @@ describe('formatSchedule', () => {
     assert.equal(formatSchedule({ type: 'interval', seconds: 60 }), 'every 1m')
   })
 
-  test('calendar – daily default', () => {
-    assert.equal(formatSchedule({ type: 'calendar', hour: 9, minute: 0 }), 'daily 09:00')
-  })
-
-  test('calendar – pads hour and minute', () => {
-    assert.equal(formatSchedule({ type: 'calendar', hour: 8, minute: 5 }), 'daily 08:05')
-  })
-
-  test('calendar – with specific weekdays', () => {
-    assert.equal(formatSchedule({ type: 'calendar', hour: 10, minute: 0, days: [1, 3, 5] }), 'Mon,Wed,Fri 10:00')
-  })
-
-  test('calendar – legacy weekdays field', () => {
-    assert.equal(formatSchedule({ type: 'calendar', hour: 9, minute: 0, weekdays: [0, 6] }), 'Sun,Sat 09:00')
-  })
-
-  test('calendar – defaults hour=9 minute=0 when omitted', () => {
-    assert.equal(formatSchedule({ type: 'calendar' }), 'daily 09:00')
-  })
 })

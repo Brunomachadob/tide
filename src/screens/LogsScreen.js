@@ -14,7 +14,7 @@ export default function LogsScreen({ taskId, navigate, goBack }) {
   const [autoRefresh, setAutoRefresh] = useState(false)
   const lines = LINE_OPTIONS[lineIdx]
 
-  const { output, stderr, loading, refresh } = useLogs(taskId, lines, autoRefresh)
+  const { output, stderr, outputTotal, stderrTotal, loading, refresh } = useLogs(taskId, lines, autoRefresh)
   const { notifications } = useNotifications(10000)
 
   useInput((input, key) => {
@@ -29,7 +29,11 @@ export default function LogsScreen({ taskId, navigate, goBack }) {
   })
 
   const content = tab === 'output' ? output : stderr
+  const total = tab === 'output' ? outputTotal : stderrTotal
   const tabLabel = tab === 'output' ? 'OUTPUT' : 'STDERR'
+  const truncationHint = total != null && total > lines
+    ? `(showing last ${lines} of ${total} lines)`
+    : null
 
   return React.createElement(
     Box,
@@ -38,6 +42,12 @@ export default function LogsScreen({ taskId, navigate, goBack }) {
       title: `Logs — ${tab === 'output' ? 'Output' : 'Stderr'} (last ${lines} lines)`,
       notificationCount: notifications.length,
     }),
+
+    truncationHint
+      ? React.createElement(Box, { paddingX: 1 },
+          React.createElement(Text, { color: 'yellow' }, truncationHint),
+        )
+      : null,
 
     React.createElement(
       Box,
