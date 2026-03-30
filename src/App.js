@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react'
 import { Box, useInput, useApp } from 'ink'
-import { createRequire } from 'module'
+import fs from 'fs'
 import { readSettings, SETTINGS_FILE } from './lib/settings.js'
 import TaskListScreen from './screens/TaskListScreen.js'
 import TaskDetailScreen from './screens/TaskDetailScreen.js'
@@ -10,8 +10,6 @@ import NotificationsScreen from './screens/NotificationsScreen.js'
 import SettingsScreen from './screens/SettingsScreen.js'
 import CreateTaskScreen from './screens/CreateTaskScreen.js'
 
-const require = createRequire(import.meta.url)
-const fs = require('fs')
 
 function isFirstRun() {
   if (!fs.existsSync(SETTINGS_FILE)) return true
