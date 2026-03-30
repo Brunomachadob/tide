@@ -103,15 +103,6 @@ All data lives in `~/.tide/`:
 - [ ] **Status dashboard** — show all tasks with next scheduled fire time and a sparkline of last 10 exit codes
 - [ ] **Pause task** — temporarily suspend a task for N hours/days without deleting it
 
-### Reliability
-- [x] **Max log size rotation** — cap `output.log` at 5MB with automatic rotation
-- [x] **Result retention policy** — auto-prune result JSON files older than N days (configurable per task)
-- [x] **Task timeout** — `timeoutSeconds` field uses launchd's `TimeOut` key to kill hung tasks
-- [x] **Overlapping run detection** — PID file prevents concurrent runs of the same task
-
-### Notifications
-- [x] **macOS native notification** — fires on task completion
-
 ### Features
 - [ ] **Output post-processing** — optional `outputFile` field to write output to a specific file
 - [ ] **Chain tasks** — `onSuccess: <task-id>` to trigger another task on success
@@ -119,6 +110,3 @@ All data lives in `~/.tide/`:
 
 ### Code Quality
 - [ ] **Convert to JSX** — all screens use `React.createElement()` directly; adding a build step (e.g. esbuild) would allow JSX and make the UI code significantly more readable
-- [x] **Fix missing `path` import in `TaskListScreen`** — `path.join()` is called on delete but `path` is never imported
-- [x] **Remove unused `os` import in `TaskDetailScreen`**
-- [x] **Replace `createRequire` in `App.js`** — now uses `import fs from 'fs'`
