@@ -1,4 +1,4 @@
-// create a new scheduled task: write prompt, generate plist, register with launchd
+// create a new scheduled task: write task.json, generate plist, register with launchd
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
@@ -79,13 +79,13 @@ ${timeoutXml}
 
 /**
  * Create a new task.
- * config: { name, prompt, schedule, command, extraArgs, workingDirectory,
+ * config: { name, argument, schedule, command, extraArgs, workingDirectory,
  *           maxRetries, permissionMode, env, id?, createdAt? }
  * Returns the created task object.
  */
 export function createTask(config) {
   if (!config.name) throw new Error("'name' is required")
-  if (!config.prompt) throw new Error("'prompt' is required")
+  if (!config.argument) throw new Error("'argument' is required")
 
   const taskId = config.id || generateId()
   const createdAt = config.createdAt || new Date().toISOString().replace(/\.\d+Z$/, 'Z')
@@ -102,9 +102,6 @@ export function createTask(config) {
   fs.mkdirSync(path.join(tDir, 'logs'), { recursive: true })
   fs.mkdirSync(path.join(tDir, 'results'), { recursive: true })
 
-  const promptFile = path.join(tDir, 'prompt.txt')
-  fs.writeFileSync(promptFile, config.prompt)
-
   const plist = plistPath(taskId)
   const plistContent = generatePlist(taskId, { ...config, command, workingDirectory, schedule })
   fs.writeFileSync(plist, plistContent)
@@ -120,7 +117,7 @@ export function createTask(config) {
   const task = {
     id: taskId,
     name: config.name,
-    prompt: config.prompt,
+    argument: config.argument,
     command,
     extraArgs: config.extraArgs || [],
     schedule,
@@ -135,5 +132,5 @@ export function createTask(config) {
   }
   writeTask(task)
 
-  return { task, plistPath: plist, promptFile }
+  return { task, plistPath: plist }
 }

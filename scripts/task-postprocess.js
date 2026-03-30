@@ -30,6 +30,7 @@ if (mode === 'config') {
   console.log(`WORKING_DIR=${q(task.workingDirectory || os.homedir())}`)
   console.log(`RESULT_RETENTION_DAYS=${q(task.resultRetentionDays ?? 30)}`)
   console.log(`JITTER_SECONDS=${q(task.jitterSeconds ?? 0)}`)
+  console.log(`ARGUMENT=${q(task.argument || '')}`)
 
 } else if (mode === 'post') {
   const [taskFile, exitCodeStr, startedAt, completedAt, attemptsStr, output, outputLog, stderrLog] = args

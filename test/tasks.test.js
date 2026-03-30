@@ -18,7 +18,7 @@ function makeTask(overrides = {}) {
   return {
     id: 'aabbccdd',
     name: 'My task',
-    prompt: 'Do something',
+    argument: 'Do something',
     command: 'claude',
     extraArgs: [],
     schedule: { type: 'interval', intervalSeconds: 3600 },

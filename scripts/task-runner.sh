@@ -7,7 +7,6 @@ TASK_ID="${1:?task-runner.sh requires a task ID}"
 TIDE_DIR="${HOME}/.tide"
 TASK_DIR="${TIDE_DIR}/tasks/${TASK_ID}"
 TASK_FILE="${TASK_DIR}/task.json"
-PROMPT_FILE="${TASK_DIR}/prompt.txt"
 RESULTS_DIR="${TASK_DIR}/results"
 LOGS_DIR="${TASK_DIR}/logs"
 OUTPUT_LOG="${LOGS_DIR}/output.log"
@@ -31,11 +30,6 @@ trap 'rm -f "${PID_FILE}"' EXIT
 
 if [[ ! -f "${TASK_FILE}" ]]; then
   echo "[$(date -u '+%Y-%m-%dT%H:%M:%SZ')] ERROR: task file not found: ${TASK_FILE}" >&2
-  exit 1
-fi
-
-if [[ ! -f "${PROMPT_FILE}" ]]; then
-  echo "[$(date -u '+%Y-%m-%dT%H:%M:%SZ')] ERROR: prompt file not found: ${PROMPT_FILE}" >&2
   exit 1
 fi
 
@@ -65,7 +59,7 @@ while [[ ${attempt} -le ${MAX_RETRIES} ]]; do
 
   CMD_ARRAY=(${=COMMAND})
   set +e
-  OUTPUT="$(cd "${WORKING_DIR}" && "${CMD_ARRAY[@]}" ${=EXTRA_ARGS} "$(cat "${PROMPT_FILE}")" 2>>"${STDERR_LOG}")"
+  OUTPUT="$(cd "${WORKING_DIR}" && "${CMD_ARRAY[@]}" ${=EXTRA_ARGS} "${ARGUMENT}" 2>>"${STDERR_LOG}")"
   EXIT_CODE=$?
   set -e
 

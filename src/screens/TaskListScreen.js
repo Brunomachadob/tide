@@ -2,8 +2,6 @@ import React, { useState, useCallback } from 'react'
 import { Box, Text, useInput } from 'ink'
 import Spinner from 'ink-spinner'
 import fs from 'fs'
-import os from 'os'
-import path from 'path'
 import { useTasks } from '../hooks/useTasks.js'
 import { useNotifications } from '../hooks/useNotifications.js'
 import Header from '../components/Header.js'
@@ -103,8 +101,6 @@ export default function TaskListScreen({ navigate }) {
         bootout(taskId)
         const plist = plistPath(taskId)
         if (fs.existsSync(plist)) fs.unlinkSync(plist)
-        const promptFile = path.join(os.homedir(), '.tide', 'prompts', `${taskId}.txt`)
-        if (fs.existsSync(promptFile)) fs.unlinkSync(promptFile)
         deleteTask(taskId)
         setSelectedIdx(i => Math.max(0, i - 1))
       })
@@ -123,7 +119,7 @@ export default function TaskListScreen({ navigate }) {
     { label: 'SCHEDULE', width: 18 },
     { label: 'STATUS',   width: 14 },
     { label: 'LAST RUN', width: 17 },
-    { label: 'RESULT',   width: 18 },
+    { label: 'LAST RESULTS', width: 18 },
   ]
 
   function Sparkline({ results, isSelected }) {

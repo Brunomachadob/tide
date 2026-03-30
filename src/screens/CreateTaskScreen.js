@@ -19,13 +19,13 @@ const INTERVAL_OPTIONS = [
   { label: '24 hours',seconds: 86400 },
 ]
 
-const STEPS = ['Name', 'Prompt', 'Schedule', 'Working Dir', 'Review']
+const STEPS = ['Name', 'Argument', 'Schedule', 'Working Dir', 'Review']
 
 
 export default function CreateTaskScreen({ goBack }) {
   const [step, setStep] = useState(0)
   const [name, setName] = useState('')
-  const [prompt, setPrompt] = useState('')
+  const [argument, setArgument] = useState('')
   const [intervalIdx, setIntervalIdx] = useState(2) // default 1h
   const [workingDir, setWorkingDir] = useState(() => readSettings().defaultWorkingDirectory || os.homedir())
   const [toast, setToast] = useState(null)
@@ -41,7 +41,7 @@ export default function CreateTaskScreen({ goBack }) {
     try {
       createTask({
         name: name.trim(),
-        prompt: prompt.trim(),
+        argument: argument.trim(),
         schedule: { type: 'interval', intervalSeconds: INTERVAL_OPTIONS[intervalIdx].seconds },
         workingDirectory: workingDir.replace(/^~/, os.homedir()),
       })
@@ -50,7 +50,7 @@ export default function CreateTaskScreen({ goBack }) {
     } catch (e) {
       setError(e.message)
     }
-  }, [name, prompt, intervalIdx, workingDir, goBack])
+  }, [name, argument, intervalIdx, workingDir, goBack])
 
   useInput((input, key) => {
     if (toast) return
@@ -66,7 +66,7 @@ export default function CreateTaskScreen({ goBack }) {
 
     // Step 1: Prompt
     if (step === 1) {
-      if (key.tab && prompt.trim()) nextStep()
+      if (key.tab && argument.trim()) nextStep()
       return
     }
 
@@ -113,11 +113,11 @@ export default function CreateTaskScreen({ goBack }) {
     if (step === 1) {
       return React.createElement(
         Box, { flexDirection: 'column', paddingX: 1 },
-        React.createElement(FieldBox, { label: 'Prompt', active: true },
+        React.createElement(FieldBox, { label: 'Argument', active: true },
           React.createElement(
             Box, { height: 6 },
             React.createElement(TextInput, {
-              value: prompt, onChange: setPrompt, active: true,
+              value: argument, onChange: setArgument, active: true,
               multiline: true,
               placeholder: 'Describe the task…',
             }),
@@ -178,10 +178,10 @@ export default function CreateTaskScreen({ goBack }) {
           React.createElement(Text, null, workingDir),
         ),
         React.createElement(Box, { marginTop: 1, flexDirection: 'column' },
-          React.createElement(Text, { color: 'gray' }, 'Prompt:'),
+          React.createElement(Text, { color: 'gray' }, 'Argument:'),
           React.createElement(
             Box, { borderStyle: 'single', borderColor: 'gray', paddingX: 1, marginTop: 0 },
-            React.createElement(Text, { wrap: 'wrap' }, prompt),
+            React.createElement(Text, { wrap: 'wrap' }, argument),
           ),
         ),
       ),

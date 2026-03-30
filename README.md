@@ -38,15 +38,15 @@ npx .
 |--------|----------------|
 | Task list | View all tasks, their schedule, status, and last result |
 | Task detail | See full config and live launchd status |
-| Create task | Name, prompt, schedule, working directory |
+| Create task | Name, argument, schedule, working directory |
 | Logs | Tail stdout/stderr for any task |
 | Results | Browse structured execution results |
 | Notifications | Review and clear completed-run summaries |
-| Settings | Run command, working directory, date format, timezone |
+| Settings | Run command, working directory, date format |
 
 ## Configuration
 
-The **run command** in Settings is the full command Tide will invoke, with the prompt appended as the final argument. Example:
+The **run command** in Settings is the full command Tide will invoke, with the argument appended as the final argument. Example:
 
 ```
 /opt/homebrew/bin/claude --permission-mode bypassPermissions -p
@@ -58,14 +58,11 @@ The **run command** in Settings is the full command Tide will invoke, with the p
 {
   "id": "3f640f65",
   "name": "Daily standup summary",
-  "prompt": "Summarize git log from the last 24h in /path/to/repo and list any open PRs",
+  "argument": "Summarize git log from the last 24h in /path/to/repo and list any open PRs",
   "command": "/opt/homebrew/bin/claude --permission-mode bypassPermissions -p",
   "extraArgs": [],
-  "schedule": {
-    "type": "calendar",
-    "hour": 9,
-    "minute": 0
-  },
+  "schedule": { "type": "interval", "intervalSeconds": 3600 },
+  "jitterSeconds": 42,
   "createdAt": "2026-03-29T10:00:00Z",
   "enabled": true,
   "maxRetries": 0,
@@ -74,9 +71,7 @@ The **run command** in Settings is the full command Tide will invoke, with the p
 }
 ```
 
-Schedule types:
-- `calendar` — `{ type, hour, minute, days? }` → fires at a specific time (optionally on specific weekdays)
-- `interval` — `{ type, intervalSeconds }` → fires every N seconds
+Schedule type: `interval` — `{ type, intervalSeconds }` — fires every N seconds after the previous run. A random `jitterSeconds` (0–min(interval/4, 300)) is assigned at creation time to spread tasks out after a wake from sleep.
 
 ## Data Directory
 
@@ -89,7 +84,6 @@ All data lives in `~/.tide/`:
   tasks/
     <id>/
       task.json
-      prompt.txt
       logs/
       results/
 ```
@@ -98,11 +92,7 @@ All data lives in `~/.tide/`:
 
 ## TODO / Future Improvements
 
-### UX
-- [ ] **Status dashboard** — show all tasks with next scheduled fire time and a sparkline of last 10 exit codes
-
 ### Features
-- [ ] **Output post-processing** — optional `outputFile` field to write output to a specific file
 - [ ] **Chain tasks** — `onSuccess: <task-id>` to trigger another task on success
 - [ ] **Export/import** — dump all tasks as JSON for backup or migration
 

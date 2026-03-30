@@ -22,6 +22,7 @@ function makeTask(tmp, taskId, overrides = {}) {
   const task = {
     id: taskId,
     name: 'Test Task',
+    argument: 'Do something useful.',
     command: '', // filled in per-test via a fake command script
     extraArgs: [],
     maxRetries: 0,
@@ -30,7 +31,6 @@ function makeTask(tmp, taskId, overrides = {}) {
     ...overrides,
   }
   fs.writeFileSync(path.join(taskDir, 'task.json'), JSON.stringify(task, null, 2))
-  fs.writeFileSync(path.join(taskDir, 'prompt.txt'), 'Do something useful.')
   return taskDir
 }
 
@@ -91,15 +91,6 @@ describe('task-runner.sh', () => {
     assert.equal(status, 1)
   })
 
-  test('exits 1 when prompt file is missing', () => {
-    const tmp = makeTmp()
-    after(() => fs.rmSync(tmp, { recursive: true, force: true }))
-    const taskId = 'no-prompt'
-    makeTask(tmp, taskId, { command: 'echo' })
-    fs.unlinkSync(path.join(tmp, '.tide', 'tasks', taskId, 'prompt.txt'))
-    const { status } = runRunner(tmp, taskId)
-    assert.equal(status, 1)
-  })
 
   test('successful run writes a result file with exitCode 0', () => {
     const tmp = makeTmp()

@@ -139,11 +139,11 @@ export default function TaskDetailScreen({ taskId, navigate, goBack }) {
       React.createElement(
         Box,
         { marginTop: 1, flexDirection: 'column' },
-        React.createElement(Text, { color: 'gray' }, 'Prompt:'),
+        React.createElement(Text, { color: 'gray' }, 'Argument:'),
         React.createElement(
           Box,
           { borderStyle: 'single', borderColor: 'gray', paddingX: 1, marginTop: 0 },
-          React.createElement(Text, { wrap: 'wrap' }, task.prompt || '(empty)'),
+          React.createElement(Text, { wrap: 'wrap' }, task.argument || '(empty)'),
         ),
       ),
     ),
