@@ -116,3 +116,9 @@ All data lives in `~/.tide/`:
 - [ ] **Output post-processing** — optional `outputFile` field to write output to a specific file
 - [ ] **Chain tasks** — `onSuccess: <task-id>` to trigger another task on success
 - [ ] **Export/import** — dump all tasks as JSON for backup or migration
+
+### Code Quality
+- [ ] **Convert to JSX** — all screens use `React.createElement()` directly; adding a build step (e.g. esbuild) would allow JSX and make the UI code significantly more readable
+- [ ] **Fix missing `path` import in `TaskListScreen`** — `path.join()` is called on delete but `path` is never imported; currently masked because delete hasn't been exercised in tests
+- [ ] **Remove unused `os` imports** — `CreateTaskScreen`, `TaskDetailScreen`, `TaskListScreen`, and `SettingsScreen` all import `os` but don't use it
+- [ ] **Replace `createRequire` in `App.js`** — the only file still using `createRequire` + `require('fs')` instead of `import fs from 'fs'`
