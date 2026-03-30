@@ -67,19 +67,6 @@ Uses Node's built-in test runner (`node:test`) — no extra dependencies. See [R
 npm test
 ```
 
-### Test files
-
-| File | What it covers |
-|---|---|
-| `test/format.test.js` | `formatDate`, `formatRelativeTime`, `formatSchedule` |
-| `test/settings.test.js` | `readSettings`, `writeSettings` |
-| `test/tasks.test.js` | `readTask`, `readTasks`, `writeTask`, `resolveTask`, `resolveId`, `setEnabled`, `deleteTask` |
-| `test/results.test.js` | `getResults`, `getLatestResult` |
-| `test/logs.test.js` | `getOutputLog`, `getStdoutLog`, `getStderrLog` |
-| `test/notifications.test.js` | `getNotifications`, `clearNotifications` |
-| `test/task-postprocess.test.js` | `scripts/task-postprocess.js` — config and post modes, invoked as subprocess |
-| `test/task-runner.test.js` | `scripts/task-runner.sh` — integration tests with fake commands |
-
 ### Approach
 
 - Each test file creates an isolated `mkdtemp` dir and sets `HOME` to it before importing the module under test — no test touches `~/.tide`.
