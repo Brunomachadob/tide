@@ -42,7 +42,7 @@ fi
 TASK_JSON="$(cat "${TASK_FILE}")"
 
 COMMAND="$(python3 -c "
-import json,sys,os,subprocess
+import json,sys,os
 d=json.loads(sys.argv[1])
 cmd=d.get('command','')
 if not cmd:
@@ -60,9 +60,6 @@ EXTRA_ARGS="$(python3 -c "import json,sys; d=json.loads(sys.argv[1]); print(' '.
 MAX_RETRIES="$(python3 -c "import json,sys; d=json.loads(sys.argv[1]); print(d.get('maxRetries',0))" "${TASK_JSON}")"
 TASK_NAME="$(python3 -c "import json,sys; d=json.loads(sys.argv[1]); print(d.get('name','unnamed'))" "${TASK_JSON}")"
 WORKING_DIR="$(python3 -c "import json,sys,os; d=json.loads(sys.argv[1]); print(d.get('workingDirectory',os.path.expanduser('~')))" "${TASK_JSON}" 2>/dev/null || echo "${HOME}")"
-# Permission mode: default bypassPermissions so headless tasks never hang waiting for input.
-# Can be overridden per-task to e.g. "default" or "acceptEdits" for more restricted runs.
-PERMISSION_MODE="$(python3 -c "import json,sys; d=json.loads(sys.argv[1]); print(d.get('permissionMode','bypassPermissions'))" "${TASK_JSON}")"
 RESULT_RETENTION_DAYS="$(python3 -c "import json,sys; d=json.loads(sys.argv[1]); print(d.get('resultRetentionDays',30))" "${TASK_JSON}")"
 
 if [[ ! -f "${PROMPT_FILE}" ]]; then
