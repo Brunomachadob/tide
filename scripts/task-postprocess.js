@@ -17,7 +17,7 @@ if (mode === 'config') {
   let command = task.command || ''
   if (!command) {
     try {
-      const settings = JSON.parse(fs.readFileSync(path.join(TIDE_DIR, 'tui-settings.json'), 'utf8'))
+      const settings = JSON.parse(fs.readFileSync(path.join(TIDE_DIR, 'settings.json'), 'utf8'))
       command = settings.command || ''
     } catch { /* no settings file */ }
   }

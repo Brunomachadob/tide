@@ -1,7 +1,13 @@
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-export const SETTINGS_FILE = path.join(os.homedir(), '.tide', 'tui-settings.json')
+const OLD_SETTINGS_FILE = path.join(os.homedir(), '.tide', 'tui-settings.json')
+export const SETTINGS_FILE = path.join(os.homedir(), '.tide', 'settings.json')
+
+// Migrate from old filename if needed
+if (fs.existsSync(OLD_SETTINGS_FILE) && !fs.existsSync(SETTINGS_FILE)) {
+  fs.renameSync(OLD_SETTINGS_FILE, SETTINGS_FILE)
+}
 
 
 const DEFAULTS = {
