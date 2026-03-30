@@ -1,0 +1,26 @@
+{
+  "name": "tide-scheduler",
+  "version": "1.0.0",
+  "description": "macOS task scheduler with a terminal UI — run any command on a schedule using launchd",
+  "type": "module",
+  "bin": {
+    "tide": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "ink": "^5.2.0",
+    "react": "^18.3.1"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Brunomachadob/tide.git"
+  },
+  "keywords": ["scheduler", "launchd", "macos", "cron", "tui"],
+  "author": "Bruno Brandao",
+  "license": "MIT"
+}
