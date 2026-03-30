@@ -8,6 +8,7 @@ const DEFAULTS = {
   dateFormat: 'YYYY-MM-DD',
   command: '',
   defaultWorkingDirectory: os.homedir(),
+  terminalBundleId: 'com.apple.Terminal',
 }
 
 export function readSettings() {

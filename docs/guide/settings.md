@@ -60,6 +60,12 @@ You can edit this file directly. Changes take effect the next time Tide reads it
 Tide writes settings atomically (temp-then-rename). If you edit `settings.json` while Tide is running, your changes will be preserved unless Tide writes settings at the same moment. Avoid holding the file open.
 :::
 
+## Terminal app
+
+The terminal app to open when you click a task completion notification. Requires [`terminal-notifier`](https://github.com/julienXX/terminal-notifier) (`brew install terminal-notifier`) — without it, notifications are sent via `osascript` and clicking opens Script Editor instead.
+
+Options: Terminal, iTerm2, Warp, Ghostty, Alacritty, Kitty.
+
 ## Per-task command override
 
 A task can override the global run command by setting `command` in its `task.json`:

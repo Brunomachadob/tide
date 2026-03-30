@@ -23,7 +23,7 @@ features:
     details: A live TUI shows task status, last result, logs, and notifications. Navigate with keyboard shortcuts, no config files to edit.
   - icon: 🔔
     title: Never miss a result
-    details: Every run appends to pending-notifications.json and fires a native macOS notification. Results are never silently discarded.
+    details: Every run is tracked and fires a native macOS notification. Results are never silently discarded.
   - icon: 🔁
     title: Retry support
     details: Configure per-task max retries with exponential backoff.

@@ -92,4 +92,24 @@ describe('task-setup.js', () => {
     const { stdout } = runScript(taskFile)
     assert.match(stdout, /^EXTRA_ARGS='--dangerously-skip-permissions --no-cache'$/m)
   })
+
+  test('emits TERMINAL_BUNDLE_ID from settings.json', () => {
+    const tideDir = path.join(TMP, '.tide')
+    fs.mkdirSync(tideDir, { recursive: true })
+    fs.writeFileSync(
+      path.join(tideDir, 'settings.json'),
+      JSON.stringify({ command: 'claude', terminalBundleId: 'com.googlecode.iterm2' })
+    )
+    const taskFile = writeTaskFile('test-task-01', { command: 'claude' })
+    const { stdout } = runScript(taskFile)
+    assert.match(stdout, /^TERMINAL_BUNDLE_ID='com\.googlecode\.iterm2'$/m)
+  })
+
+  test('emits default TERMINAL_BUNDLE_ID when not in settings', () => {
+    const tideDir = path.join(TMP, '.tide')
+    fs.writeFileSync(path.join(tideDir, 'settings.json'), JSON.stringify({ command: 'claude' }))
+    const taskFile = writeTaskFile('test-task-01', { command: 'claude' })
+    const { stdout } = runScript(taskFile)
+    assert.match(stdout, /^TERMINAL_BUNDLE_ID='com\.apple\.Terminal'$/m)
+  })
 })

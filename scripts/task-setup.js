@@ -12,12 +12,12 @@ const [,, taskFile] = process.argv
 const task = JSON.parse(fs.readFileSync(taskFile, 'utf8'))
 
 let command = task.command || ''
-if (!command) {
-  try {
-    const settings = JSON.parse(fs.readFileSync(path.join(TIDE_DIR, 'settings.json'), 'utf8'))
-    command = settings.command || ''
-  } catch { /* no settings file */ }
-}
+let terminalBundleId = 'com.apple.Terminal'
+try {
+  const settings = JSON.parse(fs.readFileSync(path.join(TIDE_DIR, 'settings.json'), 'utf8'))
+  if (!command) command = settings.command || ''
+  if (settings.terminalBundleId) terminalBundleId = settings.terminalBundleId
+} catch { /* no settings file */ }
 
 const q = v => `'${String(v).replace(/'/g, "'\\''")}'`
 console.log(`COMMAND=${q(command)}`)
@@ -28,3 +28,4 @@ console.log(`WORKING_DIR=${q(task.workingDirectory || os.homedir())}`)
 console.log(`RESULT_RETENTION_DAYS=${q(task.resultRetentionDays ?? 30)}`)
 console.log(`JITTER_SECONDS=${q(task.jitterSeconds ?? 0)}`)
 console.log(`ARGUMENT=${q(task.argument || '')}`)
+console.log(`TERMINAL_BUNDLE_ID=${q(terminalBundleId)}`)
