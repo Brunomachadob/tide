@@ -34,7 +34,7 @@ if [[ ! -f "${TASK_FILE}" ]]; then
 fi
 
 # Read config via Node
-eval "$(node "${SCRIPT_DIR}/task-postprocess.js" config "${TASK_FILE}")"
+eval "$(node "${SCRIPT_DIR}/task-setup.js" "${TASK_FILE}")"
 
 # Jitter: spread tasks after wake so they don't all fire simultaneously
 if [[ ${JITTER_SECONDS} -gt 0 ]]; then
@@ -75,7 +75,7 @@ echo "--- exit ${EXIT_CODE} at ${COMPLETED_AT} ---" >> "${STDERR_LOG}"
 echo "" >> "${STDERR_LOG}"
 
 # Delegate JSON writing, notifications, log rotation, and retention to Node
-node "${SCRIPT_DIR}/task-postprocess.js" post \
+node "${SCRIPT_DIR}/task-postprocess.js" \
   "${TASK_FILE}" "${EXIT_CODE}" "${STARTED_AT}" "${COMPLETED_AT}" "$((attempt))" \
   "${OUTPUT}" "${OUTPUT_LOG}" "${STDERR_LOG}"
 

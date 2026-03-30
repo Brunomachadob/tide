@@ -6,7 +6,6 @@ import path from 'node:path'
 import { spawnSync } from 'node:child_process'
 
 const SCRIPT = path.resolve('scripts/task-runner.sh')
-const POSTPROCESS = path.resolve('scripts/task-postprocess.js')
 
 // ── helpers ────────────────────────────────────────────────────────────────
 

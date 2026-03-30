@@ -9,7 +9,7 @@ For user-facing docs, data model, and configuration see [README.md](README.md).
 A task's lifecycle involves three distinct layers:
 
 1. **launchd** — owns scheduling and process execution. Each task is a plist in `~/Library/LaunchAgents/`. launchd fires `scripts/task-runner.sh <id>` on schedule.
-2. **task-runner.sh** — thin shell wrapper. Reads config via `task-postprocess.js config`, runs the command with retry logic, then delegates all post-run work (result JSON, notifications, log rotation, retention) to `task-postprocess.js post`.
+2. **task-runner.sh** — thin shell wrapper. Reads config via `task-setup.js`, runs the command with retry logic, then delegates all post-run work (result JSON, notifications, log rotation, retention) to `task-postprocess.js`.
 3. **TUI** (`src/`) — reads `~/.tide/` on a polling interval and calls `launchctl print` per task to get live status. Never writes to launchd directly except on create/enable/disable/delete.
 
 ### Task data assembly
@@ -41,7 +41,8 @@ src/lib/
 
 scripts/
   task-runner.sh        — executed by launchd; runs the command, handles retries
-  task-postprocess.js   — Node helper called by task-runner.sh for all JSON work
+  task-setup.js         — reads task.json and emits shell variables before the run
+  task-postprocess.js   — writes result JSON, notifications, rotates logs, prunes old results
 
 src/hooks/
   useTasks.js       — polls loadTasks() (merges task.json + launchd + lastResult)
@@ -54,7 +55,7 @@ src/hooks/
 
 - `task.json` is the source of truth for task config. launchd's plist is derived from it and can be regenerated.
 - All JSON writes use an atomic tmp-then-rename pattern (`atomicWriteJSON` in `io.js`).
-- `readTasks()` no longer has side effects — it does not create `pending-notifications.json`. That file is created on first write by `task-postprocess.js`.
+- `readTasks()` no longer has side effects — it does not create `pending-notifications.json`. That file is created on first write by `task-postprocess.js` (post-run).
 - The `attempts` field in result JSON is the total number of runs (1 = ran once, 2 = ran + 1 retry). The shell increments the counter before breaking on success or exhausting retries.
 
 ---
