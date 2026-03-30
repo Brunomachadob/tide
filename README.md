@@ -100,7 +100,6 @@ All data lives in `~/.tide/`:
 
 ### UX
 - [ ] **Status dashboard** — show all tasks with next scheduled fire time and a sparkline of last 10 exit codes
-- [ ] **Pause task** — temporarily suspend a task for N hours/days without deleting it
 
 ### Features
 - [ ] **Output post-processing** — optional `outputFile` field to write output to a specific file
