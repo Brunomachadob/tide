@@ -99,7 +99,6 @@ All data lives in `~/.tide/`:
 ## TODO / Future Improvements
 
 ### UX
-- [ ] **Natural language schedule parsing** — accept "every weekday at 9am", "every Monday", "twice a day"
 - [ ] **Status dashboard** — show all tasks with next scheduled fire time and a sparkline of last 10 exit codes
 - [ ] **Pause task** — temporarily suspend a task for N hours/days without deleting it
 
