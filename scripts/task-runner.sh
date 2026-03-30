@@ -41,26 +41,27 @@ fi
 
 TASK_JSON="$(cat "${TASK_FILE}")"
 
-COMMAND="$(python3 -c "
-import json,sys,os
-d=json.loads(sys.argv[1])
-cmd=d.get('command','')
+eval "$(python3 - "${TASK_JSON}" <<'PYEOF'
+import json, sys, os, shlex
+
+d = json.loads(sys.argv[1])
+
+cmd = d.get('command', '')
 if not cmd:
-    settings_file=os.path.join(os.path.expanduser('~'),'.tide','tui-settings.json')
     try:
-        with open(settings_file) as f:
-            cmd=json.load(f).get('command','')
+        with open(os.path.expanduser('~/.tide/tui-settings.json')) as f:
+            cmd = json.load(f).get('command', '')
     except Exception:
         pass
-if not cmd:
-    cmd=''
-print(cmd)
-" "${TASK_JSON}")"
-EXTRA_ARGS="$(python3 -c "import json,sys; d=json.loads(sys.argv[1]); print(' '.join(d.get('extraArgs',[])))" "${TASK_JSON}")"
-MAX_RETRIES="$(python3 -c "import json,sys; d=json.loads(sys.argv[1]); print(d.get('maxRetries',0))" "${TASK_JSON}")"
-TASK_NAME="$(python3 -c "import json,sys; d=json.loads(sys.argv[1]); print(d.get('name','unnamed'))" "${TASK_JSON}")"
-WORKING_DIR="$(python3 -c "import json,sys,os; d=json.loads(sys.argv[1]); print(d.get('workingDirectory',os.path.expanduser('~')))" "${TASK_JSON}" 2>/dev/null || echo "${HOME}")"
-RESULT_RETENTION_DAYS="$(python3 -c "import json,sys; d=json.loads(sys.argv[1]); print(d.get('resultRetentionDays',30))" "${TASK_JSON}")"
+
+print(f"COMMAND={shlex.quote(cmd)}")
+print(f"EXTRA_ARGS={shlex.quote(' '.join(d.get('extraArgs', [])))}")
+print(f"MAX_RETRIES={shlex.quote(str(d.get('maxRetries', 0)))}")
+print(f"TASK_NAME={shlex.quote(d.get('name', 'unnamed'))}")
+print(f"WORKING_DIR={shlex.quote(d.get('workingDirectory', os.path.expanduser('~')))}")
+print(f"RESULT_RETENTION_DAYS={shlex.quote(str(d.get('resultRetentionDays', 30)))}")
+PYEOF
+)"
 
 if [[ ! -f "${PROMPT_FILE}" ]]; then
   echo "[${TIMESTAMP}] ERROR: prompt file not found: ${PROMPT_FILE}" >&2
