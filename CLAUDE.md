@@ -60,6 +60,44 @@ src/hooks/
 
 ---
 
+## Architecture Decision Records (ADRs)
+
+ADRs live in `docs/adr/` and document significant architectural decisions — why they were made, what was considered, and what the consequences are.
+
+### When to consult ADRs
+
+Before planning or implementing any change that touches the architecture, **read the relevant ADRs first**. They capture constraints and tradeoffs that may not be obvious from the code alone. A plan that contradicts an existing ADR must explicitly address it.
+
+### When to write an ADR
+
+Write a new ADR whenever a plan involves:
+- Changing a core architectural decision (scheduling model, config format, execution model, etc.)
+- Introducing a new technology or runtime dependency
+- Making a tradeoff that future maintainers would reasonably question
+
+If the new decision supersedes an existing ADR, update the old ADR's status to `Superseded by ADR-NNNN` and link to the new one.
+
+### ADR template
+
+```markdown
+# ADR-NNNN: Title
+Date: YYYY-MM-DD
+Status: Accepted | Superseded by [ADR-NNNN](NNNN-title.md)
+
+## Context
+Why this decision was needed — the problem, constraint, or question that prompted it.
+
+## Decision
+What was decided.
+
+## Consequences
+What this means going forward — both benefits and limitations.
+```
+
+Keep ADRs concise. The goal is to capture the *why*, not reconstruct every option considered. Only add an alternatives section if the tradeoffs were genuinely non-obvious.
+
+---
+
 ## Testing
 
 Uses Node's built-in test runner (`node:test`) — no extra dependencies. See [README.md](README.md) for data directory layout.
