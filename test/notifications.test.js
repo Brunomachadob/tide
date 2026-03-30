@@ -7,7 +7,7 @@ import path from 'node:path'
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'tide-test-notif-'))
 process.env.HOME = TMP
 
-const { getNotifications, clearNotifications } = await import('../src/lib/notifications.js?bust=1')
+const { getNotifications, clearNotifications, dismissNotification } = await import('../src/lib/notifications.js?bust=1')
 
 const TIDE_DIR = path.join(TMP, '.tide')
 const NOTIF_FILE = path.join(TIDE_DIR, 'pending-notifications.json')
@@ -35,6 +35,20 @@ describe('getNotifications', () => {
     const data = [{ taskId: 'abc', message: 'done' }]
     fs.writeFileSync(NOTIF_FILE, JSON.stringify(data))
     assert.deepEqual(getNotifications(), data)
+  })
+})
+
+describe('dismissNotification', () => {
+  test('removes only the matching taskId', () => {
+    fs.writeFileSync(NOTIF_FILE, JSON.stringify([{ taskId: 'a' }, { taskId: 'b' }, { taskId: 'c' }]))
+    dismissNotification('b')
+    assert.deepEqual(getNotifications(), [{ taskId: 'a' }, { taskId: 'c' }])
+  })
+
+  test('is a no-op for an unknown taskId', () => {
+    fs.writeFileSync(NOTIF_FILE, JSON.stringify([{ taskId: 'a' }]))
+    dismissNotification('z')
+    assert.deepEqual(getNotifications(), [{ taskId: 'a' }])
   })
 })
 

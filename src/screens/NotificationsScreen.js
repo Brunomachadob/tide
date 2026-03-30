@@ -11,16 +11,39 @@ import { formatDate } from '../lib/format.js'
 
 export default function NotificationsScreen({ navigate, goBack }) {
   const settings = readSettings()
-  const { notifications, loading, clear } = useNotifications(10000)
+  const { notifications, loading, clear, dismiss } = useNotifications(10000)
+  const [selectedIdx, setSelectedIdx] = useState(0)
   const [confirmClear, setConfirmClear] = useState(false)
   const [toast, setToast] = useState(null)
+
+  const displayed = [...notifications].reverse()
 
   useInput((input, key) => {
     if (confirmClear) return
     if (key.escape || input === 'q') { goBack(); return }
-    if (input === 'c' && notifications.length > 0) setConfirmClear(true)
+    if (key.upArrow || input === 'k') {
+      setSelectedIdx(i => Math.max(0, i - 1))
+      return
+    }
+    if (key.downArrow || input === 'j') {
+      setSelectedIdx(i => Math.min((displayed.length || 1) - 1, i + 1))
+      return
+    }
+    if (key.return && displayed[selectedIdx]) {
+      const n = displayed[selectedIdx]
+      dismiss(n.taskId)
+      setSelectedIdx(i => Math.max(0, Math.min(i, displayed.length - 2)))
+      navigate('logs', { taskId: n.taskId })
+      return
+    }
+    if (input === 'd' && displayed[selectedIdx]) {
+      const n = displayed[selectedIdx]
+      dismiss(n.taskId)
+      setSelectedIdx(i => Math.max(0, Math.min(i, displayed.length - 2)))
+      return
+    }
+    if (input === 'c' && displayed.length > 0) setConfirmClear(true)
     if (input === 's') navigate('settings')
-    if (input === 'r') {} // auto-refreshes
   })
 
   return React.createElement(
@@ -43,11 +66,14 @@ export default function NotificationsScreen({ navigate, goBack }) {
       : React.createElement(
           Box,
           { flexDirection: 'column', paddingX: 1 },
-          notifications.map((n, i) =>
-            React.createElement(
+          displayed.map((n, i) => {
+            const isSelected = i === selectedIdx
+            return React.createElement(
               Box,
               { key: i, flexDirection: 'column', marginBottom: 1,
-                borderStyle: 'single', borderColor: n.exitCode === 0 ? 'green' : 'red', paddingX: 1 },
+                borderStyle: 'single',
+                borderColor: isSelected ? 'blue' : (n.exitCode === 0 ? 'green' : 'red'),
+                paddingX: 1 },
               React.createElement(
                 Box,
                 { gap: 2 },
@@ -60,8 +86,8 @@ export default function NotificationsScreen({ navigate, goBack }) {
               n.summary
                 ? React.createElement(Text, { color: 'gray' }, n.summary)
                 : null,
-            ),
-          ),
+            )
+          }),
         ),
 
     confirmClear
@@ -86,8 +112,11 @@ export default function NotificationsScreen({ navigate, goBack }) {
 
     React.createElement(KeyHints, {
       hints: [
-        ['Esc/q', 'back'],
+        ['↑↓/jk', 'move'],
+        ['↵', 'logs + dismiss'],
+        ['d', 'dismiss'],
         ['c', 'clear all'],
+        ['Esc/q', 'back'],
       ],
     }),
   )
