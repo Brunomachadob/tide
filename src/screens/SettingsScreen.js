@@ -6,7 +6,7 @@ import FieldBox from '../components/FieldBox.js'
 import TextInput from '../components/TextInput.js'
 import Toast from '../components/Toast.js'
 import KeyHints from '../components/KeyHints.js'
-import { readSettings, writeSettings, detectClaudeCommand } from '../lib/settings.js'
+import { readSettings, writeSettings } from '../lib/settings.js'
 import { DATE_FORMATS, TIMEZONES } from '../lib/constants.js'
 
 const FIELDS = ['command', 'workingDir', 'dateFormat', 'timezone']
@@ -29,7 +29,7 @@ function PickerOptions({ items, selectedIdx }) {
 export default function SettingsScreen({ goBack, navigate, onSave }) {
   const saved = readSettings()
   const [field, setField] = useState('command')
-  const [command, setCommand] = useState(saved.command || detectClaudeCommand())
+  const [command, setCommand] = useState(saved.command || '')
   const [workingDir, setWorkingDir] = useState(saved.defaultWorkingDirectory || os.homedir())
   const [dateFormatIdx, setDateFormatIdx] = useState(Math.max(0, DATE_FORMATS.indexOf(saved.dateFormat)))
   const [tzIdx, setTzIdx] = useState(Math.max(0, TIMEZONES.indexOf(saved.timezone)))
@@ -68,8 +68,8 @@ export default function SettingsScreen({ goBack, navigate, onSave }) {
     React.createElement(Header, { title: 'Settings' }),
 
     React.createElement(Box, { flexDirection: 'column', paddingX: 1 },
-      React.createElement(FieldBox, { label: 'Claude command', active: field === 'command' },
-        React.createElement(TextInput, { value: command, onChange: setCommand, active: field === 'command', placeholder: '/opt/homebrew/bin/claude' }),
+      React.createElement(FieldBox, { label: 'Run command (must end with prompt flag)', active: field === 'command' },
+        React.createElement(TextInput, { value: command, onChange: setCommand, active: field === 'command', placeholder: '/opt/homebrew/bin/claude --permission-mode bypassPermissions -p' }),
       ),
       React.createElement(FieldBox, { label: 'Default working directory', active: field === 'workingDir' },
         React.createElement(TextInput, { value: workingDir, onChange: setWorkingDir, active: field === 'workingDir', placeholder: os.homedir() }),

@@ -1,18 +1,18 @@
 #!/bin/zsh
 # task-runner.sh <task-id>
-# Called by launchd to execute a scheduled Claude task.
-# Reads task config, runs claude26, captures output, writes result JSON, appends notification.
+# Called by launchd to execute a scheduled Tide task.
+# Reads task config, runs the configured command, captures output, writes result JSON, appends notification.
 set -uo pipefail
 
 TASK_ID="${1:?task-runner.sh requires a task ID}"
-SCHEDULER_DIR="${HOME}/.claude/scheduler"
+SCHEDULER_DIR="${HOME}/.tide"
 TASK_DIR="${SCHEDULER_DIR}/tasks/${TASK_ID}"
 TASK_FILE="${TASK_DIR}/task.json"
 PROMPT_FILE="${TASK_DIR}/prompt.txt"
 RESULTS_DIR="${TASK_DIR}/results"
 LOGS_DIR="${TASK_DIR}/logs"
 NOTIFICATIONS_FILE="${SCHEDULER_DIR}/pending-notifications.json"
-CLAUDE_OUTPUT_LOG="${LOGS_DIR}/output.log"
+OUTPUT_LOG="${LOGS_DIR}/output.log"
 STDERR_LOG="${LOGS_DIR}/stderr.log"
 
 mkdir -p "${RESULTS_DIR}" "${LOGS_DIR}"
@@ -46,15 +46,14 @@ import json,sys,os,subprocess
 d=json.loads(sys.argv[1])
 cmd=d.get('command','')
 if not cmd:
-    settings_file=os.path.join(os.path.expanduser('~'),'.claude','scheduler','tui-settings.json')
+    settings_file=os.path.join(os.path.expanduser('~'),'.tide','tui-settings.json')
     try:
         with open(settings_file) as f:
             cmd=json.load(f).get('command','')
     except Exception:
         pass
 if not cmd:
-    r=subprocess.run(['which','claude'],capture_output=True,text=True)
-    cmd=r.stdout.strip() if r.returncode==0 else '/opt/homebrew/bin/claude26'
+    cmd=''
 print(cmd)
 " "${TASK_JSON}")"
 EXTRA_ARGS="$(python3 -c "import json,sys; d=json.loads(sys.argv[1]); print(' '.join(d.get('extraArgs',[])))" "${TASK_JSON}")"
@@ -72,7 +71,7 @@ if [[ ! -f "${PROMPT_FILE}" ]]; then
 fi
 
 # Append run header to output and stderr logs
-echo "=== ${TIMESTAMP} ===" >> "${CLAUDE_OUTPUT_LOG}"
+echo "=== ${TIMESTAMP} ===" >> "${OUTPUT_LOG}"
 echo "=== ${TIMESTAMP} ===" >> "${STDERR_LOG}"
 
 # Run with retries
@@ -83,23 +82,20 @@ OUTPUT=""
 while [[ ${attempt} -le ${MAX_RETRIES} ]]; do
   if [[ ${attempt} -gt 0 ]]; then
     BACKOFF=$((attempt * 30))
-    echo "[${TIMESTAMP}] Retry ${attempt}/${MAX_RETRIES} after ${BACKOFF}s..." >> "${CLAUDE_OUTPUT_LOG}"
+    echo "[${TIMESTAMP}] Retry ${attempt}/${MAX_RETRIES} after ${BACKOFF}s..." >> "${OUTPUT_LOG}"
     sleep ${BACKOFF}
   fi
 
-  # Run claude26 with the prompt file contents.
-  # --permission-mode bypassPermissions (default) ensures the headless session never
-  # hangs waiting for a tool-use permission prompt that nobody can answer.
-  # Stdout (Claude's response) goes to the output log; stderr goes to stderr log.
+  # Run the configured command with the prompt. Stdout goes to the output log; stderr goes to stderr log.
+  # Split COMMAND and EXTRA_ARGS into arrays so flags are passed correctly.
+  CMD_ARRAY=(${=COMMAND})
   set +e
-  OUTPUT="$(cd "${WORKING_DIR}" && "${COMMAND}" -p "$(cat "${PROMPT_FILE}")" \
-    --permission-mode "${PERMISSION_MODE}" \
-    ${EXTRA_ARGS} 2>>"${STDERR_LOG}")"
+  OUTPUT="$(cd "${WORKING_DIR}" && "${CMD_ARRAY[@]}" ${=EXTRA_ARGS} "$(cat "${PROMPT_FILE}")" 2>>"${STDERR_LOG}")"
   EXIT_CODE=$?
   set -e
 
-  # Write Claude's response to the output log
-  printf '%s\n' "${OUTPUT}" >> "${CLAUDE_OUTPUT_LOG}"
+  # Write command output to the output log
+  printf '%s\n' "${OUTPUT}" >> "${OUTPUT_LOG}"
 
   [[ ${EXIT_CODE} -eq 0 ]] && break
   attempt=$((attempt + 1))
@@ -108,8 +104,8 @@ done
 COMPLETED_AT="$(python3 -c "from datetime import datetime,timezone; print(datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'))")"
 
 # Append run footer to output and stderr logs
-echo "--- exit ${EXIT_CODE} at ${COMPLETED_AT} ---" >> "${CLAUDE_OUTPUT_LOG}"
-echo "" >> "${CLAUDE_OUTPUT_LOG}"
+echo "--- exit ${EXIT_CODE} at ${COMPLETED_AT} ---" >> "${OUTPUT_LOG}"
+echo "" >> "${OUTPUT_LOG}"
 echo "--- exit ${EXIT_CODE} at ${COMPLETED_AT} ---" >> "${STDERR_LOG}"
 echo "" >> "${STDERR_LOG}"
 
@@ -192,7 +188,7 @@ with open('${logfile}', 'wb') as f:
     fi
   fi
 }
-rotate_log "${CLAUDE_OUTPUT_LOG}"
+rotate_log "${OUTPUT_LOG}"
 rotate_log "${STDERR_LOG}"
 
 # Result retention: prune result JSON files older than resultRetentionDays
@@ -217,10 +213,10 @@ PYEOF
 
 # macOS native notification
 if [[ ${EXIT_CODE} -eq 0 ]]; then
-  NOTIF_TITLE="Scheduler: ${TASK_NAME} ✓"
+  NOTIF_TITLE="Tide: ${TASK_NAME} ✓"
   NOTIF_MSG="Task completed successfully."
 else
-  NOTIF_TITLE="Scheduler: ${TASK_NAME} ✗"
+  NOTIF_TITLE="Tide: ${TASK_NAME} ✗"
   NOTIF_MSG="Task failed (exit ${EXIT_CODE})."
 fi
 osascript -e "display notification \"${NOTIF_MSG}\" with title \"${NOTIF_TITLE}\"" 2>/dev/null || true

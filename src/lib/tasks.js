@@ -1,18 +1,16 @@
-// lib/tasks.js — per-task JSON storage under ~/.claude/scheduler/tasks/<id>/
-'use strict'
+// per-task JSON storage under ~/.tide/tasks/<id>/
+import fs from 'fs'
+import os from 'os'
+import path from 'path'
 
-const fs = require('fs')
-const os = require('os')
-const path = require('path')
+const TIDE_DIR = path.join(os.homedir(), '.tide')
+const TASKS_DIR = path.join(TIDE_DIR, 'tasks')
 
-const SCHEDULER_DIR = path.join(os.homedir(), '.claude', 'scheduler')
-const TASKS_DIR = path.join(SCHEDULER_DIR, 'tasks')
-
-function taskDir(id) {
+export function taskDir(id) {
   return path.join(TASKS_DIR, id)
 }
 
-function taskFile(id) {
+export function taskFile(id) {
   return path.join(TASKS_DIR, id, 'task.json')
 }
 
@@ -22,14 +20,14 @@ function ensureTaskDir(id) {
 }
 
 function ensureNotificationsFile() {
-  const notifFile = path.join(SCHEDULER_DIR, 'pending-notifications.json')
+  const notifFile = path.join(TIDE_DIR, 'pending-notifications.json')
   if (!fs.existsSync(notifFile)) {
     fs.writeFileSync(notifFile, '[]')
   }
 }
 
 /** Read a single task by ID. Returns null if not found. */
-function readTask(id) {
+export function readTask(id) {
   const file = taskFile(id)
   if (!fs.existsSync(file)) return null
   try {
@@ -40,7 +38,7 @@ function readTask(id) {
 }
 
 /** Read all tasks, sorted by createdAt ascending. */
-function readTasks() {
+export function readTasks() {
   ensureNotificationsFile()
   if (!fs.existsSync(TASKS_DIR)) return { tasks: [] }
 
@@ -53,7 +51,7 @@ function readTasks() {
 }
 
 /** Write (create or replace) a single task's task.json. */
-function writeTask(task) {
+export function writeTask(task) {
   ensureTaskDir(task.id)
   const file = taskFile(task.id)
   const tmp = file + '.tmp'
@@ -62,16 +60,13 @@ function writeTask(task) {
 }
 
 /** Resolve task name or ID → full task object, or null if not found */
-function resolveTask(nameOrId) {
+export function resolveTask(nameOrId) {
   const needle = nameOrId.toLowerCase()
 
-  // Exact ID match first (fast path)
   const exact = readTask(nameOrId)
   if (exact) return exact
 
-  // Scan all tasks for prefix ID or name match
   const { tasks } = readTasks()
-
   const byPrefix = tasks.find(t => t.id.startsWith(needle))
   if (byPrefix) return byPrefix
 
@@ -79,20 +74,20 @@ function resolveTask(nameOrId) {
 }
 
 /** Resolve to ID string, throws if not found */
-function resolveId(nameOrId) {
+export function resolveId(nameOrId) {
   const task = resolveTask(nameOrId)
-  if (!task) throw new Error(`No task found matching '${nameOrId}'. Run /scheduler list to see available tasks.`)
+  if (!task) throw new Error(`No task found matching '${nameOrId}'. Run /tide list to see available tasks.`)
   return task.id
 }
 
-function setEnabled(id, enabled) {
+export function setEnabled(id, enabled) {
   const task = readTask(id)
   if (!task) throw new Error(`Task ${id} not found`)
   task.enabled = enabled
   writeTask(task)
 }
 
-function deleteTask(id) {
+export function deleteTask(id) {
   const dir = taskDir(id)
   if (fs.existsSync(dir)) {
     fs.rmSync(dir, { recursive: true, force: true })
@@ -100,7 +95,7 @@ function deleteTask(id) {
 }
 
 /** Format schedule for display */
-function formatSchedule(schedule) {
+export function formatSchedule(schedule) {
   if (!schedule) return 'unknown'
   if (schedule.type === 'interval') {
     const secs = schedule.intervalSeconds || schedule.seconds || 3600
@@ -120,5 +115,3 @@ function formatSchedule(schedule) {
   }
   return `daily ${timeStr}`
 }
-
-module.exports = { taskDir, taskFile, readTask, readTasks, writeTask, resolveTask, resolveId, setEnabled, deleteTask, formatSchedule }

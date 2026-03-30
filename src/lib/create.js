@@ -1,23 +1,16 @@
-// lib/create.js — create a new scheduled task: write prompt, generate plist, register with launchd
-'use strict'
+// create a new scheduled task: write prompt, generate plist, register with launchd
+import fs from 'fs'
+import os from 'os'
+import path from 'path'
+import crypto from 'crypto'
+import { spawnSync } from 'child_process'
+import { fileURLToPath } from 'url'
+import { writeTask, taskDir } from './tasks.js'
+import { bootstrap, plistPath, label } from './launchd.js'
+import { readSettings } from './settings.js'
 
-const fs = require('fs')
-const os = require('os')
-const path = require('path')
-const crypto = require('crypto')
-const { spawnSync } = require('child_process')
-const { writeTask, readTask, taskDir } = require('./tasks')
-const { bootstrap, plistPath, label } = require('./launchd')
-
-const SETTINGS_FILE = path.join(os.homedir(), '.claude', 'scheduler', 'tui-settings.json')
-
-function readTuiSettings() {
-  try { return JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8')) } catch { return {} }
-}
-
-const SCHEDULER_DIR = path.join(os.homedir(), '.claude', 'scheduler')
+const PLUGIN_ROOT = path.resolve(fileURLToPath(import.meta.url), '../../..')
 const LAUNCH_AGENTS_DIR = path.join(os.homedir(), 'Library', 'LaunchAgents')
-const PLUGIN_ROOT = path.resolve(__dirname, '..')
 
 function generateId() {
   return crypto.randomBytes(4).toString('hex')
@@ -70,7 +63,7 @@ function generatePlist(taskId, config) {
   </array>
   <key>EnvironmentVariables</key>
   <dict>
-    <key>CLAUDE_SCHEDULER_TASK_ID</key>
+    <key>TIDE_TASK_ID</key>
     <string>${taskId}</string>
     <key>HOME</key>
     <string>${os.homedir()}</string>
@@ -98,16 +91,15 @@ ${timeoutXml}
  *           maxRetries, permissionMode, env, id?, createdAt? }
  * Returns the created task object.
  */
-function createTask(config) {
+export function createTask(config) {
   if (!config.name) throw new Error("'name' is required")
   if (!config.prompt) throw new Error("'prompt' is required")
 
   const taskId = config.id || generateId()
   const createdAt = config.createdAt || new Date().toISOString().replace(/\.\d+Z$/, 'Z')
-  const command = config.command || readTuiSettings().command || '/opt/homebrew/bin/claude26'
+  const command = config.command || readSettings().command
   const workingDirectory = config.workingDirectory || os.homedir()
   const maxRetries = config.maxRetries ?? 0
-  const permissionMode = config.permissionMode || 'bypassPermissions'
   const schedule = config.schedule || { type: 'calendar', hour: 9, minute: 0 }
   const timeoutSeconds = config.timeoutSeconds ?? null
   const resultRetentionDays = config.resultRetentionDays ?? 30
@@ -116,26 +108,21 @@ function createTask(config) {
   fs.mkdirSync(path.join(tDir, 'logs'), { recursive: true })
   fs.mkdirSync(path.join(tDir, 'results'), { recursive: true })
 
-  // Write prompt file
   const promptFile = path.join(tDir, 'prompt.txt')
   fs.writeFileSync(promptFile, config.prompt)
 
-  // Generate and write plist
   const plist = plistPath(taskId)
   const plistContent = generatePlist(taskId, { ...config, command, workingDirectory, schedule })
   fs.writeFileSync(plist, plistContent)
 
-  // Validate plist
   const lint = spawnSync('plutil', ['-lint', plist], { encoding: 'utf8' })
   if (lint.status !== 0) {
     fs.unlinkSync(plist)
     throw new Error(`Generated plist is invalid: ${lint.stdout || lint.stderr}`)
   }
 
-  // Register with launchd
   bootstrap(taskId)
 
-  // Persist task.json
   const task = {
     id: taskId,
     name: config.name,
@@ -146,7 +133,6 @@ function createTask(config) {
     createdAt,
     enabled: true,
     maxRetries,
-    permissionMode,
     workingDirectory,
     env: config.env || {},
     ...(timeoutSeconds !== null && { timeoutSeconds }),
@@ -156,5 +142,3 @@ function createTask(config) {
 
   return { task, plistPath: plist, promptFile }
 }
-
-module.exports = { createTask }

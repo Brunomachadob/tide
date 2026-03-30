@@ -1,23 +1,21 @@
-// lib/launchd.js — launchctl operations
-'use strict'
+// launchctl operations
+import { spawnSync } from 'child_process'
+import path from 'path'
+import os from 'os'
+import { fileURLToPath } from 'url'
 
-const { execSync, spawnSync } = require('child_process')
-const path = require('path')
-const os = require('os')
-
-const PLUGIN_ROOT = path.resolve(__dirname, '..')
-const SCHEDULER_DIR = path.join(os.homedir(), '.claude', 'scheduler')
+const PLUGIN_ROOT = path.resolve(fileURLToPath(import.meta.url), '../../..')
 const LAUNCH_AGENTS_DIR = path.join(os.homedir(), 'Library', 'LaunchAgents')
 
 function uid() {
   return process.getuid()
 }
 
-function label(taskId) {
-  return `com.claude.scheduler.${taskId}`
+export function label(taskId) {
+  return `com.tide.${taskId}`
 }
 
-function plistPath(taskId) {
+export function plistPath(taskId) {
   return path.join(LAUNCH_AGENTS_DIR, `${label(taskId)}.plist`)
 }
 
@@ -25,7 +23,7 @@ function plistPath(taskId) {
  * Query launchd status for a task.
  * Returns { loaded: bool, pid: number|null, lastExitCode: number|null }
  */
-function getStatus(taskId) {
+export function getStatus(taskId) {
   try {
     const result = spawnSync('launchctl', ['print', `gui/${uid()}/${label(taskId)}`], {
       encoding: 'utf8',
@@ -35,7 +33,6 @@ function getStatus(taskId) {
       return { loaded: false, pid: null, lastExitCode: null }
     }
     const stdout = result.stdout || ''
-    // Parse: "pid = 12345" and "last exit code = 0"
     const pidMatch = stdout.match(/\bpid\s*=\s*(\d+)/)
     const exitMatch = stdout.match(/last exit code\s*=\s*(-?\d+)/)
     return {
@@ -48,10 +45,13 @@ function getStatus(taskId) {
   }
 }
 
-/**
- * Bootstrap (enable) a task's plist with launchctl.
- */
-function bootstrap(taskId) {
+/** Bootstrap (enable) a task's plist with launchctl. Bootout first to ensure idempotency. */
+export function bootstrap(taskId) {
+  // Unload first — launchd rejects bootstrap if the label is already registered
+  spawnSync('launchctl', ['bootout', `gui/${uid()}/${label(taskId)}`], {
+    encoding: 'utf8',
+    timeout: 10000,
+  })
   const plist = plistPath(taskId)
   const result = spawnSync('launchctl', ['bootstrap', `gui/${uid()}`, plist], {
     encoding: 'utf8',
@@ -62,22 +62,19 @@ function bootstrap(taskId) {
   }
 }
 
-/**
- * Bootout (disable) a task from launchctl. Ignores errors if not loaded.
- */
-function bootout(taskId) {
+/** Bootout (disable) a task from launchctl. Ignores errors if not loaded. */
+export function bootout(taskId) {
   spawnSync('launchctl', ['bootout', `gui/${uid()}/${label(taskId)}`], {
     encoding: 'utf8',
     timeout: 10000,
   })
-  // Ignore exit code — task may already be unloaded
 }
 
 /**
  * Manually trigger a task immediately.
  * Tries launchctl kickstart first; falls back to running task-runner.sh directly.
  */
-function kickstart(taskId) {
+export function kickstart(taskId) {
   const result = spawnSync('launchctl', ['kickstart', '-p', `gui/${uid()}/${label(taskId)}`], {
     encoding: 'utf8',
     timeout: 10000,
@@ -85,14 +82,11 @@ function kickstart(taskId) {
   if (result.status === 0) {
     return { method: 'launchctl' }
   }
-  // Fallback: run task-runner.sh directly
   const runner = path.join(PLUGIN_ROOT, 'scripts', 'task-runner.sh')
-  const env = { ...process.env, CLAUDE_SCHEDULER_TASK_ID: taskId }
+  const env = { ...process.env, TIDE_TASK_ID: taskId }
   const fallback = spawnSync(runner, [taskId], { encoding: 'utf8', env, timeout: 120000 })
   if (fallback.status !== 0) {
     throw new Error(`task-runner.sh failed (exit ${fallback.status}): ${fallback.stderr}`)
   }
   return { method: 'direct' }
 }
-
-module.exports = { getStatus, bootstrap, bootout, kickstart, plistPath, label }

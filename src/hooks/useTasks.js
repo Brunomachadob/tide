@@ -1,13 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
-import { createRequire } from 'module'
-import path from 'path'
-import { fileURLToPath } from 'url'
-
-const require = createRequire(import.meta.url)
-const libPath = path.resolve(fileURLToPath(import.meta.url), '../../../../lib')
-const { readTasks, formatSchedule } = require(path.join(libPath, 'tasks'))
-const { getStatus } = require(path.join(libPath, 'launchd'))
-const { getLatestResult } = require(path.join(libPath, 'results'))
+import { readTasks, formatSchedule } from '../lib/tasks.js'
+import { getStatus } from '../lib/launchd.js'
+import { getLatestResult } from '../lib/results.js'
 
 function loadTasks() {
   const { tasks } = readTasks()

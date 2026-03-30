@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "ink": "^5.2.0",
+    "ink-spinner": "^5.0.0",
     "react": "^18.3.1"
   },
   "engines": {
@@ -20,7 +21,13 @@
     "type": "git",
     "url": "git+https://github.com/Brunomachadob/tide.git"
   },
-  "keywords": ["scheduler", "launchd", "macos", "cron", "tui"],
+  "keywords": [
+    "scheduler",
+    "launchd",
+    "macos",
+    "cron",
+    "tui"
+  ],
   "author": "Bruno Brandao",
   "license": "MIT"
 }

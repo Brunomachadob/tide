@@ -1,11 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { createRequire } from 'module'
-import path from 'path'
-import { fileURLToPath } from 'url'
-
-const require = createRequire(import.meta.url)
-const libPath = path.resolve(fileURLToPath(import.meta.url), '../../../../lib')
-const { getOutputLog, getStderrLog } = require(path.join(libPath, 'logs'))
+import { getOutputLog, getStderrLog } from '../lib/logs.js'
 
 export function useLogs(taskId, lines = 50, autoRefresh = false) {
   const [output, setOutput] = useState(null)

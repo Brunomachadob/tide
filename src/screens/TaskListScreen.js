@@ -1,9 +1,8 @@
 import React, { useState, useCallback } from 'react'
 import { Box, Text, useInput } from 'ink'
 import Spinner from 'ink-spinner'
-import { createRequire } from 'module'
-import path from 'path'
-import { fileURLToPath } from 'url'
+import fs from 'fs'
+import os from 'os'
 import { useTasks } from '../hooks/useTasks.js'
 import { useNotifications } from '../hooks/useNotifications.js'
 import Header from '../components/Header.js'
@@ -13,13 +12,8 @@ import ConfirmDialog from '../components/ConfirmDialog.js'
 import Toast from '../components/Toast.js'
 import KeyHints from '../components/KeyHints.js'
 import { formatDate, readSettings } from '../lib/settings.js'
-
-const require = createRequire(import.meta.url)
-const libPath = path.resolve(fileURLToPath(import.meta.url), '../../../../lib')
-const { bootout, bootstrap, kickstart } = require(path.join(libPath, 'launchd'))
-const { setEnabled, deleteTask } = require(path.join(libPath, 'tasks'))
-const fs = require('fs')
-const os = require('os')
+import { bootout, bootstrap, kickstart, plistPath } from '../lib/launchd.js'
+import { setEnabled, deleteTask } from '../lib/tasks.js'
 
 export default function TaskListScreen({ navigate }) {
   const settings = readSettings()
@@ -104,11 +98,10 @@ export default function TaskListScreen({ navigate }) {
       runAction('Disable', () => { bootout(taskId); setEnabled(taskId, false) })
     } else if (action === 'delete') {
       runAction('Delete', () => {
-        const { plistPath } = require(path.join(libPath, 'launchd'))
         bootout(taskId)
         const plist = plistPath(taskId)
         if (fs.existsSync(plist)) fs.unlinkSync(plist)
-        const promptFile = path.join(os.homedir(), '.claude', 'scheduler', 'prompts', `${taskId}.txt`)
+        const promptFile = path.join(os.homedir(), '.tide', 'prompts', `${taskId}.txt`)
         if (fs.existsSync(promptFile)) fs.unlinkSync(promptFile)
         deleteTask(taskId)
         setSelectedIdx(i => Math.max(0, i - 1))
@@ -165,7 +158,7 @@ export default function TaskListScreen({ navigate }) {
     // Rows
     tasks.length === 0
       ? React.createElement(Box, { paddingX: 1, paddingY: 1 },
-          React.createElement(Text, { color: 'gray' }, 'No scheduled tasks. Run /scheduler create to add one.'),
+          React.createElement(Text, { color: 'gray' }, 'No scheduled tasks. Run /tide create to add one.'),
         )
       : tasks.map((task, i) => {
           const isSelected = i === selectedIdx

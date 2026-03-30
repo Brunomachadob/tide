@@ -1,11 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { createRequire } from 'module'
-import path from 'path'
-import { fileURLToPath } from 'url'
-
-const require = createRequire(import.meta.url)
-const libPath = path.resolve(fileURLToPath(import.meta.url), '../../../../lib')
-const { getResults } = require(path.join(libPath, 'results'))
+import { getResults } from '../lib/results.js'
 
 export function useResults(taskId, count = 5) {
   const [results, setResults] = useState([])

@@ -11,7 +11,7 @@ export default function Header({ title, subtitle, notificationCount = 0, onNotif
       React.createElement(
         Box,
         null,
-        React.createElement(Text, { bold: true, color: 'cyan' }, 'Claude Scheduler'),
+        React.createElement(Text, { bold: true, color: 'cyan' }, '≋ Tide'),
         subtitle
           ? React.createElement(Text, { color: 'gray' }, '  ' + subtitle)
           : null,

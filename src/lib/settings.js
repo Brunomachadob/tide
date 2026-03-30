@@ -1,20 +1,8 @@
-import { createRequire } from 'module'
+import fs from 'fs'
 import os from 'os'
 import path from 'path'
+export const SETTINGS_FILE = path.join(os.homedir(), '.tide', 'tui-settings.json')
 
-const require = createRequire(import.meta.url)
-const fs = require('fs')
-const { spawnSync } = require('child_process')
-
-export const SETTINGS_FILE = path.join(os.homedir(), '.claude', 'scheduler', 'tui-settings.json')
-
-export function detectClaudeCommand() {
-  for (const name of ['claude', 'claude26']) {
-    const r = spawnSync('which', [name], { encoding: 'utf8' })
-    if (r.status === 0 && r.stdout.trim()) return r.stdout.trim()
-  }
-  return ''
-}
 
 const DEFAULTS = {
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,

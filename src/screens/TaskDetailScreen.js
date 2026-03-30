@@ -1,9 +1,8 @@
 import React, { useState, useCallback } from 'react'
 import { Box, Text, useInput } from 'ink'
 import Spinner from 'ink-spinner'
-import { createRequire } from 'module'
-import path from 'path'
-import { fileURLToPath } from 'url'
+import fs from 'fs'
+import os from 'os'
 import { useTask } from '../hooks/useTasks.js'
 import { useNotifications } from '../hooks/useNotifications.js'
 import Header from '../components/Header.js'
@@ -13,13 +12,8 @@ import ConfirmDialog from '../components/ConfirmDialog.js'
 import Toast from '../components/Toast.js'
 import KeyHints from '../components/KeyHints.js'
 import { formatDate, readSettings } from '../lib/settings.js'
-
-const require = createRequire(import.meta.url)
-const libPath = path.resolve(fileURLToPath(import.meta.url), '../../../../lib')
-const { bootout, bootstrap, kickstart, plistPath } = require(path.join(libPath, 'launchd'))
-const { setEnabled, deleteTask } = require(path.join(libPath, 'tasks'))
-const fs = require('fs')
-const os = require('os')
+import { bootout, bootstrap, kickstart, plistPath } from '../lib/launchd.js'
+import { setEnabled, deleteTask } from '../lib/tasks.js'
 
 function Field({ label, value, valueColor }) {
   return React.createElement(

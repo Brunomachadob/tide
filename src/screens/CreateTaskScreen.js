@@ -1,8 +1,5 @@
 import React, { useState, useCallback } from 'react'
 import { Box, Text, useInput } from 'ink'
-import { createRequire } from 'module'
-import path from 'path'
-import { fileURLToPath } from 'url'
 import os from 'os'
 import Header from '../components/Header.js'
 import FieldBox from '../components/FieldBox.js'
@@ -10,10 +7,7 @@ import TextInput from '../components/TextInput.js'
 import Toast from '../components/Toast.js'
 import KeyHints from '../components/KeyHints.js'
 import { readSettings } from '../lib/settings.js'
-
-const require = createRequire(import.meta.url)
-const libPath = path.resolve(fileURLToPath(import.meta.url), '../../lib')
-const { createTask } = require(path.join(libPath, 'create'))
+import { createTask } from '../lib/create.js'
 
 const INTERVAL_OPTIONS = [
   { label: '15 min',  seconds: 900 },
@@ -165,7 +159,7 @@ export default function CreateTaskScreen({ goBack }) {
     if (step === 1) {
       return React.createElement(
         Box, { flexDirection: 'column', paddingX: 1 },
-        React.createElement(FieldBox, { label: 'Prompt (what Claude should do)', active: true },
+        React.createElement(FieldBox, { label: 'Prompt', active: true },
           React.createElement(
             Box, { height: 6 },
             React.createElement(TextInput, {

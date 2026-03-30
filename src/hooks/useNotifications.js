@@ -1,11 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { createRequire } from 'module'
-import path from 'path'
-import { fileURLToPath } from 'url'
-
-const require = createRequire(import.meta.url)
-const libPath = path.resolve(fileURLToPath(import.meta.url), '../../../../lib')
-const { getNotifications, clearNotifications } = require(path.join(libPath, 'notifications'))
+import { getNotifications, clearNotifications } from '../lib/notifications.js'
 
 export function useNotifications(intervalMs = 10000) {
   const [notifications, setNotifications] = useState([])
