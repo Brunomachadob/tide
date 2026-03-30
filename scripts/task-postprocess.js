@@ -34,7 +34,7 @@ if (mode === 'config') {
   const [taskFile, exitCodeStr, startedAt, completedAt, attemptsStr, output, outputLog, stderrLog] = args
   const task = JSON.parse(fs.readFileSync(taskFile, 'utf8'))
   const exitCode = parseInt(exitCodeStr)
-  const attempts = parseInt(attemptsStr) + 1
+  const attempts = parseInt(attemptsStr)
   const retentionDays = task.resultRetentionDays ?? 30
 
   // Write result JSON

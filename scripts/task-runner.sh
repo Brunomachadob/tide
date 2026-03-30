@@ -65,8 +65,8 @@ while [[ ${attempt} -le ${MAX_RETRIES} ]]; do
   set -e
 
   printf '%s\n' "${OUTPUT}" >> "${OUTPUT_LOG}"
-  [[ ${EXIT_CODE} -eq 0 ]] && break
   attempt=$((attempt + 1))
+  [[ ${EXIT_CODE} -eq 0 ]] && break
 done
 
 COMPLETED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
