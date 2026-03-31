@@ -72,7 +72,9 @@ export default function TaskDetailScreen({ taskId, navigate, goBack }) {
       try {
         const pidFile = `${taskDir(taskId)}/running.pid`
         const pid = parseInt(fs.readFileSync(pidFile, 'utf8').trim())
-        process.kill(pid, 'SIGTERM')
+        // Kill the entire process group so child commands (e.g. claude) are
+        // also terminated, not just the shell wrapper.
+        process.kill(-pid, 'SIGTERM')
         refresh()
         showToast(`Killed process ${pid}`, 'success')
       } catch (e) {
