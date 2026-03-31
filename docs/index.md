@@ -2,7 +2,7 @@
 layout: home
 
 hero:
-  name: Tide
+  name: "≋ Tide"
   text: macOS task scheduler with a terminal UI
   tagline: Run any command on a schedule using launchd.
   actions:
