@@ -22,10 +22,10 @@ function loadTasks() {
   return tasks.map(task => {
     const launchd = getStatus(task.id)
     let status
-    if (!task.enabled) {
-      status = 'disabled'
-    } else if (launchd.pid || isRunningViaPidFile(task.id)) {
+    if (launchd.pid || isRunningViaPidFile(task.id)) {
       status = 'running'
+    } else if (!task.enabled) {
+      status = 'disabled'
     } else if (launchd.loaded && launchd.lastExitCode !== null && launchd.lastExitCode !== 0) {
       status = 'launchd-error'
     } else if (launchd.loaded) {
