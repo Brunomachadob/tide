@@ -26,6 +26,8 @@ function loadTasks() {
       status = 'disabled'
     } else if (launchd.pid || isRunningViaPidFile(task.id)) {
       status = 'running'
+    } else if (launchd.loaded && launchd.lastExitCode !== null && launchd.lastExitCode !== 0) {
+      status = 'launchd-error'
     } else if (launchd.loaded) {
       status = 'loaded'
     } else {
@@ -33,7 +35,7 @@ function loadTasks() {
     }
     const lastResult = getLatestCompletedRun(task.id)
     const recentResults = getRuns(task.id, 5)
-    return { ...task, status, lastResult, recentResults, scheduleLabel: formatSchedule(task.schedule) }
+    return { ...task, status, launchdExitCode: launchd.lastExitCode, lastResult, recentResults, scheduleLabel: formatSchedule(task.schedule) }
   })
 }
 

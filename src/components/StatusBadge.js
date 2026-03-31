@@ -12,9 +12,10 @@ export default function StatusBadge({ status }) {
   }
 
   const map = {
-    loaded:      ['cyan',   '○ loaded'],
-    disabled:    ['gray',   '- disabled'],
-    'not loaded': ['yellow', '! not loaded'],
+    loaded:          ['cyan',   '○ loaded'],
+    disabled:        ['gray',   '- disabled'],
+    'not loaded':    ['yellow', '! not loaded'],
+    'launchd-error': ['red',    '✗ launchd error'],
   }
   const [color, label] = map[status] || ['white', status]
   return React.createElement(Text, { color }, label)

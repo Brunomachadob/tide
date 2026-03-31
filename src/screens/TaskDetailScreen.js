@@ -135,6 +135,13 @@ export default function TaskDetailScreen({ taskId, navigate, goBack }) {
         ),
         task.status === 'not loaded'
           ? React.createElement(Text, { color: 'yellow' }, "→ press 'e' to re-register with launchd")
+          : task.status === 'launchd-error'
+          ? React.createElement(Box, { flexDirection: 'column' },
+              React.createElement(Text, { color: 'red' }, `→ launchd exit code ${task.launchdExitCode} — task will not run`),
+              task.launchdExitCode === 78
+                ? React.createElement(Text, { color: 'gray' }, '   EX_CONFIG: plist or runner path is invalid. Press \'e\' to disable and re-enable.')
+                : React.createElement(Text, { color: 'gray' }, "   Press 'e' to disable and re-enable, or check ~/Library/LaunchAgents/com.tide." + task.id + '.plist'),
+            )
           : null,
       ),
       React.createElement(Field, { label: 'ID',         value: task.id }),
