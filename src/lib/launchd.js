@@ -1,5 +1,5 @@
 // launchctl operations
-import { spawnSync } from 'child_process'
+import { spawnSync, spawn } from 'child_process'
 import path from 'path'
 import os from 'os'
 import { fileURLToPath } from 'url'
@@ -78,9 +78,11 @@ export function bootout(taskId) {
 export function kickstart(taskId) {
   const runner = path.join(PLUGIN_ROOT, 'scripts', 'task-runner.sh')
   const env = { ...process.env, TIDE_TASK_ID: taskId, TIDE_NO_JITTER: '1' }
-  const result = spawnSync(runner, [taskId], { encoding: 'utf8', env, timeout: 120000 })
-  if (result.status !== 0) {
-    throw new Error(`task-runner.sh failed (exit ${result.status}): ${result.stderr}`)
-  }
+  const child = spawn(runner, [taskId], {
+    env,
+    detached: true,
+    stdio: 'ignore',
+  })
+  child.unref()
   return { method: 'direct' }
 }
