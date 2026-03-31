@@ -50,6 +50,7 @@ try { entries = JSON.parse(fs.readFileSync(notifFile, 'utf8')) } catch { /* ok *
 entries.push({
   taskId: task.id,
   taskName: task.name,
+  runId,
   completedAt,
   exitCode,
   resultFile: runFile,

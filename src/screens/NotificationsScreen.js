@@ -32,7 +32,7 @@ export default function NotificationsScreen({ navigate, goBack }) {
     if (key.return && displayed[selectedIdx]) {
       const n = displayed[selectedIdx]
       markRead(n.taskId, n.completedAt)
-      navigate('logs', { taskId: n.taskId })
+      navigate('runs', { taskId: n.taskId, taskStatus: null, initialRunId: n.runId })
       return
     }
     if (input === 'd' && displayed[selectedIdx]) {

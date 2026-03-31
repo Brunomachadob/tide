@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Box, Text, useInput } from 'ink'
 import Spinner from 'ink-spinner'
 import { useRuns } from '../hooks/useRuns.js'
@@ -28,7 +28,7 @@ function RunDetail({ taskId, taskStatus, run, isLatest, navigate, onBack }) {
 
   const { output, stderr, outputTotal, stderrTotal, loading, refresh } =
     useRunLogs(taskId, run.runId, lines, autoRefresh)
-  const { notifications } = useNotifications(10000)
+  const { unreadCount } = useNotifications(10000)
 
   useInput((input, key) => {
     if (key.escape || input === 'q' || key.leftArrow) { onBack(); return }
@@ -57,7 +57,7 @@ function RunDetail({ taskId, taskStatus, run, isLatest, navigate, onBack }) {
     { flexDirection: 'column' },
     React.createElement(Header, {
       title: `Run ${run.runId}`,
-      notificationCount: notifications.length,
+      notificationCount: unreadCount,
     }),
 
     React.createElement(
@@ -130,7 +130,7 @@ function RunDetail({ taskId, taskStatus, run, isLatest, navigate, onBack }) {
   )
 }
 
-export default function RunsScreen({ taskId, taskStatus, navigate, goBack }) {
+export default function RunsScreen({ taskId, taskStatus, initialRunId, navigate, goBack }) {
   const settings = readSettings()
   const [view, setView] = useState('list')
   const [countIdx, setCountIdx] = useState(0)
@@ -138,7 +138,16 @@ export default function RunsScreen({ taskId, taskStatus, navigate, goBack }) {
   const count = COUNT_OPTIONS[countIdx]
 
   const { runs, loading, refresh } = useRuns(taskId, count)
-  const { notifications } = useNotifications(10000)
+  const { unreadCount } = useNotifications(10000)
+
+  useEffect(() => {
+    if (!initialRunId || loading || runs.length === 0) return
+    const idx = runs.findIndex(r => r.runId === initialRunId)
+    if (idx !== -1) {
+      setSelectedIdx(idx)
+      setView('detail')
+    }
+  }, [initialRunId, loading, runs])
 
   const selectedRun = runs[selectedIdx] ?? null
 
@@ -176,7 +185,7 @@ export default function RunsScreen({ taskId, taskStatus, navigate, goBack }) {
     { flexDirection: 'column' },
     React.createElement(Header, {
       title: `Runs (last ${count})`,
-      notificationCount: notifications.length,
+      notificationCount: unreadCount,
     }),
 
     loading

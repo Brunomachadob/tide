@@ -29,7 +29,7 @@ function Field({ label, value, valueColor }) {
 export default function TaskDetailScreen({ taskId, navigate, goBack }) {
   const settings = readSettings()
   const { task, loading, refresh } = useTask(taskId, 5000)
-  const { notifications } = useNotifications(10000)
+  const { unreadCount } = useNotifications(10000)
   const [confirm, setConfirm] = useState(null)
   const [toast, setToast] = useState(null)
 
@@ -116,7 +116,7 @@ export default function TaskDetailScreen({ taskId, navigate, goBack }) {
     { flexDirection: 'column' },
     React.createElement(Header, {
       title: task.name || task.id.slice(0, 8),
-      notificationCount: notifications.length,
+      notificationCount: unreadCount,
     }),
 
     React.createElement(
