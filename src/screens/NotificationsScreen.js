@@ -11,7 +11,7 @@ import { formatDate } from '../lib/format.js'
 
 export default function NotificationsScreen({ navigate, goBack }) {
   const settings = readSettings()
-  const { notifications, loading, clear, dismiss } = useNotifications(10000)
+  const { notifications, loading, clear, clearRead, dismiss, markRead, markAllRead, unreadCount } = useNotifications(10000)
   const [selectedIdx, setSelectedIdx] = useState(0)
   const [confirmClear, setConfirmClear] = useState(false)
   const [toast, setToast] = useState(null)
@@ -31,8 +31,7 @@ export default function NotificationsScreen({ navigate, goBack }) {
     }
     if (key.return && displayed[selectedIdx]) {
       const n = displayed[selectedIdx]
-      dismiss(n.taskId, n.completedAt)
-      setSelectedIdx(i => Math.max(0, Math.min(i, displayed.length - 2)))
+      markRead(n.taskId, n.completedAt)
       navigate('logs', { taskId: n.taskId })
       return
     }
@@ -40,6 +39,17 @@ export default function NotificationsScreen({ navigate, goBack }) {
       const n = displayed[selectedIdx]
       dismiss(n.taskId, n.completedAt)
       setSelectedIdx(i => Math.max(0, Math.min(i, displayed.length - 2)))
+      return
+    }
+    if (input === 'R' && displayed.length > 0) {
+      markAllRead()
+      setToast({ message: 'All notifications marked as read', type: 'success' })
+      return
+    }
+    if (input === 'r' && displayed.length > 0) {
+      clearRead()
+      setSelectedIdx(0)
+      setToast({ message: 'Read notifications cleared', type: 'success' })
       return
     }
     if (input === 'c' && displayed.length > 0) setConfirmClear(true)
@@ -51,7 +61,7 @@ export default function NotificationsScreen({ navigate, goBack }) {
     { flexDirection: 'column' },
     React.createElement(Header, {
       title: 'Notifications',
-      notificationCount: notifications.length,
+      notificationCount: unreadCount,
     }),
 
     loading
@@ -61,7 +71,7 @@ export default function NotificationsScreen({ navigate, goBack }) {
         )
       : notifications.length === 0
       ? React.createElement(Box, { paddingX: 1, paddingY: 1 },
-          React.createElement(Text, { color: 'gray' }, 'No pending notifications.'),
+          React.createElement(Text, { color: 'gray' }, 'No notifications.'),
         )
       : React.createElement(
           Box,
@@ -82,6 +92,9 @@ export default function NotificationsScreen({ navigate, goBack }) {
                 n.exitCode === 0
                   ? React.createElement(Text, { color: 'green' }, '✓ ok')
                   : React.createElement(Text, { color: 'red' }, `✗ exit ${n.exitCode}`),
+                n.read
+                  ? React.createElement(Text, { color: 'gray' }, '● read')
+                  : React.createElement(Text, { color: 'yellow' }, '● unread'),
               ),
               n.summary
                 ? React.createElement(Text, { color: 'gray' }, n.summary)
@@ -97,7 +110,7 @@ export default function NotificationsScreen({ navigate, goBack }) {
             onConfirm: () => {
               setConfirmClear(false)
               clear()
-              setToast({ message: 'Notifications cleared', type: 'success' })
+              setToast({ message: 'All notifications cleared', type: 'success' })
             },
             onCancel: () => setConfirmClear(false),
           }),
@@ -113,8 +126,10 @@ export default function NotificationsScreen({ navigate, goBack }) {
     React.createElement(KeyHints, {
       hints: [
         ['↑↓/jk', 'move'],
-        ['↵', 'logs + dismiss'],
+        ['↵', 'logs + mark read'],
         ['d', 'dismiss'],
+        ['R', 'mark all read'],
+        ['r', 'clear read'],
         ['c', 'clear all'],
         ['Esc/q', 'back'],
       ],

@@ -35,7 +35,7 @@ fs.writeFileSync(resultFile, JSON.stringify({
 }, null, 2))
 
 // Append notification (atomic)
-const notifFile = path.join(TIDE_DIR, 'pending-notifications.json')
+const notifFile = path.join(TIDE_DIR, 'notifications.json')
 let entries = []
 try { entries = JSON.parse(fs.readFileSync(notifFile, 'utf8')) } catch { /* ok */ }
 entries.push({
@@ -45,6 +45,7 @@ entries.push({
   exitCode,
   resultFile,
   summary: output.slice(0, 300),
+  read: false,
 })
 const tmp = notifFile + '.tmp'
 fs.writeFileSync(tmp, JSON.stringify(entries, null, 2))

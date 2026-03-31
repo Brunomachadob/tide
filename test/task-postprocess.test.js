@@ -45,7 +45,7 @@ function runScript(...args) {
 }
 
 function notifFile() {
-  return path.join(TMP, '.tide', 'pending-notifications.json')
+  return path.join(TMP, '.tide', 'notifications.json')
 }
 
 // ── tests ──────────────────────────────────────────────────────────────────
@@ -100,6 +100,7 @@ describe('task-postprocess', () => {
     assert.equal(entry.taskId, taskId)
     assert.equal(entry.exitCode, 1)
     assert.ok(entry.completedAt)
+    assert.equal(entry.read, false)
   })
 
   test('appends to existing notifications rather than replacing', () => {
