@@ -3,6 +3,7 @@ import { Box, Text, useInput } from 'ink'
 import Spinner from 'ink-spinner'
 import { useRuns } from '../hooks/useRuns.js'
 import { useRunLogs } from '../hooks/useLogs.js'
+import { renderMarkdown } from '../lib/markdown.js'
 import { useNotifications } from '../hooks/useNotifications.js'
 import Header from '../components/Header.js'
 import ResultBadge from '../components/ResultBadge.js'
@@ -115,7 +116,7 @@ function RunDetail({ taskId, taskStatus, run, isLatest, navigate, onBack }) {
             ? React.createElement(Text, { color: 'gray' }, '(no log yet)')
             : content === ''
             ? React.createElement(Text, { color: 'gray' }, '(empty)')
-            : React.createElement(Text, null, content),
+            : React.createElement(Text, null, tab === 'output' ? renderMarkdown(content) : content),
         ),
 
     React.createElement(KeyHints, {
