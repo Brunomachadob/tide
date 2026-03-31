@@ -28,4 +28,4 @@ jobs:
 
       - name: Write test summary
         if: always()
-        run: node scripts/ci-summary.js
+        run: node test/ci-summary.js
