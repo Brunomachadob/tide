@@ -4,7 +4,7 @@ import { Box, Text } from 'ink'
 export default function KeyHints({ hints, refreshIndicator }) {
   return React.createElement(
     Box,
-    { borderStyle: 'single', borderColor: 'gray', paddingX: 1, marginTop: 1, justifyContent: 'space-between' },
+    { borderStyle: 'single', borderColor: 'gray', paddingX: 1, justifyContent: 'space-between' },
     React.createElement(
       Box,
       null,

@@ -50,7 +50,7 @@ function initialTerminalIdx(bundleId) {
 }
 
 // onSave: optional callback after saving (used for first-run redirect to 'list')
-export default function SettingsScreen({ goBack, navigate, onSave }) {
+export default function SettingsScreen({ goBack, navigate, onSave, height }) {
   const saved = readSettings()
   const [field, setField] = useState('command')
   const [command, setCommand] = useState(saved.command || '')
@@ -108,7 +108,7 @@ export default function SettingsScreen({ goBack, navigate, onSave }) {
   })
 
   return React.createElement(
-    Box, { flexDirection: 'column' },
+    Box, { flexDirection: 'column', height },
     React.createElement(Header, { title: 'Settings' }),
 
     React.createElement(Box, { flexDirection: 'column', paddingX: 1 },
@@ -143,6 +143,7 @@ export default function SettingsScreen({ goBack, navigate, onSave }) {
         )
       : null,
 
+    React.createElement(Box, { flexGrow: 1 }),
     React.createElement(KeyHints, {
       hints: [['Esc/q', 'back'], ['Tab', 'switch field'], ['←→', 'change value'], ['↵', 'save']],
     }),

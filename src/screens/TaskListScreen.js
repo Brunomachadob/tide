@@ -16,7 +16,7 @@ import { formatDate, formatRelativeTime } from '../lib/format.js'
 import { bootout, bootstrap, kickstart, plistPath } from '../lib/launchd.js'
 import { setEnabled, deleteTask } from '../lib/tasks.js'
 
-export default function TaskListScreen({ navigate }) {
+export default function TaskListScreen({ navigate, height }) {
   const settings = readSettings()
   const intervalMs = settings.refreshInterval * 1000
   const { tasks, loading, error, refresh } = useTasks(intervalMs)
@@ -137,7 +137,7 @@ export default function TaskListScreen({ navigate }) {
 
   return React.createElement(
     Box,
-    { flexDirection: 'column' },
+    { flexDirection: 'column', height },
     React.createElement(Header, {
       title: null,
       notificationCount: unreadCount,
@@ -216,6 +216,7 @@ export default function TaskListScreen({ navigate }) {
         )
       : null,
 
+    React.createElement(Box, { flexGrow: 1 }),
     React.createElement(KeyHints, {
       hints: [
         ['↑↓/jk', 'move'],

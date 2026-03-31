@@ -44,7 +44,7 @@ function openInEditor(current) {
   }
 }
 
-export default function CreateTaskScreen({ task: existingTask, prefillArgument, parentRunId, defaultsFrom, goBack }) {
+export default function CreateTaskScreen({ task: existingTask, prefillArgument, parentRunId, defaultsFrom, goBack, height }) {
   const isEdit = !!existingTask
   const defaults = existingTask || defaultsFrom
   const [step, setStep] = useState(0)
@@ -293,7 +293,7 @@ export default function CreateTaskScreen({ task: existingTask, prefillArgument, 
   ].flat()
 
   return React.createElement(
-    Box, { flexDirection: 'column' },
+    Box, { flexDirection: 'column', height },
     React.createElement(Header, { title: stepTitle }),
     renderStep(),
     toast
@@ -301,6 +301,7 @@ export default function CreateTaskScreen({ task: existingTask, prefillArgument, 
           React.createElement(Toast, { message: toast.message, type: toast.type, onDone: goBack }),
         )
       : null,
+    React.createElement(Box, { flexGrow: 1 }),
     React.createElement(KeyHints, { hints: keyHints }),
   )
 }

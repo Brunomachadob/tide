@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react'
-import { Box, useInput, useApp } from 'ink'
+import { Box, useInput, useApp, useStdout } from 'ink'
 import { readSettings } from './lib/settings.js'
 import TaskListScreen from './screens/TaskListScreen.js'
 import TaskDetailScreen from './screens/TaskDetailScreen.js'
@@ -16,6 +16,7 @@ function isFirstRun() {
 // Navigation stack: each entry is { screen, props }
 export default function App() {
   const { exit } = useApp()
+  const { stdout } = useStdout()
   const [stack, setStack] = useState([{ screen: isFirstRun() ? 'setup' : 'list', props: {} }])
 
   const navigate = useCallback((screen, props = {}) => {
@@ -32,7 +33,7 @@ export default function App() {
   })
 
   const current = stack[stack.length - 1]
-  const screenProps = { navigate, goBack }
+  const screenProps = { navigate, goBack, height: stdout?.rows ? stdout.rows - 1 : undefined }
 
   switch (current.screen) {
     case 'list':

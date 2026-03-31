@@ -30,7 +30,7 @@ function Field({ label, value, valueColor }) {
   )
 }
 
-export default function TaskDetailScreen({ taskId, navigate, goBack }) {
+export default function TaskDetailScreen({ taskId, navigate, goBack, height }) {
   const settings = readSettings()
   const intervalMs = settings.refreshInterval * 1000
   const { task, loading, refresh } = useTask(taskId, intervalMs)
@@ -126,7 +126,7 @@ export default function TaskDetailScreen({ taskId, navigate, goBack }) {
 
   return React.createElement(
     Box,
-    { flexDirection: 'column' },
+    { flexDirection: 'column', height },
     React.createElement(Header, {
       title: task.name || task.id.slice(0, 8),
       notificationCount: unreadCount,
@@ -198,6 +198,7 @@ export default function TaskDetailScreen({ taskId, navigate, goBack }) {
         )
       : null,
 
+    React.createElement(Box, { flexGrow: 1 }),
     React.createElement(KeyHints, {
       hints: [
         ['Esc/q', 'back'],

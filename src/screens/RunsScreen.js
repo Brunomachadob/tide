@@ -23,7 +23,7 @@ function duration(run) {
   return `${(ms / 1000).toFixed(1)}s`
 }
 
-function RunDetail({ taskId, taskStatus, run, isLatest, navigate, onBack }) {
+function RunDetail({ taskId, taskStatus, run, isLatest, navigate, onBack, height }) {
   const [tab, setTab] = useState('output')
   const [lineIdx, setLineIdx] = useState(0)
   const [autoRefresh, setAutoRefresh] = useState(isLatest && taskStatus === 'running')
@@ -66,7 +66,7 @@ function RunDetail({ taskId, taskStatus, run, isLatest, navigate, onBack }) {
 
   return React.createElement(
     Box,
-    { flexDirection: 'column' },
+    { flexDirection: 'column', height },
     React.createElement(Header, {
       title: `Run ${run.runId}`,
       notificationCount: unreadCount,
@@ -133,6 +133,7 @@ function RunDetail({ taskId, taskStatus, run, isLatest, navigate, onBack }) {
             : React.createElement(Text, null, tab === 'output' ? renderMarkdown(content) : content),
         ),
 
+    React.createElement(Box, { flexGrow: 1 }),
     React.createElement(KeyHints, {
       hints: [
         ['←/Esc/q', 'back'],
@@ -146,7 +147,7 @@ function RunDetail({ taskId, taskStatus, run, isLatest, navigate, onBack }) {
   )
 }
 
-export default function RunsScreen({ taskId, taskStatus, initialRunId, navigate, goBack }) {
+export default function RunsScreen({ taskId, taskStatus, initialRunId, navigate, goBack, height }) {
   const settings = readSettings()
   const [view, setView] = useState('list')
   const [countIdx, setCountIdx] = useState(0)
@@ -193,12 +194,13 @@ export default function RunsScreen({ taskId, taskStatus, initialRunId, navigate,
       isLatest: selectedIdx === 0,
       navigate,
       onBack: () => setView('list'),
+      height,
     })
   }
 
   return React.createElement(
     Box,
-    { flexDirection: 'column' },
+    { flexDirection: 'column', height },
     React.createElement(Header, {
       title: `Runs (last ${count})`,
       notificationCount: unreadCount,
@@ -245,6 +247,7 @@ export default function RunsScreen({ taskId, taskStatus, initialRunId, navigate,
           )
         }),
 
+    React.createElement(Box, { flexGrow: 1 }),
     React.createElement(KeyHints, {
       hints: [
         ['Esc/q', 'back'],
