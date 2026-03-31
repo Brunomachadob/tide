@@ -18,7 +18,7 @@ import { setEnabled, deleteTask } from '../lib/tasks.js'
 export default function TaskListScreen({ navigate }) {
   const settings = readSettings()
   const { tasks, loading, error, refresh } = useTasks(5000)
-  const { notifications } = useNotifications(10000)
+  const { unreadCount } = useNotifications(10000)
   const [selectedIdx, setSelectedIdx] = useState(0)
   const [confirm, setConfirm] = useState(null) // { action, taskId, message }
   const [toast, setToast] = useState(null)
@@ -141,7 +141,7 @@ export default function TaskListScreen({ navigate }) {
     { flexDirection: 'column' },
     React.createElement(Header, {
       title: null,
-      notificationCount: notifications.length,
+      notificationCount: unreadCount,
     }),
 
     error
