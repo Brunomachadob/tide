@@ -1,8 +1,21 @@
 import { useState, useEffect, useCallback } from 'react'
-import { readTasks } from '../lib/tasks.js'
+import fs from 'fs'
+import { readTasks, taskDir } from '../lib/tasks.js'
 import { formatSchedule } from '../lib/format.js'
 import { getStatus } from '../lib/launchd.js'
 import { getLatestResult, getResults } from '../lib/results.js'
+
+function isRunningViaPidFile(taskId) {
+  try {
+    const pidFile = `${taskDir(taskId)}/running.pid`
+    const pid = parseInt(fs.readFileSync(pidFile, 'utf8').trim())
+    if (!pid) return false
+    process.kill(pid, 0)
+    return true
+  } catch {
+    return false
+  }
+}
 
 function loadTasks() {
   const { tasks } = readTasks()
@@ -11,8 +24,10 @@ function loadTasks() {
     let status
     if (!task.enabled) {
       status = 'disabled'
+    } else if (launchd.pid || isRunningViaPidFile(task.id)) {
+      status = 'running'
     } else if (launchd.loaded) {
-      status = launchd.pid ? 'running' : 'loaded'
+      status = 'loaded'
     } else {
       status = 'not loaded'
     }
