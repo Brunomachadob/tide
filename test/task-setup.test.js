@@ -151,4 +151,46 @@ describe('task-setup.js', () => {
     const { stdout } = runScript(taskFile)
     assert.match(stdout, /^CLAUDE_STREAM_JSON='0'$/m)
   })
+
+  test('writes argument to run.json', () => {
+    const taskFile = writeTaskFile('test-task-01', { command: 'claude', argument: 'do something' })
+    const { stdout, status } = runScript(taskFile)
+    assert.equal(status, 0)
+
+    const runIdMatch = stdout.match(/^RUN_ID='([0-9a-f]{8})'$/m)
+    assert.ok(runIdMatch)
+    const runId = runIdMatch[1]
+
+    const runDir = path.join(TMP, '.tide', 'tasks', 'test-task-01', 'runs', runId)
+    const runJson = JSON.parse(fs.readFileSync(path.join(runDir, 'run.json'), 'utf8'))
+    assert.equal(runJson.argument, 'do something')
+  })
+
+  test('writes parentRunId to run.json when present in task', () => {
+    const taskFile = writeTaskFile('test-task-01', { command: 'claude', argument: 'follow up', parentRunId: 'abc12345' })
+    const { stdout, status } = runScript(taskFile)
+    assert.equal(status, 0)
+
+    const runIdMatch = stdout.match(/^RUN_ID='([0-9a-f]{8})'$/m)
+    assert.ok(runIdMatch)
+    const runId = runIdMatch[1]
+
+    const runDir = path.join(TMP, '.tide', 'tasks', 'test-task-01', 'runs', runId)
+    const runJson = JSON.parse(fs.readFileSync(path.join(runDir, 'run.json'), 'utf8'))
+    assert.equal(runJson.parentRunId, 'abc12345')
+  })
+
+  test('omits parentRunId from run.json when not in task', () => {
+    const taskFile = writeTaskFile('test-task-01', { command: 'claude', argument: 'hello' })
+    const { stdout, status } = runScript(taskFile)
+    assert.equal(status, 0)
+
+    const runIdMatch = stdout.match(/^RUN_ID='([0-9a-f]{8})'$/m)
+    assert.ok(runIdMatch)
+    const runId = runIdMatch[1]
+
+    const runDir = path.join(TMP, '.tide', 'tasks', 'test-task-01', 'runs', runId)
+    const runJson = JSON.parse(fs.readFileSync(path.join(runDir, 'run.json'), 'utf8'))
+    assert.equal(runJson.parentRunId, undefined)
+  })
 })

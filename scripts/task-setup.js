@@ -26,12 +26,15 @@ const runId = crypto.randomBytes(4).toString('hex')
 const startedAt = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
 const runDir = path.join(TIDE_DIR, 'tasks', task.id, 'runs', runId)
 fs.mkdirSync(runDir, { recursive: true })
-fs.writeFileSync(path.join(runDir, 'run.json'), JSON.stringify({
+const runRecord = {
   runId,
   taskId: task.id,
   taskName: task.name,
   startedAt,
-}, null, 2))
+  argument: task.argument || '',
+}
+if (task.parentRunId) runRecord.parentRunId = task.parentRunId
+fs.writeFileSync(path.join(runDir, 'run.json'), JSON.stringify(runRecord, null, 2))
 
 const q = v => `'${String(v).replace(/'/g, "'\\''")}'`
 console.log(`COMMAND=${q(command)}`)

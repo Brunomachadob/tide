@@ -101,7 +101,7 @@ function writePlist(taskId, config) {
 /**
  * Create a new task.
  * config: { name, argument, schedule, command, extraArgs, workingDirectory,
- *           maxRetries, env, claudeStreamJson, id?, createdAt? }
+ *           maxRetries, env, claudeStreamJson, parentRunId?, id?, createdAt? }
  * Returns the created task object.
  */
 export function createTask(config) {
@@ -141,6 +141,7 @@ export function createTask(config) {
     ...(timeoutSeconds !== null && { timeoutSeconds }),
     resultRetentionDays,
     claudeStreamJson,
+    ...(config.parentRunId ? { parentRunId: config.parentRunId } : {}),
   }
   writeTask(task)
 

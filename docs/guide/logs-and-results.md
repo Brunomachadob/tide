@@ -22,7 +22,9 @@ Each task execution is stored as a self-contained **run** under `~/.tide/tasks/<
   "startedAt": "2026-03-30T10:00:00Z",
   "completedAt": "2026-03-30T10:00:45Z",
   "exitCode": 0,
-  "attempts": 1
+  "attempts": 1,
+  "argument": "the prompt used for this run",
+  "parentRunId": "de45f012"
 }
 ```
 
@@ -33,8 +35,10 @@ Each task execution is stored as a self-contained **run** under `~/.tide/tasks/<
 | `completedAt` | ISO 8601 timestamp written when the run finishes. Absent if the run is in progress or was killed |
 | `exitCode` | Shell exit code. `0` = success, non-zero = failure |
 | `attempts` | Total number of attempts. `1` = ran once, `2` = initial run + 1 retry |
+| `argument` | The argument (prompt) used for this run, snapshotted at start time |
+| `parentRunId` | Present only on follow-up runs. The `runId` of the run this was spawned from |
 
-`run.json` is written twice: once at start (with only `runId`, `taskId`, `taskName`, `startedAt`) and again at completion with the full record. This means a run directory always exists as proof-of-start, even if the process was killed.
+`run.json` is written twice: once at start (with `runId`, `taskId`, `taskName`, `startedAt`, `argument`, and `parentRunId` if applicable) and again at completion with the full record. This means a run directory always exists as proof-of-start, even if the process was killed.
 
 ## Viewing runs
 
@@ -58,7 +62,11 @@ Press `Enter` or `→` on a run to open its detail view. This shows:
 
 Press `Tab` to switch between OUTPUT and STDERR tabs.
 
-Press `f` to toggle **auto-refresh** — useful when watching a run in progress. Auto-refresh is enabled automatically when viewing the latest run of a currently-running task.
+Press `f` to start a **follow-up run** — this opens the New Task screen pre-seeded with the previous run's argument and full output, so you can append a new prompt on top and continue the context chain. The new task records `parentRunId` linking it back to the source run.
+
+Press `Ctrl+F` to toggle **auto-refresh** — useful when watching a run in progress. Auto-refresh is enabled automatically when viewing the latest run of a currently-running task.
+
+If a run is a follow-up, its detail view shows `↳ follow-up of <parentRunId>` in the header.
 
 Press `←` / `Esc` / `q` to go back to the run list.
 
