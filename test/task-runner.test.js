@@ -40,6 +40,19 @@ function makeFakeCommand(tmp, { exitCode = 0, output = 'fake output' } = {}) {
   return script
 }
 
+function makeFakeStreamCommand(tmp, { exitCode = 0, text = 'streamed output' } = {}) {
+  const ndjson = [
+    JSON.stringify({ type: 'stream_event', event: { type: 'message_start' } }),
+    JSON.stringify({ type: 'stream_event', event: { type: 'content_block_delta', delta: { type: 'text_delta', text } } }),
+    JSON.stringify({ type: 'stream_event', event: { type: 'message_stop' } }),
+    JSON.stringify({ type: 'result', result: text }),
+  ].join('\n')
+  const script = path.join(tmp, 'fake-stream-cmd.sh')
+  fs.writeFileSync(script, `#!/bin/sh\nprintf '${ndjson.replace(/'/g, "'\\''")}'\nexit ${exitCode}\n`)
+  fs.chmodSync(script, 0o755)
+  return script
+}
+
 function runRunner(tmp, taskId) {
   return spawnSync('zsh', [SCRIPT, taskId], {
     encoding: 'utf8',
@@ -232,5 +245,36 @@ describe('task-runner.sh', () => {
     assert.ok(result)
     assert.equal(result.exitCode, 0)
     assert.equal(result.attempts, 1)
+  })
+
+  test('stream mode extracts text from stream-json output', () => {
+    const tmp = makeTmp()
+    after(() => fs.rmSync(tmp, { recursive: true, force: true }))
+    const taskId = 'stream-task'
+    const fakeCmd = makeFakeStreamCommand(tmp, { exitCode: 0, text: 'hello stream' })
+    makeTask(tmp, taskId, { command: fakeCmd, claudeStreamJson: true })
+
+    const { status } = runRunner(tmp, taskId)
+    assert.equal(status, 0)
+
+    const log = fs.readFileSync(
+      path.join(tmp, '.tide', 'tasks', taskId, 'logs', 'output.log'), 'utf8'
+    )
+    assert.ok(log.includes('hello stream'), `expected "hello stream" in log, got: ${log}`)
+    assert.ok(!log.includes('"type"'), 'log should not contain raw JSON')
+  })
+
+  test('stream mode preserves exit code from the command', () => {
+    const tmp = makeTmp()
+    after(() => fs.rmSync(tmp, { recursive: true, force: true }))
+    const taskId = 'stream-fail-task'
+    const fakeCmd = makeFakeStreamCommand(tmp, { exitCode: 1, text: 'oops' })
+    makeTask(tmp, taskId, { command: fakeCmd, claudeStreamJson: true })
+
+    runRunner(tmp, taskId)
+
+    const result = readLatestResult(tmp, taskId)
+    assert.ok(result)
+    assert.equal(result.exitCode, 1)
   })
 })

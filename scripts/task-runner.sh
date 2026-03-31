@@ -62,8 +62,14 @@ while [[ ${attempt} -le ${MAX_RETRIES} ]]; do
 
   CMD_ARRAY=(${=COMMAND})
   set +e
-  cd "${WORKING_DIR}" && "${CMD_ARRAY[@]}" ${=EXTRA_ARGS} "${ARGUMENT}" >> "${OUTPUT_LOG}" 2>> "${STDERR_LOG}"
-  EXIT_CODE=$?
+  if [[ "${CLAUDE_STREAM_JSON}" == "1" ]]; then
+    cd "${WORKING_DIR}" && "${CMD_ARRAY[@]}" ${=EXTRA_ARGS} "${ARGUMENT}" 2>> "${STDERR_LOG}" | \
+      node "${SCRIPT_DIR}/claude-stream-extract.js" >> "${OUTPUT_LOG}"
+    EXIT_CODE=${pipestatus[1]}
+  else
+    cd "${WORKING_DIR}" && "${CMD_ARRAY[@]}" ${=EXTRA_ARGS} "${ARGUMENT}" >> "${OUTPUT_LOG}" 2>> "${STDERR_LOG}"
+    EXIT_CODE=$?
+  fi
   set -e
 
   attempt=$((attempt + 1))

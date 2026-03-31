@@ -134,6 +134,9 @@ export default function TaskDetailScreen({ taskId, navigate, goBack }) {
         : null,
       React.createElement(Field, { label: 'Working dir', value: task.workingDirectory }),
       React.createElement(Field, { label: 'Max retries', value: task.maxRetries ?? 0 }),
+      task.claudeStreamJson
+        ? React.createElement(Field, { label: 'Claude stream-json', value: 'enabled', valueColor: 'green' })
+        : null,
       React.createElement(Field, { label: 'Created',    value: createdAt }),
       React.createElement(Field, { label: 'Last run',   value: lastRun }),
       React.createElement(

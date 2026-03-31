@@ -11,7 +11,7 @@ const LINE_OPTIONS = [50, 100, 200, 500]
 export default function LogsScreen({ taskId, navigate, goBack }) {
   const [tab, setTab] = useState('output')   // 'output' | 'stderr'
   const [lineIdx, setLineIdx] = useState(0)
-  const [autoRefresh, setAutoRefresh] = useState(false)
+  const [autoRefresh, setAutoRefresh] = useState(true)
   const lines = LINE_OPTIONS[lineIdx]
 
   const { output, stderr, outputTotal, stderrTotal, loading, refresh } = useLogs(taskId, lines, autoRefresh)

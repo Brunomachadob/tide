@@ -112,4 +112,16 @@ describe('task-setup.js', () => {
     const { stdout } = runScript(taskFile)
     assert.match(stdout, /^TERMINAL_BUNDLE_ID='com\.apple\.Terminal'$/m)
   })
+
+  test('emits CLAUDE_STREAM_JSON=1 when claudeStreamJson is true', () => {
+    const taskFile = writeTaskFile('test-task-01', { command: 'claude', claudeStreamJson: true })
+    const { stdout } = runScript(taskFile)
+    assert.match(stdout, /^CLAUDE_STREAM_JSON='1'$/m)
+  })
+
+  test('emits CLAUDE_STREAM_JSON=0 when claudeStreamJson is false or absent', () => {
+    const taskFile = writeTaskFile('test-task-01', { command: 'claude' })
+    const { stdout } = runScript(taskFile)
+    assert.match(stdout, /^CLAUDE_STREAM_JSON='0'$/m)
+  })
 })

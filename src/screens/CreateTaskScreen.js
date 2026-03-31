@@ -19,7 +19,7 @@ const INTERVAL_OPTIONS = [
   { label: '24 hours',seconds: 86400 },
 ]
 
-const STEPS = ['Name', 'Argument', 'Schedule', 'Working Dir', 'Command', 'Review']
+const STEPS = ['Name', 'Argument', 'Schedule', 'Working Dir', 'Command', 'Claude Stream JSON', 'Review']
 
 function intervalIdxForSeconds(secs) {
   const idx = INTERVAL_OPTIONS.findIndex(o => o.seconds === secs)
@@ -40,6 +40,7 @@ export default function CreateTaskScreen({ task: existingTask, goBack }) {
   const [command, setCommand] = useState(
     existingTask?.command ?? readSettings().command ?? ''
   )
+  const [claudeStreamJson, setStreamOutput] = useState(existingTask?.claudeStreamJson ?? false)
   const [toast, setToast] = useState(null)
   const [error, setError] = useState(null)
 
@@ -54,17 +55,17 @@ export default function CreateTaskScreen({ task: existingTask, goBack }) {
       const schedule = { type: 'interval', intervalSeconds: INTERVAL_OPTIONS[intervalIdx].seconds }
       const resolvedDir = workingDir.replace(/^~/, os.homedir())
       if (isEdit) {
-        updateTask(existingTask, { name: name.trim(), argument: argument.trim(), schedule, workingDirectory: resolvedDir, command: command.trim() })
+        updateTask(existingTask, { name: name.trim(), argument: argument.trim(), schedule, workingDirectory: resolvedDir, command: command.trim(), claudeStreamJson })
         setToast({ message: `Task "${name.trim()}" updated`, type: 'success' })
       } else {
-        createTask({ name: name.trim(), argument: argument.trim(), schedule, workingDirectory: resolvedDir, command: command.trim() })
+        createTask({ name: name.trim(), argument: argument.trim(), schedule, workingDirectory: resolvedDir, command: command.trim(), claudeStreamJson })
         setToast({ message: `Task "${name.trim()}" created`, type: 'success' })
       }
       setTimeout(goBack, 1500)
     } catch (e) {
       setError(e.message)
     }
-  }, [isEdit, existingTask, name, argument, intervalIdx, workingDir, goBack])
+  }, [isEdit, existingTask, name, argument, intervalIdx, workingDir, command, claudeStreamJson, goBack])
 
   useInput((input, key) => {
     if (toast) return
@@ -104,8 +105,15 @@ export default function CreateTaskScreen({ task: existingTask, goBack }) {
       return
     }
 
-    // Step 5: Review
+    // Step 5: Stream Output
     if (step === 5) {
+      if (key.tab) { nextStep(); return }
+      if (input === ' ' || key.return) setStreamOutput(v => !v)
+      return
+    }
+
+    // Step 6: Review
+    if (step === 6) {
       if (key.return) handleSave()
     }
   })
@@ -190,7 +198,22 @@ export default function CreateTaskScreen({ task: existingTask, goBack }) {
       )
     }
 
-    // Step 5: Review
+    if (step === 5) {
+      return React.createElement(
+        Box, { flexDirection: 'column', paddingX: 1 },
+        React.createElement(FieldBox, { label: 'Claude stream-json', active: true },
+          React.createElement(Text, { color: claudeStreamJson ? 'green' : 'gray' },
+            claudeStreamJson ? '[x] Enabled' : '[ ] Disabled',
+          ),
+        ),
+        React.createElement(Text, { color: 'gray' },
+          'Enable for Claude commands using --output-format=stream-json --include-partial-messages --verbose.',
+        ),
+        React.createElement(Text, { color: 'gray' }, 'Space/Enter to toggle · Tab to continue'),
+      )
+    }
+
+    // Step 6: Review
     const schedSummary = `Every ${INTERVAL_OPTIONS[intervalIdx].label}`
 
     return React.createElement(
@@ -214,6 +237,10 @@ export default function CreateTaskScreen({ task: existingTask, goBack }) {
           React.createElement(Box, { width: 18 }, React.createElement(Text, { color: 'gray' }, 'Command:')),
           React.createElement(Text, null, command),
         ),
+        React.createElement(Box, { gap: 2 },
+          React.createElement(Box, { width: 18 }, React.createElement(Text, { color: 'gray' }, 'Claude stream-json:')),
+          React.createElement(Text, null, claudeStreamJson ? 'yes' : 'no'),
+        ),
         React.createElement(Box, { marginTop: 1, flexDirection: 'column' },
           React.createElement(Text, { color: 'gray' }, 'Argument:'),
           React.createElement(
@@ -230,12 +257,14 @@ export default function CreateTaskScreen({ task: existingTask, goBack }) {
   }
 
   const keyHints = [
-    step < 5
+    step < 6
       ? (step === 1
           ? [['↵', 'newline'], ['Tab', 'next'], ['Esc', 'back']]
           : step === 2
             ? [['↑↓', 'select'], ['Tab', 'next'], ['Esc', 'back']]
-            : [['Tab', 'next'], ['Esc', 'back']])
+            : step === 5
+              ? [['Space', 'toggle'], ['Tab', 'next'], ['Esc', 'back']]
+              : [['Tab', 'next'], ['Esc', 'back']])
       : [['↵', isEdit ? 'save' : 'create'], ['Esc', 'back']],
   ].flat()
 

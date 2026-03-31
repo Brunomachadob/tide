@@ -18,7 +18,8 @@ Each task is stored as `~/.tide/tasks/<id>/task.json`.
   "maxRetries": 0,
   "workingDirectory": "/Users/you",
   "env": {},
-  "resultRetentionDays": 30
+  "resultRetentionDays": 30,
+  "claudeStreamJson": false
 }
 ```
 
@@ -40,6 +41,7 @@ Each task is stored as `~/.tide/tasks/<id>/task.json`.
 | `workingDirectory` | `string` | Directory the command runs in. Falls back to settings default. |
 | `env` | `object` | Additional environment variables passed to the command. |
 | `resultRetentionDays` | `number` | Results older than this are pruned after each run. Default: `30`. |
+| `claudeStreamJson` | `boolean` | When `true`, the command's stdout is treated as Claude's `--output-format=stream-json` NDJSON. Each token is extracted and written to `output.log` as it arrives, enabling real-time log following. Requires the command to include `--output-format=stream-json --include-partial-messages --verbose`. Default: `false`. |
 
 ## Task state at display time
 

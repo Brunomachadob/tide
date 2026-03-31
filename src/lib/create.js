@@ -100,7 +100,7 @@ function writePlist(taskId, config) {
 /**
  * Create a new task.
  * config: { name, argument, schedule, command, extraArgs, workingDirectory,
- *           maxRetries, env, id?, createdAt? }
+ *           maxRetries, env, claudeStreamJson, id?, createdAt? }
  * Returns the created task object.
  */
 export function createTask(config) {
@@ -117,6 +117,7 @@ export function createTask(config) {
   const jitterSeconds = config.jitterSeconds ?? Math.floor(Math.random() * Math.min(intervalSeconds / 4, 300))
   const timeoutSeconds = config.timeoutSeconds ?? null
   const resultRetentionDays = config.resultRetentionDays ?? 30
+  const claudeStreamJson = config.claudeStreamJson ?? false
 
   const tDir = taskDir(taskId)
   fs.mkdirSync(path.join(tDir, 'logs'), { recursive: true })
@@ -137,6 +138,7 @@ export function createTask(config) {
     env: config.env || {},
     ...(timeoutSeconds !== null && { timeoutSeconds }),
     resultRetentionDays,
+    claudeStreamJson,
   }
   writeTask(task)
 
@@ -162,6 +164,7 @@ export function updateTask(existing, changes) {
     command,
     schedule,
     workingDirectory,
+    claudeStreamJson: changes.claudeStreamJson ?? existing.claudeStreamJson ?? false,
   }
 
   writeTask(task)

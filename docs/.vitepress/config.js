@@ -49,6 +49,7 @@ export default defineConfig({
           { text: 'ADR-0001: Interval Scheduling', link: '/adr/0001-interval-only-scheduling' },
           { text: 'ADR-0002: task.json as Truth', link: '/adr/0002-task-json-as-source-of-truth' },
           { text: 'ADR-0003: eval for Shell Config', link: '/adr/0003-eval-for-shell-config' },
+          { text: 'ADR-0004: Claude stream-json Logs', link: '/adr/0004-claude-stream-json-for-real-time-logs' },
         ],
       },
     ],

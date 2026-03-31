@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
+import fs from 'fs'
+import path from 'path'
 import { getOutputLog, getStderrLog, getOutputLogLineCount, getStderrLogLineCount } from '../lib/logs.js'
+import { TASKS_DIR } from '../lib/tasks.js'
 
 export function useLogs(taskId, lines = 50, autoRefresh = false) {
   const [output, setOutput] = useState(null)
@@ -24,9 +27,22 @@ export function useLogs(taskId, lines = 50, autoRefresh = false) {
   useEffect(() => {
     refresh()
     if (!autoRefresh) return
-    const id = setInterval(refresh, 3000)
-    return () => clearInterval(id)
-  }, [refresh, autoRefresh])
+
+    // Watch the logs directory for changes and refresh immediately on any write.
+    // Fall back to polling every 10s in case fs.watch misses an event.
+    const logsDir = path.join(TASKS_DIR, taskId, 'logs')
+    let watcher = null
+    try {
+      watcher = fs.watch(logsDir, refresh)
+    } catch {
+      // logs dir may not exist yet if task has never run — polling handles it
+    }
+    const id = setInterval(refresh, 10000)
+    return () => {
+      watcher?.close()
+      clearInterval(id)
+    }
+  }, [refresh, autoRefresh, taskId])
 
   return { output, stderr, outputTotal, stderrTotal, loading, refresh }
 }
