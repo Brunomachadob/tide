@@ -79,7 +79,7 @@ For each qualifying issue (worktree is created only when there's something to im
    <1–3 bullet points>
 
    ## Test plan
-   - [ ] npm test passes
+   - [ ] CI passes
    - [ ] <any manual check>" \
      --draft --base main --head tide-maintainer/issue-<N>
    ```
@@ -106,6 +106,13 @@ gh api repos/Brunomachadob/tide/pulls/<N>/comments \
 Skip if count is 0. **Stop after finding 2 PRs with unresolved comments.**
 
 For each qualifying PR (worktree is created only when there are unresolved comments):
+
+0. Check CI status. If the latest CI run on the PR is failing for reasons unrelated to the
+   review comments (i.e. a pre-existing test failure), skip this PR and note why:
+   ```sh
+   gh pr checks <N> --watch=false
+   ```
+   Skip if CI status is `fail` and the failure predates the review comments.
 
 1. Create and enter a worktree:
    ```sh
