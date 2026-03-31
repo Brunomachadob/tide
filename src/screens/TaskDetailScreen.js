@@ -13,7 +13,7 @@ import KeyHints from '../components/KeyHints.js'
 import { readSettings } from '../lib/settings.js'
 import { formatDate, formatRelativeTime } from '../lib/format.js'
 import { bootout, bootstrap, kickstart, plistPath } from '../lib/launchd.js'
-import { setEnabled, deleteTask } from '../lib/tasks.js'
+import { setEnabled, deleteTask, taskDir } from '../lib/tasks.js'
 
 function Field({ label, value, valueColor }) {
   return React.createElement(
@@ -49,6 +49,7 @@ export default function TaskDetailScreen({ taskId, navigate, goBack }) {
   useInput((input, key) => {
     if (confirm) return
     if (key.escape || input === 'q') { goBack(); return }
+    if (input === 'k' && task?.status === 'running') setConfirm({ action: 'kill', message: `Kill "${task.name}"? The running process will be terminated.` })
     if (input === 'r') setConfirm({ action: 'run', message: `Run "${task?.name}" now?` })
     if (input === 'e' && task) {
       const action = task.enabled ? 'disable' : 'enable'
@@ -66,7 +67,18 @@ export default function TaskDetailScreen({ taskId, navigate, goBack }) {
   const handleConfirm = useCallback(() => {
     const action = confirm.action
     setConfirm(null)
-    if (action === 'run') {
+    if (action === 'kill') {
+      try {
+        const pidFile = `${taskDir(taskId)}/running.pid`
+        const pid = parseInt(fs.readFileSync(pidFile, 'utf8').trim())
+        process.kill(pid, 'SIGTERM')
+        refresh()
+        showToast(`Killed process ${pid}`, 'success')
+      } catch (e) {
+        showToast(e.message, 'error')
+      }
+    }
+    else if (action === 'run') {
       try {
         kickstart(taskId)
         showToast(`"${task?.name || taskId}" triggered — running in background`, 'success')
@@ -171,6 +183,7 @@ export default function TaskDetailScreen({ taskId, navigate, goBack }) {
       hints: [
         ['Esc/q', 'back'],
         ['r', 'run'],
+        ...(task.status === 'running' ? [['k', 'kill']] : []),
         ['e', 'en/disable'],
         ['E', 'edit'],
         ['l', 'logs'],
