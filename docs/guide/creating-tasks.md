@@ -10,18 +10,18 @@ All fields:
 |-------|----------|---------|-------------|
 | `name` | Yes | — | Human-readable label |
 | `argument` | Yes | — | Final argument passed to the run command |
-| `intervalSeconds` | Yes | — | Run frequency in seconds |
+| `schedule` | Yes | — | `Manual only` or an interval (15m – 24h) |
 | `workingDirectory` | No | `~` | Directory the command runs in |
 | `maxRetries` | No | `0` | Extra attempts on failure (0 = no retries) |
 
 ## What Tide does on save
 
 1. Generates a random 8-character hex ID (e.g. `3f640f65`)
-2. Assigns a random `jitterSeconds` value between 0 and `min(interval/4, 300)`
+2. For interval tasks: assigns a random `jitterSeconds` value between 0 and `min(interval/4, 300)`. Manual tasks get `jitterSeconds: 0`.
 3. Writes `~/.tide/tasks/<id>/task.json`
-4. Generates `~/Library/LaunchAgents/com.tide.<id>.plist` from the task config
+4. Generates `~/Library/LaunchAgents/com.tide.<id>.plist` from the task config. Manual tasks produce a plist with no `StartInterval` key.
 5. Validates the plist with `plutil -lint` (hard error if invalid)
-6. Calls `launchctl bootstrap` to register the task — it is live immediately
+6. Calls `launchctl bootstrap` to register the task — interval tasks are live immediately; manual tasks are registered but will not fire until triggered
 
 ## How the run command is assembled
 

@@ -1,14 +1,32 @@
 # Scheduling
 
-## Interval-based only
+## Schedule types
 
-Tide uses **interval scheduling** exclusively. A task fires every N seconds after its previous run completes.
+Tide supports two schedule types:
+
+### Interval
+
+A task fires every N seconds after its previous run completes.
 
 ```json
 "schedule": { "type": "interval", "intervalSeconds": 3600 }
 ```
 
 Calendar-based scheduling ("run at 9am every weekday") is not supported. See [ADR-0001](/adr/0001-interval-only-scheduling) for the reasoning.
+
+### Manual
+
+A task with a manual schedule never fires automatically — it only runs when you explicitly trigger it with `r` (run now) from the task list or detail screen.
+
+```json
+"schedule": { "type": "manual" }
+```
+
+Manual tasks are useful when you want to reuse the same command, argument, and working directory on demand without setting up a recurring schedule. They are registered with launchd like any other task, but their plist has no `StartInterval` key, so launchd never fires them.
+
+::: tip
+Manual tasks still produce run history, logs, and notifications just like scheduled tasks.
+:::
 
 ## Common intervals
 
