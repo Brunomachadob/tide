@@ -1,6 +1,9 @@
 import React, { useState, useCallback } from 'react'
 import { Box, Text, useInput } from 'ink'
 import os from 'os'
+import fs from 'fs'
+import path from 'path'
+import { spawnSync } from 'child_process'
 import Header from '../components/Header.js'
 import FieldBox from '../components/FieldBox.js'
 import TextInput from '../components/TextInput.js'
@@ -26,6 +29,18 @@ function intervalIdxForSchedule(schedule) {
   if (!schedule || schedule.type === 'manual') return 0
   const idx = INTERVAL_OPTIONS.findIndex(o => o.seconds === schedule.intervalSeconds)
   return idx >= 0 ? idx : 4  // default to 1h (index 4 after prepending Manual)
+}
+
+function openInEditor(current) {
+  const editor = process.env.EDITOR || '/usr/bin/vi'
+  const tmp = path.join(os.tmpdir(), `tide-argument-${Date.now()}.md`)
+  try {
+    fs.writeFileSync(tmp, current)
+    spawnSync(editor, [tmp], { stdio: 'inherit' })
+    return fs.readFileSync(tmp, 'utf8')
+  } finally {
+    try { fs.unlinkSync(tmp) } catch { /* ok */ }
+  }
 }
 
 export default function CreateTaskScreen({ task: existingTask, goBack }) {
@@ -86,6 +101,7 @@ export default function CreateTaskScreen({ task: existingTask, goBack }) {
 
     // Step 1: Prompt
     if (step === 1) {
+      if (key.ctrl && input === 'e') { setArgument(openInEditor(argument)); return }
       if (key.tab && argument.trim()) nextStep()
       return
     }
@@ -156,7 +172,7 @@ export default function CreateTaskScreen({ task: existingTask, goBack }) {
             }),
           ),
         ),
-        React.createElement(Text, { color: 'gray' }, 'Enter adds a newline · Tab to continue'),
+        React.createElement(Text, { color: 'gray' }, 'Enter adds a newline · Ctrl+E open in $EDITOR · Tab to continue'),
       )
     }
 
