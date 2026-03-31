@@ -39,16 +39,32 @@ describe('getNotifications', () => {
 })
 
 describe('dismissNotification', () => {
-  test('removes only the matching taskId', () => {
-    fs.writeFileSync(NOTIF_FILE, JSON.stringify([{ taskId: 'a' }, { taskId: 'b' }, { taskId: 'c' }]))
-    dismissNotification('b')
-    assert.deepEqual(getNotifications(), [{ taskId: 'a' }, { taskId: 'c' }])
+  test('removes only the matching taskId + completedAt', () => {
+    const data = [
+      { taskId: 'a', completedAt: '2024-01-01T00:00:00Z' },
+      { taskId: 'b', completedAt: '2024-01-01T00:01:00Z' },
+      { taskId: 'c', completedAt: '2024-01-01T00:02:00Z' },
+    ]
+    fs.writeFileSync(NOTIF_FILE, JSON.stringify(data))
+    dismissNotification('b', '2024-01-01T00:01:00Z')
+    assert.deepEqual(getNotifications(), [data[0], data[2]])
+  })
+
+  test('does not remove other runs of the same task', () => {
+    const data = [
+      { taskId: 'a', completedAt: '2024-01-01T00:00:00Z' },
+      { taskId: 'a', completedAt: '2024-01-01T00:01:00Z' },
+    ]
+    fs.writeFileSync(NOTIF_FILE, JSON.stringify(data))
+    dismissNotification('a', '2024-01-01T00:00:00Z')
+    assert.deepEqual(getNotifications(), [data[1]])
   })
 
   test('is a no-op for an unknown taskId', () => {
-    fs.writeFileSync(NOTIF_FILE, JSON.stringify([{ taskId: 'a' }]))
-    dismissNotification('z')
-    assert.deepEqual(getNotifications(), [{ taskId: 'a' }])
+    const data = [{ taskId: 'a', completedAt: '2024-01-01T00:00:00Z' }]
+    fs.writeFileSync(NOTIF_FILE, JSON.stringify(data))
+    dismissNotification('z', '2024-01-01T00:00:00Z')
+    assert.deepEqual(getNotifications(), data)
   })
 })
 

@@ -26,9 +26,9 @@ export function useNotifications(intervalMs = 10000) {
     setNotifications([])
   }, [])
 
-  const dismiss = useCallback((taskId) => {
-    dismissNotification(taskId)
-    setNotifications(prev => prev.filter(n => n.taskId !== taskId))
+  const dismiss = useCallback((taskId, completedAt) => {
+    dismissNotification(taskId, completedAt)
+    setNotifications(prev => prev.filter(n => !(n.taskId === taskId && n.completedAt === completedAt)))
   }, [])
 
   return { notifications, loading, refresh, clear, dismiss }

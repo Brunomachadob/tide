@@ -31,14 +31,14 @@ export default function NotificationsScreen({ navigate, goBack }) {
     }
     if (key.return && displayed[selectedIdx]) {
       const n = displayed[selectedIdx]
-      dismiss(n.taskId)
+      dismiss(n.taskId, n.completedAt)
       setSelectedIdx(i => Math.max(0, Math.min(i, displayed.length - 2)))
       navigate('logs', { taskId: n.taskId })
       return
     }
     if (input === 'd' && displayed[selectedIdx]) {
       const n = displayed[selectedIdx]
-      dismiss(n.taskId)
+      dismiss(n.taskId, n.completedAt)
       setSelectedIdx(i => Math.max(0, Math.min(i, displayed.length - 2)))
       return
     }

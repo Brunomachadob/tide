@@ -13,7 +13,7 @@ export function clearNotifications() {
   atomicWriteJSON(NOTIFICATIONS_FILE, [])
 }
 
-export function dismissNotification(taskId) {
+export function dismissNotification(taskId, completedAt) {
   const current = safeReadJSON(NOTIFICATIONS_FILE, [])
-  atomicWriteJSON(NOTIFICATIONS_FILE, current.filter(n => n.taskId !== taskId))
+  atomicWriteJSON(NOTIFICATIONS_FILE, current.filter(n => !(n.taskId === taskId && n.completedAt === completedAt)))
 }
