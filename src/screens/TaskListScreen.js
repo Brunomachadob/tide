@@ -115,7 +115,7 @@ export default function TaskListScreen({ navigate }) {
   }
 
   const COLS = [
-    { label: 'NAME',     width: 22 },
+    { label: 'NAME',     width: 30 },
     { label: 'SCHEDULE', width: 18 },
     { label: 'STATUS',   width: 14 },
     { label: 'LAST RUN', width: 17 },

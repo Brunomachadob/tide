@@ -20,8 +20,8 @@ export default function Header({ title, subtitle, notificationCount = 0, onNotif
         Box,
         { gap: 2 },
         notificationCount > 0
-          ? React.createElement(Text, { color: 'yellow' }, `[n] notifs (${notificationCount})`)
-          : React.createElement(Text, { color: 'gray' }, '[n] notifs'),
+          ? React.createElement(Text, { color: 'yellow' }, `[n] notifications (${notificationCount})`)
+          : React.createElement(Text, { color: 'gray' }, '[n] notifications'),
         React.createElement(Text, { color: 'gray' }, '[s] settings'),
       ),
     ),
