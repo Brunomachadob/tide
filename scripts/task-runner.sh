@@ -88,9 +88,9 @@ else
   NOTIF_MSG="Task failed (exit ${EXIT_CODE})."
 fi
 if command -v terminal-notifier &>/dev/null; then
-  terminal-notifier -title "${NOTIF_TITLE}" -message "${NOTIF_MSG}" -activate "${TERMINAL_BUNDLE_ID}" 2>/dev/null || true
+  terminal-notifier -title "${NOTIF_TITLE}" -message "${NOTIF_MSG}" -activate "${TERMINAL_BUNDLE_ID}" 2>/dev/null &
 else
-  osascript -e "display notification \"${NOTIF_MSG}\" with title \"${NOTIF_TITLE}\"" 2>/dev/null || true
+  osascript -e "display notification \"${NOTIF_MSG}\" with title \"${NOTIF_TITLE}\"" 2>/dev/null &
 fi
 
 echo "[${COMPLETED_AT}] Task '${TASK_NAME}' (${TASK_ID}) exit=${EXIT_CODE} attempts=$((attempt+1))"
