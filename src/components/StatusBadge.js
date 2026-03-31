@@ -1,18 +1,21 @@
 import React from 'react'
 import { Text } from 'ink'
-
-const STATUS_COLORS = {
-  running: 'green',
-  loaded: 'cyan',
-  disabled: 'gray',
-  'not loaded': 'yellow',
-}
+import Spinner from 'ink-spinner'
 
 export default function StatusBadge({ status }) {
-  const color = STATUS_COLORS[status] || 'white'
-  const label = status === 'running' ? '● running' :
-                status === 'loaded'  ? '○ loaded'  :
-                status === 'disabled' ? '- disabled' :
-                '! not loaded'
+  if (status === 'running') {
+    return React.createElement(
+      Text, { color: 'green' },
+      React.createElement(Spinner, { type: 'dots' }),
+      ' running',
+    )
+  }
+
+  const map = {
+    loaded:      ['cyan',   '○ loaded'],
+    disabled:    ['gray',   '- disabled'],
+    'not loaded': ['yellow', '! not loaded'],
+  }
+  const [color, label] = map[status] || ['white', status]
   return React.createElement(Text, { color }, label)
 }

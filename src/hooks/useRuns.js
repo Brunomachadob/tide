@@ -1,15 +1,15 @@
 import { useState, useEffect, useCallback } from 'react'
-import { getResults } from '../lib/results.js'
+import { getRuns } from '../lib/runs.js'
 
-export function useResults(taskId, count = 5) {
-  const [results, setResults] = useState([])
+export function useRuns(taskId, count = 5) {
+  const [runs, setRuns] = useState([])
   const [loading, setLoading] = useState(true)
 
   const refresh = useCallback(() => {
     try {
-      setResults(getResults(taskId, count))
+      setRuns(getRuns(taskId, count))
     } catch {
-      setResults([])
+      setRuns([])
     } finally {
       setLoading(false)
     }
@@ -19,5 +19,5 @@ export function useResults(taskId, count = 5) {
     refresh()
   }, [refresh])
 
-  return { results, loading, refresh }
+  return { runs, loading, refresh }
 }

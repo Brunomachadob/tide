@@ -24,8 +24,10 @@ rl.on('line', line => {
   } else if (inner.type === 'message_stop') {
     // Separate assistant turns with a newline, but only if this turn produced text
     if (wroteTextThisTurn) process.stdout.write('\n')
-  } else if (event.type === 'result' && typeof event.result === 'string') {
+  } else if (event.type === 'result') {
     // Final result line — ensure output ends with a newline
-    if (!event.result.endsWith('\n')) process.stdout.write('\n')
+    if (typeof event.result === 'string' && !event.result.endsWith('\n')) process.stdout.write('\n')
+    // Exit non-zero if Claude reported a failure or error
+    if (event.is_error || event.subtype === 'failure') process.exit(1)
   }
 })

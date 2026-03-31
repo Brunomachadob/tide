@@ -50,10 +50,8 @@ export default function TaskListScreen({ navigate }) {
       setSelectedIdx(i => Math.min((tasks.length || 1) - 1, i + 1))
     } else if (key.return) {
       if (tasks[selectedIdx]) navigate('detail', { taskId: tasks[selectedIdx].id })
-    } else if (input === 'l') {
-      if (tasks[selectedIdx]) navigate('logs', { taskId: tasks[selectedIdx].id })
     } else if (input === 'x') {
-      if (tasks[selectedIdx]) navigate('results', { taskId: tasks[selectedIdx].id })
+      if (tasks[selectedIdx]) navigate('runs', { taskId: tasks[selectedIdx].id, taskStatus: tasks[selectedIdx].status })
     } else if (input === 'r') {
       if (tasks[selectedIdx]) {
         const t = tasks[selectedIdx]
@@ -124,9 +122,10 @@ export default function TaskListScreen({ navigate }) {
 
   function Sparkline({ results, isSelected }) {
     if (!results || results.length === 0) return React.createElement(Text, { color: 'gray' }, '-')
-    const dots = [...results].reverse().map((r, i) => {
+    const dots = [...results].reverse().flatMap((r, i) => {
+      if (!r.completedAt) return [React.createElement(Spinner, { key: i, type: 'dots' })]
       const ok = r.exitCode === 0
-      return React.createElement(Text, { key: i, color: ok ? 'green' : 'red' }, ok ? '✓' : '✗')
+      return [React.createElement(Text, { key: i, color: ok ? 'green' : 'red' }, ok ? '✓' : '✗')]
     })
     return React.createElement(Box, { gap: 0 }, ...dots)
   }
@@ -224,8 +223,7 @@ export default function TaskListScreen({ navigate }) {
         ['c', 'create'],
         ['r', 'run'],
         ['e', 'en/disable'],
-        ['l', 'logs'],
-        ['x', 'results'],
+        ['x', 'runs'],
         ['d', 'delete'],
         ['R', 'refresh'],
         ['q', 'quit'],

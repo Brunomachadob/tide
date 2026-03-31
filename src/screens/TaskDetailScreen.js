@@ -57,8 +57,7 @@ export default function TaskDetailScreen({ taskId, navigate, goBack }) {
     }
     if (input === 'E' && task) navigate('edit', { task })
     if (input === 'd') setConfirm({ action: 'delete', message: `Delete "${task?.name}"? This cannot be undone.` })
-    if (input === 'l') navigate('logs', { taskId })
-    if (input === 'x') navigate('results', { taskId })
+    if (input === 'x') navigate('runs', { taskId, taskStatus: task.status })
     if (input === 'n') navigate('notifications')
     if (input === 's') navigate('settings')
     if (input === 'R') refresh()
@@ -186,8 +185,7 @@ export default function TaskDetailScreen({ taskId, navigate, goBack }) {
         ...(task.status === 'running' ? [['k', 'kill']] : []),
         ['e', 'en/disable'],
         ['E', 'edit'],
-        ['l', 'logs'],
-        ['x', 'results'],
+        ['x', 'runs'],
         ['d', 'delete'],
         ['R', 'refresh'],
       ],

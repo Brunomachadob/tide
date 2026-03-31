@@ -1,10 +1,10 @@
-// read task log files
+// read per-run log files
 import fs from 'fs'
 import path from 'path'
 import { TASKS_DIR } from './tasks.js'
 
-function logsDir(taskId) {
-  return path.join(TASKS_DIR, taskId, 'logs')
+function runLogsDir(taskId, runId) {
+  return path.join(TASKS_DIR, taskId, 'runs', runId)
 }
 
 function readLastLines(filePath, n) {
@@ -25,18 +25,18 @@ function countLines(filePath) {
   return lines.length
 }
 
-export function getOutputLog(taskId, lines = 50) {
-  return readLastLines(path.join(logsDir(taskId), 'output.log'), lines)
+export function getRunOutputLog(taskId, runId, lines = 50) {
+  return readLastLines(path.join(runLogsDir(taskId, runId), 'output.log'), lines)
 }
 
-export function getStderrLog(taskId, lines = 50) {
-  return readLastLines(path.join(logsDir(taskId), 'stderr.log'), lines)
+export function getRunStderrLog(taskId, runId, lines = 50) {
+  return readLastLines(path.join(runLogsDir(taskId, runId), 'stderr.log'), lines)
 }
 
-export function getOutputLogLineCount(taskId) {
-  return countLines(path.join(logsDir(taskId), 'output.log'))
+export function getRunOutputLogLineCount(taskId, runId) {
+  return countLines(path.join(runLogsDir(taskId, runId), 'output.log'))
 }
 
-export function getStderrLogLineCount(taskId) {
-  return countLines(path.join(logsDir(taskId), 'stderr.log'))
+export function getRunStderrLogLineCount(taskId, runId) {
+  return countLines(path.join(runLogsDir(taskId, runId), 'stderr.log'))
 }

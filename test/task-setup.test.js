@@ -15,8 +15,7 @@ function setup() {
   TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'tide-test-setup-'))
   const taskId = 'test-task-01'
   const taskDir = path.join(TMP, '.tide', 'tasks', taskId)
-  fs.mkdirSync(path.join(taskDir, 'results'), { recursive: true })
-  fs.mkdirSync(path.join(taskDir, 'logs'), { recursive: true })
+  fs.mkdirSync(taskDir, { recursive: true })
   return taskId
 }
 
@@ -59,6 +58,34 @@ describe('task-setup.js', () => {
     assert.match(stdout, /^TASK_NAME='Test Task'$/m)
     assert.match(stdout, /^WORKING_DIR='/m)
     assert.match(stdout, /^RESULT_RETENTION_DAYS='30'$/m)
+  })
+
+  test('emits RUN_ID, RUN_DIR, and STARTED_AT', () => {
+    const taskFile = writeTaskFile('test-task-01', { command: 'claude' })
+    const { stdout, status } = runScript(taskFile)
+    assert.equal(status, 0)
+    assert.match(stdout, /^RUN_ID='[0-9a-f]{8}'$/m)
+    assert.match(stdout, /^RUN_DIR='/m)
+    assert.match(stdout, /^STARTED_AT='/m)
+  })
+
+  test('creates the run directory and writes initial run.json', () => {
+    const taskFile = writeTaskFile('test-task-01', { command: 'claude' })
+    const { stdout, status } = runScript(taskFile)
+    assert.equal(status, 0)
+
+    const runIdMatch = stdout.match(/^RUN_ID='([0-9a-f]{8})'$/m)
+    assert.ok(runIdMatch, 'RUN_ID not found in output')
+    const runId = runIdMatch[1]
+
+    const runDir = path.join(TMP, '.tide', 'tasks', 'test-task-01', 'runs', runId)
+    assert.ok(fs.existsSync(runDir), 'run directory should be created')
+
+    const runJson = JSON.parse(fs.readFileSync(path.join(runDir, 'run.json'), 'utf8'))
+    assert.equal(runJson.runId, runId)
+    assert.equal(runJson.taskId, 'test-task-01')
+    assert.ok(runJson.startedAt, 'startedAt should be present')
+    assert.equal(runJson.completedAt, undefined, 'completedAt should not be set yet')
   })
 
   test('falls back to settings.json command when task.command is empty', () => {

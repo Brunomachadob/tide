@@ -3,8 +3,7 @@ import { Box, useInput, useApp } from 'ink'
 import { readSettings } from './lib/settings.js'
 import TaskListScreen from './screens/TaskListScreen.js'
 import TaskDetailScreen from './screens/TaskDetailScreen.js'
-import LogsScreen from './screens/LogsScreen.js'
-import ResultsScreen from './screens/ResultsScreen.js'
+import RunsScreen from './screens/RunsScreen.js'
 import NotificationsScreen from './screens/NotificationsScreen.js'
 import SettingsScreen from './screens/SettingsScreen.js'
 import CreateTaskScreen from './screens/CreateTaskScreen.js'
@@ -40,10 +39,8 @@ export default function App() {
       return React.createElement(TaskListScreen, { ...screenProps, ...current.props })
     case 'detail':
       return React.createElement(TaskDetailScreen, { ...screenProps, ...current.props })
-    case 'logs':
-      return React.createElement(LogsScreen, { ...screenProps, ...current.props })
-    case 'results':
-      return React.createElement(ResultsScreen, { ...screenProps, ...current.props })
+    case 'runs':
+      return React.createElement(RunsScreen, { ...screenProps, ...current.props })
     case 'notifications':
       return React.createElement(NotificationsScreen, { ...screenProps, ...current.props })
     case 'settings':

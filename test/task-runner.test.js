@@ -15,8 +15,7 @@ function makeTmp() {
 
 function makeTask(tmp, taskId, overrides = {}) {
   const taskDir = path.join(tmp, '.tide', 'tasks', taskId)
-  fs.mkdirSync(path.join(taskDir, 'results'), { recursive: true })
-  fs.mkdirSync(path.join(taskDir, 'logs'), { recursive: true })
+  fs.mkdirSync(taskDir, { recursive: true })
 
   const task = {
     id: taskId,
@@ -66,15 +65,47 @@ function runRunner(tmp, taskId) {
   })
 }
 
-function resultsDir(tmp, taskId) {
-  return path.join(tmp, '.tide', 'tasks', taskId, 'results')
+function runsDir(tmp, taskId) {
+  return path.join(tmp, '.tide', 'tasks', taskId, 'runs')
 }
 
-function readLatestResult(tmp, taskId) {
-  const dir = resultsDir(tmp, taskId)
-  const files = fs.readdirSync(dir).filter(f => f.endsWith('.json')).sort()
-  if (!files.length) return null
-  return JSON.parse(fs.readFileSync(path.join(dir, files[files.length - 1]), 'utf8'))
+function readLatestRun(tmp, taskId) {
+  const dir = runsDir(tmp, taskId)
+  if (!fs.existsSync(dir)) return null
+  const entries = fs.readdirSync(dir).filter(e => {
+    try { return fs.statSync(path.join(dir, e)).isDirectory() } catch { return false }
+  })
+  if (!entries.length) return null
+  // Find the run with the latest startedAt
+  let latest = null
+  for (const entry of entries) {
+    try {
+      const run = JSON.parse(fs.readFileSync(path.join(dir, entry, 'run.json'), 'utf8'))
+      if (!latest || run.startedAt > latest.startedAt) latest = run
+    } catch { /* skip */ }
+  }
+  return latest
+}
+
+function readLatestRunLog(tmp, taskId) {
+  const dir = runsDir(tmp, taskId)
+  if (!fs.existsSync(dir)) return null
+  const entries = fs.readdirSync(dir).filter(e => {
+    try { return fs.statSync(path.join(dir, e)).isDirectory() } catch { return false }
+  })
+  if (!entries.length) return null
+  let latest = null
+  let latestStartedAt = null
+  for (const entry of entries) {
+    try {
+      const run = JSON.parse(fs.readFileSync(path.join(dir, entry, 'run.json'), 'utf8'))
+      if (!latestStartedAt || run.startedAt > latestStartedAt) {
+        latestStartedAt = run.startedAt
+        latest = path.join(dir, entry, 'output.log')
+      }
+    } catch { /* skip */ }
+  }
+  return latest ? fs.readFileSync(latest, 'utf8') : null
 }
 
 // ── tests ──────────────────────────────────────────────────────────────────
@@ -97,15 +128,13 @@ describe('task-runner.sh', () => {
     after(() => fs.rmSync(tmp, { recursive: true, force: true }))
     const taskId = 'no-task'
     const taskDir = path.join(tmp, '.tide', 'tasks', taskId)
-    fs.mkdirSync(path.join(taskDir, 'results'), { recursive: true })
-    fs.mkdirSync(path.join(taskDir, 'logs'), { recursive: true })
+    fs.mkdirSync(taskDir, { recursive: true })
     // no task.json
     const { status } = runRunner(tmp, taskId)
     assert.equal(status, 1)
   })
 
-
-  test('successful run writes a result file with exitCode 0', () => {
+  test('successful run writes a run.json with exitCode 0', () => {
     const tmp = makeTmp()
     after(() => fs.rmSync(tmp, { recursive: true, force: true }))
     const taskId = 'success-task'
@@ -115,15 +144,15 @@ describe('task-runner.sh', () => {
     const { status } = runRunner(tmp, taskId)
     assert.equal(status, 0)
 
-    const result = readLatestResult(tmp, taskId)
-    assert.ok(result, 'result file should exist')
-    assert.equal(result.exitCode, 0)
-    assert.equal(result.taskId, taskId)
-    assert.ok(result.startedAt)
-    assert.ok(result.completedAt)
+    const run = readLatestRun(tmp, taskId)
+    assert.ok(run, 'run.json should exist')
+    assert.equal(run.exitCode, 0)
+    assert.equal(run.taskId, taskId)
+    assert.ok(run.startedAt)
+    assert.ok(run.completedAt)
   })
 
-  test('failed run writes a result file with non-zero exitCode', () => {
+  test('failed run writes a run.json with non-zero exitCode', () => {
     const tmp = makeTmp()
     after(() => fs.rmSync(tmp, { recursive: true, force: true }))
     const taskId = 'fail-task'
@@ -132,12 +161,12 @@ describe('task-runner.sh', () => {
 
     runRunner(tmp, taskId)
 
-    const result = readLatestResult(tmp, taskId)
-    assert.ok(result, 'result file should exist')
-    assert.equal(result.exitCode, 1)
+    const run = readLatestRun(tmp, taskId)
+    assert.ok(run, 'run.json should exist')
+    assert.equal(run.exitCode, 1)
   })
 
-  test('appends run header to output.log', () => {
+  test('run output is written to per-run output.log', () => {
     const tmp = makeTmp()
     after(() => fs.rmSync(tmp, { recursive: true, force: true }))
     const taskId = 'log-task'
@@ -146,10 +175,9 @@ describe('task-runner.sh', () => {
 
     runRunner(tmp, taskId)
 
-    const log = fs.readFileSync(
-      path.join(tmp, '.tide', 'tasks', taskId, 'logs', 'output.log'), 'utf8'
-    )
-    assert.match(log, /=== \d{4}-\d{2}-\d{2}T/)
+    const log = readLatestRunLog(tmp, taskId)
+    assert.ok(log, 'output.log should exist in run dir')
+    assert.ok(log.includes('log me'), `expected "log me" in log, got: ${log}`)
   })
 
   test('cleans up PID file after successful run', () => {
@@ -193,9 +221,10 @@ describe('task-runner.sh', () => {
     assert.equal(status, 0) // exits 0 (skip is not an error)
     assert.match(stderr, /Skipping/)
 
-    // No result should be written since the run was skipped
-    const results = fs.readdirSync(resultsDir(tmp, taskId)).filter(f => f.endsWith('.json'))
-    assert.equal(results.length, 0)
+    // No runs should be written since the run was skipped
+    const dir = runsDir(tmp, taskId)
+    const entries = fs.existsSync(dir) ? fs.readdirSync(dir) : []
+    assert.equal(entries.length, 0)
   })
 
   test('removes stale PID file and proceeds when PID is dead', () => {
@@ -212,9 +241,9 @@ describe('task-runner.sh', () => {
     const { status } = runRunner(tmp, taskId)
     assert.equal(status, 0)
 
-    const result = readLatestResult(tmp, taskId)
-    assert.ok(result, 'should have run despite stale PID file')
-    assert.equal(result.exitCode, 0)
+    const run = readLatestRun(tmp, taskId)
+    assert.ok(run, 'should have run despite stale PID file')
+    assert.equal(run.exitCode, 0)
   })
 
   test('records attempts=1 when maxRetries=0 and command fails', () => {
@@ -226,10 +255,10 @@ describe('task-runner.sh', () => {
 
     runRunner(tmp, taskId)
 
-    const result = readLatestResult(tmp, taskId)
-    assert.ok(result)
-    assert.equal(result.exitCode, 1)
-    assert.equal(result.attempts, 1)
+    const run = readLatestRun(tmp, taskId)
+    assert.ok(run)
+    assert.equal(run.exitCode, 1)
+    assert.equal(run.attempts, 1)
   })
 
   test('records attempts=1 when maxRetries=0 and command succeeds', () => {
@@ -241,10 +270,10 @@ describe('task-runner.sh', () => {
 
     runRunner(tmp, taskId)
 
-    const result = readLatestResult(tmp, taskId)
-    assert.ok(result)
-    assert.equal(result.exitCode, 0)
-    assert.equal(result.attempts, 1)
+    const run = readLatestRun(tmp, taskId)
+    assert.ok(run)
+    assert.equal(run.exitCode, 0)
+    assert.equal(run.attempts, 1)
   })
 
   test('stream mode extracts text from stream-json output', () => {
@@ -257,9 +286,8 @@ describe('task-runner.sh', () => {
     const { status } = runRunner(tmp, taskId)
     assert.equal(status, 0)
 
-    const log = fs.readFileSync(
-      path.join(tmp, '.tide', 'tasks', taskId, 'logs', 'output.log'), 'utf8'
-    )
+    const log = readLatestRunLog(tmp, taskId)
+    assert.ok(log, 'output.log should exist in run dir')
     assert.ok(log.includes('hello stream'), `expected "hello stream" in log, got: ${log}`)
     assert.ok(!log.includes('"type"'), 'log should not contain raw JSON')
   })
@@ -273,8 +301,8 @@ describe('task-runner.sh', () => {
 
     runRunner(tmp, taskId)
 
-    const result = readLatestResult(tmp, taskId)
-    assert.ok(result)
-    assert.equal(result.exitCode, 1)
+    const run = readLatestRun(tmp, taskId)
+    assert.ok(run)
+    assert.equal(run.exitCode, 1)
   })
 })

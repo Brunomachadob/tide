@@ -1,18 +1,29 @@
 #!/usr/bin/env node
-// task-postprocess.js — writes result JSON, notifications, rotates logs, and prunes old results
+// task-postprocess.js — completes run.json, writes notification, rotates logs, prunes old runs
 // Usage:
-//   node task-postprocess.js <task-file> <exit-code> <started-at> <completed-at> <attempts> <output> <output-log> <stderr-log>
+//   node task-postprocess.js <task-file> <exit-code> <started-at> <completed-at> <attempts> <run-dir>
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
 
 const TIDE_DIR = path.join(os.homedir(), '.tide')
-const [,, taskFile, exitCodeStr, startedAt, completedAt, attemptsStr, outputLog, stderrLog] = process.argv
+const [,, taskFile, exitCodeStr, startedAt, completedAt, attemptsStr, runDir] = process.argv
 
 const task = JSON.parse(fs.readFileSync(taskFile, 'utf8'))
 const exitCode = parseInt(exitCodeStr)
 const attempts = parseInt(attemptsStr)
 const retentionDays = task.resultRetentionDays ?? 30
+
+// Read runId from the initial run.json written by task-setup.js
+const runFile = path.join(runDir, 'run.json')
+let runId = path.basename(runDir)
+try {
+  const existing = JSON.parse(fs.readFileSync(runFile, 'utf8'))
+  runId = existing.runId ?? runId
+} catch { /* use dirname as fallback */ }
+
+const outputLog = path.join(runDir, 'output.log')
+const stderrLog = path.join(runDir, 'stderr.log')
 
 // Read last 300 chars of output log for notification summary
 let output = ''
@@ -21,17 +32,15 @@ try {
   output = buf.slice(-300)
 } catch { /* ok */ }
 
-// Write result JSON
-const resultsDir = path.join(TIDE_DIR, 'tasks', task.id, 'results')
-const resultFile = path.join(resultsDir, `${startedAt}.json`)
-fs.writeFileSync(resultFile, JSON.stringify({
+// Complete run.json (overwrite with full record)
+fs.writeFileSync(runFile, JSON.stringify({
+  runId,
   taskId: task.id,
   taskName: task.name,
   startedAt,
   completedAt,
   exitCode,
   attempts,
-  output,
 }, null, 2))
 
 // Append notification (atomic)
@@ -43,7 +52,7 @@ entries.push({
   taskName: task.name,
   completedAt,
   exitCode,
-  resultFile,
+  resultFile: runFile,
   summary: output.slice(0, 300),
   read: false,
 })
@@ -65,12 +74,18 @@ for (const logFile of [outputLog, stderrLog]) {
   } catch { /* ok */ }
 }
 
-// Result retention: delete result files older than retentionDays
+// Run retention: delete run directories older than retentionDays
+const runsDir = path.join(TIDE_DIR, 'tasks', task.id, 'runs')
 const cutoff = Date.now() - retentionDays * 86400 * 1000
-for (const fname of fs.readdirSync(resultsDir)) {
-  if (!fname.endsWith('.json')) continue
-  const fpath = path.join(resultsDir, fname)
-  try {
-    if (fs.statSync(fpath).mtimeMs < cutoff) fs.unlinkSync(fpath)
-  } catch { /* ok */ }
-}
+try {
+  for (const entry of fs.readdirSync(runsDir)) {
+    const entryPath = path.join(runsDir, entry)
+    try {
+      const entryRunFile = path.join(entryPath, 'run.json')
+      const entryRun = JSON.parse(fs.readFileSync(entryRunFile, 'utf8'))
+      if (entryRun.startedAt && new Date(entryRun.startedAt).getTime() < cutoff) {
+        fs.rmSync(entryPath, { recursive: true, force: true })
+      }
+    } catch { /* skip unreadable entries */ }
+  }
+} catch { /* ok if runs dir missing */ }

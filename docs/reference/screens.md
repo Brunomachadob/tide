@@ -10,21 +10,21 @@ The main screen. Shows all tasks with status, schedule, and last result.
 |-----|--------|
 | `↑` / `↓` | Navigate tasks |
 | `Enter` | Open Task Detail |
-| `n` | Create new task |
-| `e` | Edit selected task |
+| `c` | Create new task |
+| `r` | Run selected task now |
+| `e` | Toggle enable/disable |
+| `x` | Open Runs for selected task |
 | `d` | Delete selected task (with confirmation) |
-| `t` | Toggle enable/disable |
-| `l` | Open Logs for selected task |
-| `r` | Open Results for selected task |
-| `N` | Open Notifications |
+| `n` | Open Notifications |
 | `s` | Open Settings |
+| `R` | Refresh |
 | `q` / `Ctrl+C` | Quit |
 
 **Status badges:**
 
 | Badge | Meaning |
 |-------|---------|
-| `running` | Task is currently executing (launchd shows an active PID) |
+| `running` | Task is currently executing |
 | `loaded` | Registered with launchd, not currently running |
 | `disabled` | `enabled: false` in task.json — not registered with launchd |
 | `not loaded` | Plist is missing or was never bootstrapped — can be re-enabled |
@@ -33,38 +33,54 @@ The main screen. Shows all tasks with status, schedule, and last result.
 
 Full view of a single task's config and live status.
 
-Shows config from `task.json`, live launchd state (PID if running, last exit code from launchd's perspective), and the last result from the results directory.
+Shows config from `task.json`, live launchd state, and the last run result.
 
-Press `e` to edit, `l` for logs, `r` for results, `Esc` to go back.
+| Key | Action |
+|-----|--------|
+| `r` | Run task now |
+| `k` | Kill running task (only shown when running) |
+| `e` | Toggle enable/disable |
+| `E` | Edit task |
+| `x` | Open Runs |
+| `d` | Delete task |
+| `R` | Refresh |
+| `Esc` / `q` | Back |
+
+## Runs
+
+Two-level screen for browsing a task's execution history and logs. Press `x` to open it from the task list or task detail.
+
+### Runs list
+
+Shows all runs newest-first. Each row displays start time, exit code badge, duration, and attempt count.
+
+| Key | Action |
+|-----|--------|
+| `↑` / `↓` / `j` / `k` | Navigate runs |
+| `Enter` / `→` | Open run detail |
+| `+` / `-` | Show more / fewer runs |
+| `r` | Refresh |
+| `Esc` / `q` | Back to task |
+
+### Run detail
+
+Shows metadata for the selected run (time, exit code, duration, attempts) and its log output — scoped to that run only.
+
+| Key | Action |
+|-----|--------|
+| `Tab` | Switch between OUTPUT and STDERR |
+| `f` | Toggle auto-refresh (live follow) |
+| `+` / `-` | Show more / fewer log lines |
+| `r` | Refresh |
+| `←` / `Esc` / `q` | Back to runs list |
+
+Auto-refresh is enabled automatically when viewing the latest run of a currently-running task.
 
 ## Create / Edit Task
 
 Form for creating or editing a task. Fields: name, argument, interval (seconds), working directory, max retries.
 
-`Enter` on the last field (or a dedicated save button) writes the task and returns to the task list.
-
 `Esc` cancels without saving.
-
-## Logs
-
-Displays log file contents for a task. Two tabs: `output.log` (combined stdout + stderr) and `stderr.log`.
-
-| Key | Action |
-|-----|--------|
-| `Tab` | Switch between output.log and stderr.log |
-| `↑` / `↓` | Scroll |
-| `Esc` | Back |
-
-Content is polled on an interval — the view updates live while a task is running.
-
-## Results
-
-Browse structured result JSON files for a task, newest-first. Each entry shows exit code, start/finish timestamps, and attempt count.
-
-| Key | Action |
-|-----|--------|
-| `↑` / `↓` | Navigate results |
-| `Esc` | Back |
 
 ## Notifications
 

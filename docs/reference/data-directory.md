@@ -7,16 +7,16 @@ All Tide data lives in `~/.tide/`.
 ```
 ~/.tide/
 ├── settings.json
-├── pending-notifications.json
+├── notifications.json
 └── tasks/
     └── <id>/
         ├── task.json
-        ├── logs/
-        │   ├── output.log
-        │   └── stderr.log
-        └── results/
-            ├── 2026-03-30T10-00-00Z.json
-            └── 2026-03-29T10-00-00Z.json
+        ├── running.pid          — present only while a run is active
+        └── runs/
+            └── <runId>/         — short hex ID, e.g. a3f9c1b2
+                ├── run.json
+                ├── output.log
+                └── stderr.log
 ```
 
 ## Files
@@ -33,7 +33,7 @@ Global settings — run command, default working directory, date format.
 }
 ```
 
-### `~/.tide/pending-notifications.json`
+### `~/.tide/notifications.json`
 
 Array of notification entries for completed runs not yet reviewed. Appended to after each run, cleared when you open the Notifications screen and press `c`.
 
@@ -43,28 +43,33 @@ Does not exist until the first task run completes.
 
 The authoritative config for a task. See [Task Model](/reference/task-model) for full schema.
 
-### `~/.tide/tasks/<id>/logs/output.log`
+### `~/.tide/tasks/<id>/runs/<runId>/run.json`
 
-Combined stdout + stderr from all runs. Runs append to this file. Rotated at 5 MB (keeps last 2 MB).
+Metadata for a single run. Written twice: once at start (with `runId`, `taskId`, `taskName`, `startedAt`), and again at completion with the full record including `completedAt`, `exitCode`, and `attempts`.
 
-### `~/.tide/tasks/<id>/logs/stderr.log`
-
-stderr-only log. Same rotation behavior.
-
-### `~/.tide/tasks/<id>/results/<timestamp>.json`
-
-One file per completed run. Filename is the ISO 8601 start timestamp with `:` replaced by `-` for filesystem compatibility.
+A run directory without a `completedAt` field in `run.json` indicates an in-progress or interrupted run.
 
 ```json
 {
-  "exitCode": 0,
+  "runId": "a3f9c1b2",
+  "taskId": "...",
+  "taskName": "My Task",
   "startedAt": "2026-03-30T10:00:00Z",
-  "finishedAt": "2026-03-30T10:00:45Z",
+  "completedAt": "2026-03-30T10:00:45Z",
+  "exitCode": 0,
   "attempts": 1
 }
 ```
 
-Files older than `resultRetentionDays` are deleted after each run.
+### `~/.tide/tasks/<id>/runs/<runId>/output.log`
+
+stdout for this run only. Rotated at 5 MB (keeps last 2 MB).
+
+### `~/.tide/tasks/<id>/runs/<runId>/stderr.log`
+
+stderr for this run only. Same rotation behavior.
+
+Run directories older than `resultRetentionDays` (default 30) are deleted after each run.
 
 ## LaunchAgents
 

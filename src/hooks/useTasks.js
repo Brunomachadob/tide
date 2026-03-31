@@ -3,7 +3,7 @@ import fs from 'fs'
 import { readTasks, taskDir } from '../lib/tasks.js'
 import { formatSchedule } from '../lib/format.js'
 import { getStatus } from '../lib/launchd.js'
-import { getLatestResult, getResults } from '../lib/results.js'
+import { getLatestCompletedRun, getRuns } from '../lib/runs.js'
 
 function isRunningViaPidFile(taskId) {
   try {
@@ -31,8 +31,8 @@ function loadTasks() {
     } else {
       status = 'not loaded'
     }
-    const lastResult = getLatestResult(task.id)
-    const recentResults = getResults(task.id, 5)
+    const lastResult = getLatestCompletedRun(task.id)
+    const recentResults = getRuns(task.id, 5)
     return { ...task, status, lastResult, recentResults, scheduleLabel: formatSchedule(task.schedule) }
   })
 }
