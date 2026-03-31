@@ -14,6 +14,12 @@ Requires macOS and Node.js 18+.
 
 On first launch, configure your **run command** in Settings (e.g. `/opt/homebrew/bin/claude --permission-mode bypassPermissions -p`), then press `n` to create a task.
 
+## Features
+
+- **Scheduled tasks** — define a command and a cron-style schedule; launchd runs it even when no app is open
+- **Follow-up runs** — from any run's detail view, press `f` to chain a new run pre-seeded with the previous run's argument and output ([docs](https://brunomachadob.github.io/tide/guide/logs-and-results#follow-up-runs))
+- **Run history** — browse logs, exit codes, and retry counts per run
+
 ## Why this exists
 
 Claude Code's built-in scheduler (`CronCreate`/`CronDelete`) only fires during an active session. Tide delegates to **macOS launchd** so tasks run on schedule regardless of whether any app is open.

@@ -62,13 +62,34 @@ Press `Enter` or `→` on a run to open its detail view. This shows:
 
 Press `Tab` to switch between OUTPUT and STDERR tabs.
 
-Press `f` to start a **follow-up run** — this opens the New Task screen pre-seeded with the previous run's argument and full output, so you can append a new prompt on top and continue the context chain. The new task records `parentRunId` linking it back to the source run.
+Press `f` to start a **follow-up run** — see [Follow-up runs](#follow-up-runs) below.
 
 Press `Ctrl+F` to toggle **auto-refresh** — useful when watching a run in progress. Auto-refresh is enabled automatically when viewing the latest run of a currently-running task.
 
 If a run is a follow-up, its detail view shows `↳ follow-up of <parentRunId>` in the header.
 
 Press `←` / `Esc` / `q` to go back to the run list.
+
+## Follow-up runs
+
+A follow-up run lets you continue a conversation where a previous run left off, passing its full output as context for the next prompt.
+
+### How it works
+
+1. Open any run in the Run detail view and press `f`.
+2. Tide opens the **New Task** screen with the **Argument** field pre-filled with the previous run's argument and its complete output, separated by a newline:
+   ```
+   <previous argument>
+   <previous output>
+   ```
+3. Edit the pre-filled argument — typically by appending your new prompt at the end — then complete the task creation flow as normal.
+4. The new task is created with a `parentRunId` field that links it back to the source run.
+
+### parentRunId and run graph
+
+Every follow-up task's `run.json` contains a `parentRunId` field pointing to the `runId` it was spawned from. This creates a traceable chain: you can reconstruct the full conversation history by following `parentRunId` links back through previous runs.
+
+Follow-up runs are visually identified in the run list and detail view with the `↳ follow-up of <parentRunId>` indicator.
 
 ## Log rotation
 
