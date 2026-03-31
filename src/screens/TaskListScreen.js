@@ -15,6 +15,7 @@ import { readSettings } from '../lib/settings.js'
 import { formatDate, formatRelativeTime } from '../lib/format.js'
 import { bootout, bootstrap, kickstart, plistPath } from '../lib/launchd.js'
 import { setEnabled, deleteTask } from '../lib/tasks.js'
+import { getLatestRun } from '../lib/runs.js'
 
 export default function TaskListScreen({ navigate, height }) {
   const settings = readSettings()
@@ -52,6 +53,13 @@ export default function TaskListScreen({ navigate, height }) {
       setSelectedIdx(i => Math.min((tasks.length || 1) - 1, i + 1))
     } else if (key.return) {
       if (tasks[selectedIdx]) navigate('detail', { taskId: tasks[selectedIdx].id })
+    } else if (input === 'l') {
+      if (tasks[selectedIdx]) {
+        const t = tasks[selectedIdx]
+        const latest = getLatestRun(t.id)
+        if (latest) navigate('runs', { taskId: t.id, taskStatus: t.status, initialRunId: latest.runId })
+        else navigate('runs', { taskId: t.id, taskStatus: t.status })
+      }
     } else if (input === 'x') {
       if (tasks[selectedIdx]) navigate('runs', { taskId: tasks[selectedIdx].id, taskStatus: tasks[selectedIdx].status })
     } else if (input === 'r') {
@@ -224,6 +232,7 @@ export default function TaskListScreen({ navigate, height }) {
         ['c', 'create'],
         ['r', 'run'],
         ['e', 'en/disable'],
+        ['l', 'logs'],
         ['x', 'runs'],
         ['d', 'delete'],
         ['q', 'quit'],
