@@ -44,21 +44,22 @@ function openInEditor(current) {
   }
 }
 
-export default function CreateTaskScreen({ task: existingTask, goBack }) {
+export default function CreateTaskScreen({ task: existingTask, prefillArgument, parentRunId, defaultsFrom, goBack }) {
   const isEdit = !!existingTask
+  const defaults = existingTask || defaultsFrom
   const [step, setStep] = useState(0)
-  const [name, setName] = useState(existingTask?.name ?? '')
-  const [argument, setArgument] = useState(existingTask?.argument ?? '')
+  const [name, setName] = useState(defaults?.name ?? '')
+  const [argument, setArgument] = useState(prefillArgument ?? existingTask?.argument ?? '')
   const [intervalIdx, setIntervalIdx] = useState(
-    existingTask ? intervalIdxForSchedule(existingTask.schedule) : 4
+    defaults ? intervalIdxForSchedule(defaults.schedule) : 4
   )
   const [workingDir, setWorkingDir] = useState(
-    existingTask?.workingDirectory ?? readSettings().defaultWorkingDirectory ?? os.homedir()
+    defaults?.workingDirectory ?? readSettings().defaultWorkingDirectory ?? os.homedir()
   )
   const [command, setCommand] = useState(
-    existingTask?.command ?? readSettings().command ?? ''
+    defaults?.command ?? readSettings().command ?? ''
   )
-  const [claudeStreamJson, setStreamOutput] = useState(existingTask?.claudeStreamJson ?? false)
+  const [claudeStreamJson, setStreamOutput] = useState(defaults?.claudeStreamJson ?? false)
   const [toast, setToast] = useState(null)
   const [error, setError] = useState(null)
 
@@ -79,14 +80,14 @@ export default function CreateTaskScreen({ task: existingTask, goBack }) {
         updateTask(existingTask, { name: name.trim(), argument: argument.trim(), schedule, workingDirectory: resolvedDir, command: command.trim(), claudeStreamJson })
         setToast({ message: `Task "${name.trim()}" updated`, type: 'success' })
       } else {
-        createTask({ name: name.trim(), argument: argument.trim(), schedule, workingDirectory: resolvedDir, command: command.trim(), claudeStreamJson })
+        createTask({ name: name.trim(), argument: argument.trim(), schedule, workingDirectory: resolvedDir, command: command.trim(), claudeStreamJson, parentRunId })
         setToast({ message: `Task "${name.trim()}" created`, type: 'success' })
       }
       setTimeout(goBack, 1500)
     } catch (e) {
       setError(e.message)
     }
-  }, [isEdit, existingTask, name, argument, intervalIdx, workingDir, command, claudeStreamJson, goBack])
+  }, [isEdit, existingTask, name, argument, intervalIdx, workingDir, command, claudeStreamJson, parentRunId, goBack])
 
   useInput((input, key) => {
     if (toast) return

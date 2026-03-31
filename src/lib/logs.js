@@ -40,3 +40,14 @@ export function getRunOutputLogLineCount(taskId, runId) {
 export function getRunStderrLogLineCount(taskId, runId) {
   return countLines(path.join(runLogsDir(taskId, runId), 'stderr.log'))
 }
+
+/** Returns the full output log content (no line limit), or null if file absent. */
+export function getRunOutputLogFull(taskId, runId) {
+  const filePath = path.join(runLogsDir(taskId, runId), 'output.log')
+  if (!fs.existsSync(filePath)) return null
+  const content = fs.readFileSync(filePath, 'utf8')
+  if (!content) return ''
+  const lines = content.split('\n')
+  if (lines[lines.length - 1] === '') lines.pop()
+  return lines.join('\n')
+}

@@ -10,6 +10,8 @@ import ResultBadge from '../components/ResultBadge.js'
 import KeyHints from '../components/KeyHints.js'
 import { readSettings } from '../lib/settings.js'
 import { formatDate, formatRelativeTime } from '../lib/format.js'
+import { getRunOutputLogFull } from '../lib/logs.js'
+import { readTask } from '../lib/tasks.js'
 
 const COUNT_OPTIONS = [5, 10, 25, 50]
 const LINE_OPTIONS = [50, 100, 200, 500]
@@ -34,7 +36,16 @@ function RunDetail({ taskId, taskStatus, run, isLatest, navigate, onBack }) {
   useInput((input, key) => {
     if (key.escape || input === 'q' || key.leftArrow) { onBack(); return }
     if (key.tab || input === '\t') setTab(t => t === 'output' ? 'stderr' : 'output')
-    if (input === 'f') setAutoRefresh(a => !a)
+    if (key.ctrl && input === 'f') { setAutoRefresh(a => !a); return }
+    if (input === 'f') {
+      // Follow-up: navigate to create screen pre-seeded with this run's context
+      const task = readTask(taskId)
+      const prevArgument = run.argument || (task ? task.argument : '') || ''
+      const prevOutput = getRunOutputLogFull(taskId, run.runId) || ''
+      const prefillArgument = [prevArgument, prevOutput].filter(Boolean).join('\n')
+      navigate('create', { prefillArgument, parentRunId: run.runId, defaultsFrom: task })
+      return
+    }
     if (input === 'r') refresh()
     if (input === 'n') navigate('notifications')
     if (input === 's') navigate('settings')
@@ -77,6 +88,9 @@ function RunDetail({ taskId, taskStatus, run, isLatest, navigate, onBack }) {
         dur ? React.createElement(Text, { color: 'gray' }, dur) : null,
         run.attempts > 1
           ? React.createElement(Text, { color: 'yellow' }, `${run.attempts} attempts`)
+          : null,
+        run.parentRunId
+          ? React.createElement(Text, { color: 'gray' }, `↳ follow-up of ${run.parentRunId}`)
           : null,
       ),
     ),
@@ -123,7 +137,8 @@ function RunDetail({ taskId, taskStatus, run, isLatest, navigate, onBack }) {
       hints: [
         ['←/Esc/q', 'back'],
         ['Tab', 'switch tab'],
-        ['f', 'toggle follow'],
+        ['f', 'follow-up run'],
+        ['Ctrl+F', 'toggle follow'],
         ['+/-', 'line count'],
         ['r', 'refresh'],
       ],
