@@ -24,7 +24,7 @@ jobs:
             --test-reporter-destination=stdout \
             --test-reporter=tap \
             --test-reporter-destination=tap-output.txt \
-            'test/*.test.js'
+            test/*.test.js
 
       - name: Write test summary
         if: always()

@@ -1,6 +1,6 @@
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
 
-const tap = readFileSync('tap-output.txt', 'utf8');
+const tap = existsSync('tap-output.txt') ? readFileSync('tap-output.txt', 'utf8') : '';
 const get = (key) => {
   const m = tap.match(new RegExp(`^# ${key} (\\d+)`, 'm'));
   return m ? parseInt(m[1], 10) : 0;
