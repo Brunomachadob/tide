@@ -81,7 +81,7 @@ For each qualifying issue (worktree is created only when there's something to im
    ## Test plan
    - [ ] CI passes
    - [ ] <any manual check>" \
-     --draft --base main --head tide-maintainer/issue-<N>
+     --base main --head tide-maintainer/issue-<N>
    ```
 7. Clean up the worktree (branch stays on remote):
    ```sh
