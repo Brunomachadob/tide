@@ -107,13 +107,6 @@ Skip if count is 0. **Stop after finding 2 PRs with unresolved comments.**
 
 For each qualifying PR (worktree is created only when there are unresolved comments):
 
-0. Check CI status. If the latest CI run on the PR is failing for reasons unrelated to the
-   review comments (i.e. a pre-existing test failure), skip this PR and note why:
-   ```sh
-   gh pr checks <N> --watch=false
-   ```
-   Skip if CI status is `fail` and the failure predates the review comments.
-
 1. Create and enter a worktree:
    ```sh
    git worktree add ../tide-pr-<N> origin/<headRefName>
@@ -135,6 +128,54 @@ For each qualifying PR (worktree is created only when there are unresolved comme
 
 ---
 
+## Step 4 — Job C: Fix failing CI on open PRs
+
+```sh
+gh pr list --state open --author "@me" --json number,title,headRefName --limit 20
+```
+
+For each PR, check CI status:
+```sh
+gh pr checks <N> 2>/dev/null
+```
+
+Skip if all checks pass or are pending. **Stop after fixing 2 PRs per run.**
+
+For each PR with a failing check:
+
+1. Get the failure details:
+   ```sh
+   # Find the failed run ID
+   gh run list --branch <headRefName> --status failure --limit 1 --json databaseId \
+     --jq '.[0].databaseId'
+   # Fetch logs for the failed job
+   gh run view <run-id> --log-failed
+   ```
+2. Read the failure output carefully. Understand what failed and why.
+3. If the failure is clearly a flake (network timeout, transient infra error) and not a
+   code problem: skip and note "likely flake".
+4. If it is a genuine test or lint failure caused by the PR's code:
+   ```sh
+   git worktree add ../tide-ci-<N> origin/<headRefName>
+   cd ../tide-ci-<N>
+   npm install
+   ```
+5. Reproduce locally: `npm test`. Diagnose the root cause from the test output.
+6. Fix the code. Stage specific files only (never `git add .` or `git add -A`), then commit:
+   ```sh
+   git commit -m "Fix CI failure: <short description>"
+   ```
+7. Push: `git push origin <headRefName>`
+8. Clean up:
+   ```sh
+   cd $OLDPWD
+   git worktree remove ../tide-ci-<N>
+   ```
+9. If `npm test` still fails locally after your fix attempt: clean up the worktree, do not
+   push, and note "could not fix CI for PR #N: <reason>".
+
+---
+
 ## Hard limits — never cross these
 
 - Never push to `main` directly
@@ -144,7 +185,7 @@ For each qualifying PR (worktree is created only when there are unresolved comme
 - Never use `git add .` or `git add -A`
 - Never commit secrets, `.env` files, or credentials
 - Never modify `CLAUDE.md`, `package-lock.json`, or `node_modules/`
-- Max 2 issues + max 2 PRs per run
+- Max 2 issues + max 2 PRs reviewed + max 2 CI fixes per run
 
 ---
 
@@ -164,6 +205,11 @@ Job A (issue triage):
 Job B (PR review):
   - PR #N: <title> → review addressed
   - PR #N: <title> → skipped: no unresolved comments
+
+Job C (CI failures):
+  - PR #N: <title> → fixed: <short description>, pushed
+  - PR #N: <title> → skipped: likely flake
+  - PR #N: <title> → could not fix: <reason>
 
 Done.
 ```
