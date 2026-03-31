@@ -49,5 +49,5 @@ Retries are useful for commands that can fail transiently:
 For tasks that are expected to fail (e.g. a health check that should alert on failure), keep `maxRetries: 0` — retries would suppress the failure signal.
 
 ::: warning Retries extend run duration
-A task with `maxRetries: 3` and backoff of 30s/60s/90s could run for up to 3 minutes before completing. launchd will fire the next scheduled interval from when `task-runner.sh` exits, so longer-running tasks effectively reduce their own run frequency.
+A task with `maxRetries: 3` and backoff of 30s/60s/90s could run for up to 3 minutes before completing. launchd will fire the next scheduled interval from when `tide.sh` exits, so longer-running tasks effectively reduce their own run frequency.
 :::

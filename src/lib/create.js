@@ -40,7 +40,7 @@ function generatePlist(taskId, config) {
   const tDir = taskDir(taskId)
   const logStdout = path.join(tDir, 'logs', 'stdout.log')
   const logStderr = path.join(tDir, 'logs', 'stderr.log')
-  const runner = path.join(PLUGIN_ROOT, 'scripts', 'task-runner.sh')
+  const runner = path.join(PLUGIN_ROOT, 'scripts', 'tide.sh')
   const workDir = config.workingDirectory || os.homedir()
   const extraEnv = buildEnvXml(config.env)
 

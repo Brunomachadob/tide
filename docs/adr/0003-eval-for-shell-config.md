@@ -1,10 +1,10 @@
-# ADR-0003: Using eval to pass config from task-setup.js to task-runner.sh
+# ADR-0003: Using eval to pass config from task-setup.js to tide.sh
 Date: 2026-03-30
 Status: Accepted
 
 ## Context
 
-`task-runner.sh` is a zsh script that needs several values from `task.json` (command, argument, retries, jitter, etc.). The shell cannot parse JSON natively, so a Node helper (`task-setup.js`) reads the file and emits shell variable assignments that the shell evaluates:
+`tide.sh` is a zsh script that needs several values from `task.json` (command, argument, retries, jitter, etc.). The shell cannot parse JSON natively, so a Node helper (`task-setup.js`) reads the file and emits shell variable assignments that the shell evaluates:
 
 ```sh
 eval "$(node task-setup.js task.json)"
@@ -20,9 +20,9 @@ eval "$(node task-setup.js task.json)"
 
 Alternatives considered:
 
-- **Pass values as CLI arguments to task-runner.sh** — launchd's `ProgramArguments` is static at plist-write time; runtime values like `argument` and `maxRetries` would still need to be read dynamically.
+- **Pass values as CLI arguments to tide.sh** — launchd's `ProgramArguments` is static at plist-write time; runtime values like `argument` and `maxRetries` would still need to be read dynamically.
 - **Source a generated env file** — same trust boundary as `eval`; sourcing a file the user owns is equivalent.
-- **Rewrite task-runner.sh in Node** — eliminates the shell/Node boundary entirely but loses the simplicity of a thin shell wrapper and complicates process management.
+- **Rewrite tide.sh in Node** — eliminates the shell/Node boundary entirely but loses the simplicity of a thin shell wrapper and complicates process management.
 
 ## Consequences
 

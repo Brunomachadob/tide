@@ -5,7 +5,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { spawnSync } from 'node:child_process'
 
-const SCRIPT = path.resolve('scripts/task-runner.sh')
+const SCRIPT = path.resolve('scripts/tide.sh')
 
 // ── helpers ────────────────────────────────────────────────────────────────
 

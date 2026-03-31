@@ -4,7 +4,7 @@ Status: Accepted
 
 ## Context
 
-When `task-runner.sh` runs a command, stdout is redirected to `output.log` via `>>`. Programs that detect a non-TTY stdout switch to fully-buffered mode — nothing is written to the file until the process exits or fills its internal buffer. This means the TUI's log viewer shows no output while the task is running, only after it completes.
+When `tide.sh` runs a command, stdout is redirected to `output.log` via `>>`. Programs that detect a non-TTY stdout switch to fully-buffered mode — nothing is written to the file until the process exits or fills its internal buffer. This means the TUI's log viewer shows no output while the task is running, only after it completes.
 
 This is particularly visible with Claude CLI (`claude --print`), which is the primary command Tide is designed around. A Claude task that runs for several minutes produces no log output until the very end, making the follow/auto-refresh feature useless during execution.
 
@@ -18,7 +18,7 @@ Several approaches were investigated:
 
 Introduce an opt-in task field `claudeStreamJson` (boolean, default `false`). When enabled:
 
-1. `task-runner.sh` pipes the command's stdout through `scripts/claude-stream-extract.js` instead of redirecting it directly to `output.log`.
+1. `tide.sh` pipes the command's stdout through `scripts/claude-stream-extract.js` instead of redirecting it directly to `output.log`.
 2. `claude-stream-extract.js` reads the NDJSON stream line-by-line, extracts text tokens from `stream_event` / `content_block_delta` events, and writes plain text to stdout — which is then appended to `output.log`.
 
 This is deliberately named `claudeStreamJson` rather than a generic "stream output" option because the extractor is coupled to Claude CLI's specific NDJSON schema (`{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"..."}}}`). It is not a general-purpose streaming mechanism.

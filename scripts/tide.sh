@@ -1,9 +1,9 @@
 #!/bin/zsh
-# task-runner.sh <task-id>
+# tide.sh <task-id>
 # Thin shell wrapper: reads config, initializes a run, runs the command, delegates post-processing to Node.
 set -uo pipefail
 
-TASK_ID="${1:?task-runner.sh requires a task ID}"
+TASK_ID="${1:?tide.sh requires a task ID}"
 TIDE_DIR="${HOME}/.tide"
 TASK_DIR="${TIDE_DIR}/tasks/${TASK_ID}"
 TASK_FILE="${TASK_DIR}/task.json"

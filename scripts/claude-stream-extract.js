@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // stream-extract.js — reads claude --output-format=stream-json NDJSON from stdin,
 // writes plain text tokens to stdout as they arrive.
-// Used by task-runner.sh when claudeStreamJson=true on a task.
+// Used by tide.sh when claudeStreamJson=true on a task.
 import readline from 'readline'
 
 const rl = readline.createInterface({ input: process.stdin, crlfDelay: Infinity })

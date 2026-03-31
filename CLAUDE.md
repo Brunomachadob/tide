@@ -8,8 +8,8 @@ User-facing docs live in `docs/` and are published to GitHub Pages via VitePress
 
 A task's lifecycle involves three distinct layers:
 
-1. **launchd** — owns scheduling and process execution. Each task is a plist in `~/Library/LaunchAgents/`. launchd fires `scripts/task-runner.sh <id>` on schedule.
-2. **task-runner.sh** — thin shell wrapper. Reads config via `task-setup.js`, runs the command with retry logic, then delegates all post-run work (result JSON, notifications, log rotation, retention) to `task-postprocess.js`.
+1. **launchd** — owns scheduling and process execution. Each task is a plist in `~/Library/LaunchAgents/`. launchd fires `scripts/tide.sh <id>` on schedule.
+2. **tide.sh** — thin shell wrapper. Reads config via `task-setup.js`, runs the command with retry logic, then delegates all post-run work (result JSON, notifications, log rotation, retention) to `task-postprocess.js`.
 3. **TUI** (`src/`) — reads `~/.tide/` on a polling interval and calls `launchctl print` per task to get live status. Never writes to launchd directly except on create/enable/disable/delete.
 
 ### Task data assembly
@@ -40,7 +40,7 @@ src/lib/
   constants.js    — DATE_FORMATS, TIMEZONES
 
 scripts/
-  task-runner.sh        — executed by launchd; runs the command, handles retries
+  tide.sh        — executed by launchd; runs the command, handles retries
   task-setup.js         — reads task.json and emits shell variables before the run
   task-postprocess.js   — writes result JSON, notifications, rotates logs, prunes old results
 
@@ -111,4 +111,4 @@ npm test
 - Each test file creates an isolated `mkdtemp` dir and sets `HOME` to it before importing the module under test — no test touches `~/.tide`.
 - `src/lib` modules are imported with a `?bust=N` query string to get a fresh ESM module instance bound to the temp `HOME` (the static import at the top of the test file would otherwise capture the real home at load time).
 - Script tests use `spawnSync` with `HOME` overridden and fake shell scripts as stand-ins for the real command.
-- `task-runner.sh` tests are macOS/zsh-only (matching the project's target platform). Retry backoff tests are omitted because the hardcoded `sleep` would make them prohibitively slow.
+- `tide.sh` tests are macOS/zsh-only (matching the project's target platform). Retry backoff tests are omitted because the hardcoded `sleep` would make them prohibitively slow.

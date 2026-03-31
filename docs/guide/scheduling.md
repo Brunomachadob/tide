@@ -59,10 +59,10 @@ launchd is the scheduler — Tide doesn't implement any timer logic itself. The 
 <integer>3600</integer>
 ```
 
-The jitter is applied in `task-runner.sh` before the command runs:
+The jitter is applied in `tide.sh` before the command runs:
 
 ```sh
 sleep $JITTER_SECONDS
 ```
 
-So the actual sequence is: launchd fires `task-runner.sh` → shell sleeps for jitter seconds → command runs.
+So the actual sequence is: launchd fires `tide.sh` → shell sleeps for jitter seconds → command runs.

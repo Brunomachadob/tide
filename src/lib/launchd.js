@@ -76,7 +76,7 @@ export function bootout(taskId) {
  * without delay regardless of the configured jitterSeconds.
  */
 export function kickstart(taskId) {
-  const runner = path.join(PLUGIN_ROOT, 'scripts', 'task-runner.sh')
+  const runner = path.join(PLUGIN_ROOT, 'scripts', 'tide.sh')
   const env = { ...process.env, TIDE_TASK_ID: taskId, TIDE_NO_JITTER: '1' }
   const child = spawn(runner, [taskId], {
     env,

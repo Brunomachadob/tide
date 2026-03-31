@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // task-setup.js — reads task.json, initializes a run (creates run dir + run.json),
-// and emits shell variable assignments for task-runner.sh
+// and emits shell variable assignments for tide.sh
 // Usage:
 //   node task-setup.js <task-file>
 import crypto from 'crypto'

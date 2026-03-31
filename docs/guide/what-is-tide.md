@@ -21,15 +21,15 @@ Tide has three distinct layers:
 
 ```
 launchd (scheduling)
-  └─ task-runner.sh (execution, retries, logging)
+  └─ tide.sh (execution, retries, logging)
        ├─ task-setup.js (reads task.json, emits shell variables)
        └─ task-postprocess.js (results, notifications, log rotation)
 
 TUI (src/) — reads ~/.tide/, never writes to launchd except on create/enable/disable/delete
 ```
 
-1. **launchd** owns the schedule. Each task is a plist in `~/Library/LaunchAgents/`. launchd fires `task-runner.sh <id>` on your configured interval.
-2. **task-runner.sh** is a thin zsh wrapper. It reads config from `task.json` via `task-setup.js`, applies jitter, runs your command (with retries), and delegates all post-run work to Node.
+1. **launchd** owns the schedule. Each task is a plist in `~/Library/LaunchAgents/`. launchd fires `tide.sh <id>` on your configured interval.
+2. **tide.sh** is a thin zsh wrapper. It reads config from `task.json` via `task-setup.js`, applies jitter, runs your command (with retries), and delegates all post-run work to Node.
 3. **The TUI** polls `~/.tide/` on an interval and calls `launchctl print` per task to get live status. It only writes to launchd when you create, enable, disable, or delete a task.
 
 ## Limitations

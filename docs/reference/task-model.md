@@ -59,7 +59,7 @@ If launchd has no record of the task (plist missing or never bootstrapped), `get
 
 Each task has a corresponding plist at `~/Library/LaunchAgents/com.tide.<id>.plist`. This is a **derived artifact** — it is generated from `task.json` and can always be regenerated. See [ADR-0002](/adr/0002-task-json-as-source-of-truth).
 
-The plist calls `task-runner.sh <id>` on the configured `StartInterval`.
+The plist calls `tide.sh <id>` on the configured `StartInterval`.
 
 ::: warning Don't edit the plist directly
 Any manual edits to the plist will be overwritten the next time you edit or re-enable the task via the TUI. Make config changes through Tide or by editing `task.json` directly (then toggle disable/enable to regenerate the plist).
