@@ -35,7 +35,7 @@ if [[ ! -f "${TASK_FILE}" ]]; then
   exit 1
 fi
 
-STARTED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+STARTED_AT="$(now)"
 echo "=== ${STARTED_AT} ===" >> "${OUTPUT_LOG}"
 echo "=== ${STARTED_AT} ===" >> "${STDERR_LOG}"
 
@@ -70,7 +70,7 @@ while [[ ${attempt} -le ${MAX_RETRIES} ]]; do
   [[ ${EXIT_CODE} -eq 0 ]] && break
 done
 
-COMPLETED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+COMPLETED_AT="$(now)"
 echo "--- exit ${EXIT_CODE} at ${COMPLETED_AT} ---" >> "${OUTPUT_LOG}"
 echo "" >> "${OUTPUT_LOG}"
 echo "--- exit ${EXIT_CODE} at ${COMPLETED_AT} ---" >> "${STDERR_LOG}"
