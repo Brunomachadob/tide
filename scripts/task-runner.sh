@@ -13,6 +13,8 @@ OUTPUT_LOG="${LOGS_DIR}/output.log"
 STDERR_LOG="${LOGS_DIR}/stderr.log"
 SCRIPT_DIR="${0:A:h}"
 
+now() { date -u '+%Y-%m-%dT%H:%M:%SZ' }
+
 mkdir -p "${RESULTS_DIR}" "${LOGS_DIR}"
 
 # Overlapping run detection via PID file
@@ -43,7 +45,7 @@ eval "$(node "${SCRIPT_DIR}/task-setup.js" "${TASK_FILE}")"
 # Jitter: spread tasks after wake so they don't all fire simultaneously.
 # Skipped when TIDE_NO_JITTER=1 (manual runs).
 if [[ ${JITTER_SECONDS} -gt 0 && "${TIDE_NO_JITTER:-0}" != "1" ]]; then
-  echo "[${STARTED_AT}] Jitter: waiting ${JITTER_SECONDS}s before starting..." >> "${OUTPUT_LOG}"
+  echo "[$(now)] Jitter: waiting ${JITTER_SECONDS}s before starting..." >> "${OUTPUT_LOG}"
   sleep ${JITTER_SECONDS}
 fi
 
@@ -54,7 +56,7 @@ EXIT_CODE=1
 while [[ ${attempt} -le ${MAX_RETRIES} ]]; do
   if [[ ${attempt} -gt 0 ]]; then
     BACKOFF=$((attempt * 30))
-    echo "[${STARTED_AT}] Retry ${attempt}/${MAX_RETRIES} after ${BACKOFF}s..." >> "${OUTPUT_LOG}"
+    echo "[$(now)] Retry ${attempt}/${MAX_RETRIES} after ${BACKOFF}s..." >> "${OUTPUT_LOG}"
     sleep ${BACKOFF}
   fi
 
