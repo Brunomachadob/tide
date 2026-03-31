@@ -74,13 +74,13 @@ describe('task-postprocess', () => {
       startedAt: '2024-01-01T09:00:00Z',
       completedAt: '2024-01-01T09:00:05Z',
       attempts: '1',
-      output: 'Task output here',
     }
     const o = { ...defaults, ...overrides }
-    return runScript(taskFile, o.exitCode, o.startedAt, o.completedAt, o.attempts, o.output, outputLog, stderrLog)
+    return runScript(taskFile, o.exitCode, o.startedAt, o.completedAt, o.attempts, outputLog, stderrLog)
   }
 
   test('writes a result JSON file', () => {
+    fs.writeFileSync(outputLog, 'Task output here\n')
     const { status } = runPost({ startedAt: '2024-02-01T10:00:00Z', completedAt: '2024-02-01T10:00:05Z' })
     assert.equal(status, 0)
     const resultsDir = path.join(TMP, '.tide', 'tasks', taskId, 'results')
@@ -90,7 +90,6 @@ describe('task-postprocess', () => {
     assert.equal(result.taskId, taskId)
     assert.equal(result.exitCode, 0)
     assert.equal(result.attempts, 1)
-    assert.equal(result.output, 'Task output here')
   })
 
   test('appends to pending-notifications.json', () => {
@@ -113,11 +112,10 @@ describe('task-postprocess', () => {
   })
 
   test('truncates output summary to 300 chars in notification', () => {
-    const longOutput = 'x'.repeat(500)
+    fs.writeFileSync(outputLog, 'x'.repeat(500))
     runPost({
       startedAt: '2024-05-01T10:00:00Z',
       completedAt: '2024-05-01T10:00:05Z',
-      output: longOutput,
     })
     const entries = JSON.parse(fs.readFileSync(notifFile(), 'utf8'))
     const last = entries[entries.length - 1]
@@ -130,7 +128,7 @@ describe('task-postprocess', () => {
     fs.writeFileSync(bigLog, Buffer.alloc(5 * 1024 * 1024 + 100, 'a'))
     runScript(taskFile, '0',
       '2024-06-01T10:00:00Z', '2024-06-01T10:00:05Z',
-      '0', 'out', bigLog, stderrLog)
+      '0', bigLog, stderrLog)
     const content = fs.readFileSync(bigLog, 'utf8')
     assert.ok(content.startsWith('[... rotated ...]'))
     assert.ok(content.length < 5 * 1024 * 1024)
@@ -142,7 +140,7 @@ describe('task-postprocess', () => {
     fs.writeFileSync(smallLog, original)
     runScript(taskFile, '0',
       '2024-07-01T10:00:00Z', '2024-07-01T10:00:05Z',
-      '0', 'out', smallLog, stderrLog)
+      '0', smallLog, stderrLog)
     assert.equal(fs.readFileSync(smallLog, 'utf8'), original)
   })
 

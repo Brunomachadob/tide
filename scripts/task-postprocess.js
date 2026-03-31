@@ -7,12 +7,19 @@ import os from 'os'
 import path from 'path'
 
 const TIDE_DIR = path.join(os.homedir(), '.tide')
-const [,, taskFile, exitCodeStr, startedAt, completedAt, attemptsStr, output, outputLog, stderrLog] = process.argv
+const [,, taskFile, exitCodeStr, startedAt, completedAt, attemptsStr, outputLog, stderrLog] = process.argv
 
 const task = JSON.parse(fs.readFileSync(taskFile, 'utf8'))
 const exitCode = parseInt(exitCodeStr)
 const attempts = parseInt(attemptsStr)
 const retentionDays = task.resultRetentionDays ?? 30
+
+// Read last 300 chars of output log for notification summary
+let output = ''
+try {
+  const buf = fs.readFileSync(outputLog, 'utf8')
+  output = buf.slice(-300)
+} catch { /* ok */ }
 
 // Write result JSON
 const resultsDir = path.join(TIDE_DIR, 'tasks', task.id, 'results')

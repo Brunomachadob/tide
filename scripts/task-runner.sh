@@ -49,7 +49,6 @@ fi
 # Run with retries
 attempt=0
 EXIT_CODE=1
-OUTPUT=""
 
 while [[ ${attempt} -le ${MAX_RETRIES} ]]; do
   if [[ ${attempt} -gt 0 ]]; then
@@ -60,11 +59,10 @@ while [[ ${attempt} -le ${MAX_RETRIES} ]]; do
 
   CMD_ARRAY=(${=COMMAND})
   set +e
-  OUTPUT="$(cd "${WORKING_DIR}" && "${CMD_ARRAY[@]}" ${=EXTRA_ARGS} "${ARGUMENT}" 2>>"${STDERR_LOG}")"
+  cd "${WORKING_DIR}" && "${CMD_ARRAY[@]}" ${=EXTRA_ARGS} "${ARGUMENT}" >> "${OUTPUT_LOG}" 2>> "${STDERR_LOG}"
   EXIT_CODE=$?
   set -e
 
-  printf '%s\n' "${OUTPUT}" >> "${OUTPUT_LOG}"
   attempt=$((attempt + 1))
   [[ ${EXIT_CODE} -eq 0 ]] && break
 done
@@ -78,7 +76,7 @@ echo "" >> "${STDERR_LOG}"
 # Delegate JSON writing, notifications, log rotation, and retention to Node
 node "${SCRIPT_DIR}/task-postprocess.js" \
   "${TASK_FILE}" "${EXIT_CODE}" "${STARTED_AT}" "${COMPLETED_AT}" "$((attempt))" \
-  "${OUTPUT}" "${OUTPUT_LOG}" "${STDERR_LOG}"
+  "${OUTPUT_LOG}" "${STDERR_LOG}"
 
 # macOS native notification
 if [[ ${EXIT_CODE} -eq 0 ]]; then
