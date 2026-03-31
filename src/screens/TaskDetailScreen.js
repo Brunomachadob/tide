@@ -11,6 +11,7 @@ import ConfirmDialog from '../components/ConfirmDialog.js'
 import Toast from '../components/Toast.js'
 import KeyHints from '../components/KeyHints.js'
 import { readSettings } from '../lib/settings.js'
+import { renderMarkdown } from '../lib/markdown.js'
 import { formatDate, formatRelativeTime } from '../lib/format.js'
 import { bootout, bootstrap, kickstart, plistPath } from '../lib/launchd.js'
 import { setEnabled, deleteTask, taskDir } from '../lib/tasks.js'
@@ -164,7 +165,7 @@ export default function TaskDetailScreen({ taskId, navigate, goBack }) {
         React.createElement(
           Box,
           { borderStyle: 'single', borderColor: 'gray', paddingX: 1, marginTop: 0 },
-          React.createElement(Text, { wrap: 'wrap' }, task.argument || '(empty)'),
+          React.createElement(Text, { wrap: 'wrap' }, task.argument ? renderMarkdown(task.argument) : '(empty)'),
         ),
       ),
     ),
