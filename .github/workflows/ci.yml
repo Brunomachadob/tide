@@ -17,4 +17,15 @@ jobs:
 
       - run: npm ci
 
-      - run: npm test
+      - name: Run tests
+        run: |
+          node --test \
+            --test-reporter=spec \
+            --test-reporter-destination=stdout \
+            --test-reporter=tap \
+            --test-reporter-destination=tap-output.txt \
+            test/*.test.js
+
+      - name: Write test summary
+        if: always()
+        run: node scripts/ci-summary.js
