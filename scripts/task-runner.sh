@@ -43,6 +43,7 @@ eval "$(node "${SCRIPT_DIR}/task-setup.js" "${TASK_FILE}")"
 # Jitter: spread tasks after wake so they don't all fire simultaneously.
 # Skipped when TIDE_NO_JITTER=1 (manual runs).
 if [[ ${JITTER_SECONDS} -gt 0 && "${TIDE_NO_JITTER:-0}" != "1" ]]; then
+  echo "[${STARTED_AT}] Jitter: waiting ${JITTER_SECONDS}s before starting..." >> "${OUTPUT_LOG}"
   sleep ${JITTER_SECONDS}
 fi
 
