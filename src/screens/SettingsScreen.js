@@ -9,7 +9,9 @@ import KeyHints from '../components/KeyHints.js'
 import { readSettings, writeSettings } from '../lib/settings.js'
 import { DATE_FORMATS, TERMINALS } from '../lib/constants.js'
 
-const FIELDS = ['command', 'workingDir', 'dateFormat', 'terminal', 'terminalCustom']
+const FIELDS = ['command', 'workingDir', 'dateFormat', 'terminal', 'terminalCustom', 'refreshInterval']
+
+const REFRESH_INTERVALS = [2, 5, 10, 30, 60]
 
 function formatDateExample(fmt) {
   const d = new Date()
@@ -58,6 +60,9 @@ export default function SettingsScreen({ goBack, navigate, onSave }) {
   const [customBundleId, setCustomBundleId] = useState(
     initialTerminalIdx(saved.terminalBundleId) === CUSTOM_IDX ? (saved.terminalBundleId || '') : ''
   )
+  const [refreshIntervalIdx, setRefreshIntervalIdx] = useState(
+    Math.max(0, REFRESH_INTERVALS.indexOf(saved.refreshInterval ?? 5))
+  )
   const [toast, setToast] = useState(null)
 
   const isCustomTerminal = terminalIdx === CUSTOM_IDX
@@ -85,12 +90,17 @@ export default function SettingsScreen({ goBack, navigate, onSave }) {
       if (key.leftArrow || input === 'h') setTerminalIdx(i => Math.max(0, i - 1))
       else if (key.rightArrow || input === 'l') setTerminalIdx(i => Math.min(CUSTOM_IDX, i + 1))
     }
+    if (field === 'refreshInterval') {
+      if (key.leftArrow || input === 'h') setRefreshIntervalIdx(i => Math.max(0, i - 1))
+      else if (key.rightArrow || input === 'l') setRefreshIntervalIdx(i => Math.min(REFRESH_INTERVALS.length - 1, i + 1))
+    }
     if (key.return) {
       writeSettings({
         command: command.trim(),
         defaultWorkingDirectory: workingDir.trim() || os.homedir(),
         dateFormat: DATE_FORMATS[dateFormatIdx],
         terminalBundleId: resolvedBundleId,
+        refreshInterval: REFRESH_INTERVALS[refreshIntervalIdx],
       })
       setToast({ message: 'Settings saved', type: 'success' })
       if (onSave) setTimeout(onSave, 1500)
@@ -121,6 +131,10 @@ export default function SettingsScreen({ goBack, navigate, onSave }) {
             React.createElement(TextInput, { value: customBundleId, onChange: setCustomBundleId, active: field === 'terminalCustom', placeholder: 'com.example.MyTerminal' }),
           )
         : null,
+      React.createElement(FieldBox, { label: 'Auto-refresh interval', active: field === 'refreshInterval' },
+        React.createElement(PickerOptions, { items: REFRESH_INTERVALS.map(s => `${s}s`), selectedIdx: refreshIntervalIdx, showExamples: false }),
+        React.createElement(Text, { color: 'gray' }, 'Use ←→ to change'),
+      ),
     ),
 
     toast

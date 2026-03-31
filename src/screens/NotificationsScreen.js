@@ -6,12 +6,14 @@ import Header from '../components/Header.js'
 import ConfirmDialog from '../components/ConfirmDialog.js'
 import Toast from '../components/Toast.js'
 import KeyHints from '../components/KeyHints.js'
+import RefreshIndicator from '../components/RefreshIndicator.js'
 import { readSettings } from '../lib/settings.js'
 import { formatDate } from '../lib/format.js'
 
 export default function NotificationsScreen({ navigate, goBack }) {
   const settings = readSettings()
-  const { notifications, loading, clear, clearRead, dismiss, markRead, markAllRead, unreadCount } = useNotifications(10000)
+  const intervalMs = settings.refreshInterval * 1000
+  const { notifications, loading, clear, clearRead, dismiss, markRead, markAllRead, unreadCount } = useNotifications(intervalMs)
   const [selectedIdx, setSelectedIdx] = useState(0)
   const [confirmClear, setConfirmClear] = useState(false)
   const [toast, setToast] = useState(null)
@@ -41,7 +43,7 @@ export default function NotificationsScreen({ navigate, goBack }) {
       setSelectedIdx(i => Math.max(0, Math.min(i, displayed.length - 2)))
       return
     }
-    if (input === 'R' && displayed.length > 0) {
+    if (key.ctrl && input === 'r' && displayed.length > 0) {
       markAllRead()
       setToast({ message: 'All notifications marked as read', type: 'success' })
       return
@@ -128,11 +130,12 @@ export default function NotificationsScreen({ navigate, goBack }) {
         ['↑↓/jk', 'move'],
         ['↵', 'logs + mark read'],
         ['d', 'dismiss'],
-        ['R', 'mark all read'],
+        ['Ctrl+R', 'mark all read'],
         ['r', 'clear read'],
         ['c', 'clear all'],
         ['Esc/q', 'back'],
       ],
+      refreshIndicator: React.createElement(RefreshIndicator, { intervalMs, loading }),
     }),
   )
 }

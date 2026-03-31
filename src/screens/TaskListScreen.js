@@ -10,6 +10,7 @@ import ResultBadge from '../components/ResultBadge.js'
 import ConfirmDialog from '../components/ConfirmDialog.js'
 import Toast from '../components/Toast.js'
 import KeyHints from '../components/KeyHints.js'
+import RefreshIndicator from '../components/RefreshIndicator.js'
 import { readSettings } from '../lib/settings.js'
 import { formatDate, formatRelativeTime } from '../lib/format.js'
 import { bootout, bootstrap, kickstart, plistPath } from '../lib/launchd.js'
@@ -17,8 +18,9 @@ import { setEnabled, deleteTask } from '../lib/tasks.js'
 
 export default function TaskListScreen({ navigate }) {
   const settings = readSettings()
-  const { tasks, loading, error, refresh } = useTasks(5000)
-  const { unreadCount } = useNotifications(10000)
+  const intervalMs = settings.refreshInterval * 1000
+  const { tasks, loading, error, refresh } = useTasks(intervalMs)
+  const { unreadCount } = useNotifications(intervalMs)
   const [selectedIdx, setSelectedIdx] = useState(0)
   const [confirm, setConfirm] = useState(null) // { action, taskId, message }
   const [toast, setToast] = useState(null)
@@ -74,8 +76,6 @@ export default function TaskListScreen({ navigate }) {
       navigate('notifications')
     } else if (input === 's') {
       navigate('settings')
-    } else if (input === 'R') {
-      refresh()
     }
   })
 
@@ -225,9 +225,9 @@ export default function TaskListScreen({ navigate }) {
         ['e', 'en/disable'],
         ['x', 'runs'],
         ['d', 'delete'],
-        ['R', 'refresh'],
         ['q', 'quit'],
       ],
+      refreshIndicator: React.createElement(RefreshIndicator, { intervalMs, loading }),
     }),
   )
 }

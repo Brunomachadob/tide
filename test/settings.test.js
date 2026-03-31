@@ -29,6 +29,7 @@ describe('readSettings', () => {
     assert.equal(s.dateFormat, 'YYYY-MM-DD')
     assert.equal(s.command, '')
     assert.ok(s.defaultWorkingDirectory)
+    assert.equal(s.refreshInterval, 5)
   })
 
   test('merges stored values with defaults', () => {
@@ -37,6 +38,7 @@ describe('readSettings', () => {
     const s = readSettings()
     assert.equal(s.dateFormat, 'DD.MM.YYYY')
     assert.equal(s.command, 'my-cmd')
+    assert.equal(s.refreshInterval, 5) // default applied when not in file
   })
 
   test('returns defaults when file contains corrupt JSON', () => {
@@ -54,10 +56,11 @@ describe('writeSettings', () => {
   })
 
   test('writes and reads back', () => {
-    writeSettings({ dateFormat: 'MM/DD/YYYY', command: 'node', defaultWorkingDirectory: '/tmp' })
+    writeSettings({ dateFormat: 'MM/DD/YYYY', command: 'node', defaultWorkingDirectory: '/tmp', refreshInterval: 10 })
     const s = readSettings()
     assert.equal(s.dateFormat, 'MM/DD/YYYY')
     assert.equal(s.command, 'node')
+    assert.equal(s.refreshInterval, 10)
   })
 
   test('is atomic (uses tmp rename)', () => {

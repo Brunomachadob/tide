@@ -9,6 +9,7 @@ const DEFAULTS = {
   command: '',
   defaultWorkingDirectory: os.homedir(),
   terminalBundleId: 'com.apple.Terminal',
+  refreshInterval: 5,
 }
 
 export function readSettings() {

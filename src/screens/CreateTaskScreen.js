@@ -11,6 +11,7 @@ import Toast from '../components/Toast.js'
 import KeyHints from '../components/KeyHints.js'
 import { readSettings } from '../lib/settings.js'
 import { createTask, updateTask } from '../lib/create.js'
+import { renderMarkdown } from '../lib/markdown.js'
 
 const INTERVAL_OPTIONS = [
   { label: 'Manual only', manual: true },
@@ -101,7 +102,7 @@ export default function CreateTaskScreen({ task: existingTask, goBack }) {
 
     // Step 1: Prompt
     if (step === 1) {
-      if (key.ctrl && input === 'e') { setArgument(openInEditor(argument)); return }
+      if (key.ctrl && input === 'o') { setArgument(openInEditor(argument)); return }
       if (key.tab && argument.trim()) nextStep()
       return
     }
@@ -172,7 +173,7 @@ export default function CreateTaskScreen({ task: existingTask, goBack }) {
             }),
           ),
         ),
-        React.createElement(Text, { color: 'gray' }, 'Enter adds a newline · Ctrl+E open in $EDITOR · Tab to continue'),
+        React.createElement(Text, { color: 'gray' }, 'Enter adds a newline · Ctrl+O open in $EDITOR · Tab to continue'),
       )
     }
 
@@ -267,7 +268,7 @@ export default function CreateTaskScreen({ task: existingTask, goBack }) {
           React.createElement(Text, { color: 'gray' }, 'Argument:'),
           React.createElement(
             Box, { borderStyle: 'single', borderColor: 'gray', paddingX: 1, marginTop: 0 },
-            React.createElement(Text, { wrap: 'wrap' }, argument),
+            React.createElement(Text, { wrap: 'wrap' }, renderMarkdown(argument)),
           ),
         ),
       ),

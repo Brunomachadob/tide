@@ -10,6 +10,7 @@ import ResultBadge from '../components/ResultBadge.js'
 import ConfirmDialog from '../components/ConfirmDialog.js'
 import Toast from '../components/Toast.js'
 import KeyHints from '../components/KeyHints.js'
+import RefreshIndicator from '../components/RefreshIndicator.js'
 import { readSettings } from '../lib/settings.js'
 import { renderMarkdown } from '../lib/markdown.js'
 import { formatDate, formatRelativeTime } from '../lib/format.js'
@@ -29,8 +30,9 @@ function Field({ label, value, valueColor }) {
 
 export default function TaskDetailScreen({ taskId, navigate, goBack }) {
   const settings = readSettings()
-  const { task, loading, refresh } = useTask(taskId, 5000)
-  const { unreadCount } = useNotifications(10000)
+  const intervalMs = settings.refreshInterval * 1000
+  const { task, loading, refresh } = useTask(taskId, intervalMs)
+  const { unreadCount } = useNotifications(intervalMs)
   const [confirm, setConfirm] = useState(null)
   const [toast, setToast] = useState(null)
 
@@ -56,12 +58,11 @@ export default function TaskDetailScreen({ taskId, navigate, goBack }) {
       const action = task.enabled ? 'disable' : 'enable'
       setConfirm({ action, message: `${action === 'enable' ? 'Enable' : 'Disable'} "${task.name}"?` })
     }
-    if (input === 'E' && task) navigate('edit', { task })
+    if (key.ctrl && input === 'e' && task) navigate('edit', { task })
     if (input === 'd') setConfirm({ action: 'delete', message: `Delete "${task?.name}"? This cannot be undone.` })
     if (input === 'x') navigate('runs', { taskId, taskStatus: task.status })
     if (input === 'n') navigate('notifications')
     if (input === 's') navigate('settings')
-    if (input === 'R') refresh()
   })
 
   const handleConfirm = useCallback(() => {
@@ -192,11 +193,11 @@ export default function TaskDetailScreen({ taskId, navigate, goBack }) {
         ['r', 'run'],
         ...(task.status === 'running' ? [['k', 'kill']] : []),
         ['e', 'en/disable'],
-        ['E', 'edit'],
+        ['Ctrl+E', 'edit'],
         ['x', 'runs'],
         ['d', 'delete'],
-        ['R', 'refresh'],
       ],
+      refreshIndicator: React.createElement(RefreshIndicator, { intervalMs, loading }),
     }),
   )
 }
