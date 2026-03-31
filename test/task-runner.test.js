@@ -47,6 +47,7 @@ function runRunner(tmp, taskId) {
       ...process.env,
       HOME: tmp,
       PATH: process.env.PATH,
+      TIDE_NO_NOTIFY: '1',
     },
     timeout: 15000,
   })

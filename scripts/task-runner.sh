@@ -81,18 +81,20 @@ node "${SCRIPT_DIR}/task-postprocess.js" \
   "${TASK_FILE}" "${EXIT_CODE}" "${STARTED_AT}" "${COMPLETED_AT}" "$((attempt))" \
   "${OUTPUT_LOG}" "${STDERR_LOG}"
 
-# macOS native notification
-if [[ ${EXIT_CODE} -eq 0 ]]; then
-  NOTIF_TITLE="Tide: ${TASK_NAME} ✓"
-  NOTIF_MSG="Task completed successfully."
-else
-  NOTIF_TITLE="Tide: ${TASK_NAME} ✗"
-  NOTIF_MSG="Task failed (exit ${EXIT_CODE})."
-fi
-if command -v terminal-notifier &>/dev/null; then
-  terminal-notifier -title "${NOTIF_TITLE}" -message "${NOTIF_MSG}" -activate "${TERMINAL_BUNDLE_ID}" 2>/dev/null &
-else
-  osascript -e "display notification \"${NOTIF_MSG}\" with title \"${NOTIF_TITLE}\"" 2>/dev/null &
+# macOS native notification (skipped when TIDE_NO_NOTIFY=1)
+if [[ "${TIDE_NO_NOTIFY:-0}" != "1" ]]; then
+  if [[ ${EXIT_CODE} -eq 0 ]]; then
+    NOTIF_TITLE="Tide: ${TASK_NAME} ✓"
+    NOTIF_MSG="Task completed successfully."
+  else
+    NOTIF_TITLE="Tide: ${TASK_NAME} ✗"
+    NOTIF_MSG="Task failed (exit ${EXIT_CODE})."
+  fi
+  if command -v terminal-notifier &>/dev/null; then
+    terminal-notifier -title "${NOTIF_TITLE}" -message "${NOTIF_MSG}" -activate "${TERMINAL_BUNDLE_ID}" 2>/dev/null &
+  else
+    osascript -e "display notification \"${NOTIF_MSG}\" with title \"${NOTIF_TITLE}\"" 2>/dev/null &
+  fi
 fi
 
 echo "[${COMPLETED_AT}] Task '${TASK_NAME}' (${TASK_ID}) exit=${EXIT_CODE} attempts=$((attempt+1))"
