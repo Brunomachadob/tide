@@ -7,7 +7,7 @@ import path from 'node:path'
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'tide-test-runs-'))
 process.env.HOME = TMP
 
-const { getRuns, getLatestRun, getLatestCompletedRun } = await import('../src/lib/runs.js?bust=1')
+const { getRuns, getLatestRun, getLatestCompletedRun, finalizeAbandonedRun } = await import('../src/lib/runs.js?bust=1')
 
 const TASKS_DIR = path.join(TMP, '.tide', 'tasks')
 
@@ -116,5 +116,42 @@ describe('getLatestCompletedRun', () => {
 
   test('returns null when task has no runs', () => {
     assert.equal(getLatestCompletedRun('no-such-task'), null)
+  })
+})
+
+describe('finalizeAbandonedRun', () => {
+  test('returns run unchanged when completedAt is already set', () => {
+    const run = { runId: 'r1', startedAt: '2024-01-01T08:00:00Z', completedAt: '2024-01-01T08:00:05Z', exitCode: 0 }
+    assert.deepEqual(finalizeAbandonedRun('any-task', run, '/tmp'), run)
+  })
+
+  test('returns run unchanged when no pid file exists', () => {
+    const run = { runId: 'r1', startedAt: '2024-01-01T08:00:00Z' }
+    const result = finalizeAbandonedRun('no-pid-task', run, '/tmp')
+    assert.equal(result.completedAt, undefined)
+    assert.equal(result.abandoned, undefined)
+  })
+
+  test('marks run as abandoned when pid file exists but process is dead', () => {
+    const taskId = 'stale-pid-task'
+    const taskDir = path.join(TASKS_DIR, taskId)
+    fs.mkdirSync(taskDir, { recursive: true })
+    // PID 1 is always alive on macOS (launchd), so use a clearly dead PID instead
+    // Write a PID that cannot possibly be alive (max pid + 1 wraps, use 99999999)
+    fs.writeFileSync(path.join(taskDir, 'running.pid'), '99999999')
+
+    const runDir = path.join(TMP, 'stale-run')
+    fs.mkdirSync(runDir, { recursive: true })
+    const run = { runId: 'r1', startedAt: '2024-01-01T08:00:00Z' }
+    fs.writeFileSync(path.join(runDir, 'run.json'), JSON.stringify(run))
+
+    const result = finalizeAbandonedRun(taskId, run, runDir)
+    assert.equal(result.abandoned, true)
+    assert.equal(result.exitCode, -1)
+    assert.ok(result.completedAt)
+
+    // Should have written finalized run.json
+    const saved = JSON.parse(fs.readFileSync(path.join(runDir, 'run.json'), 'utf8'))
+    assert.equal(saved.abandoned, true)
   })
 })

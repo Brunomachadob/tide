@@ -1,8 +1,34 @@
 // read task run records from ~/.tide/tasks/<id>/runs/
 import fs from 'fs'
 import path from 'path'
-import { TASKS_DIR } from './tasks.js'
-import { safeReadJSON } from './io.js'
+import { TASKS_DIR, taskDir } from './tasks.js'
+import { safeReadJSON, atomicWriteJSON } from './io.js'
+
+/**
+ * If a run has no completedAt and its shell process is no longer alive,
+ * mark it as abandoned in-place so it doesn't stay stuck as "running" forever.
+ */
+export function finalizeAbandonedRun(taskId, run, runDir) {
+  if (run.completedAt) return run
+  const pidFile = path.join(taskDir(taskId), 'running.pid')
+  // Only abandon if a stale PID file exists (file present but process is dead).
+  // No PID file means the run may be legitimately starting up or the shell already
+  // cleaned up via its EXIT trap — don't touch it in that case.
+  let pidFileExists = false
+  let processAlive = false
+  try {
+    const pid = parseInt(fs.readFileSync(pidFile, 'utf8').trim())
+    pidFileExists = true
+    if (pid) process.kill(pid, 0)
+    processAlive = true
+  } catch (e) {
+    if (e.code !== 'ENOENT') pidFileExists = true  // file exists but process dead
+  }
+  if (!pidFileExists || processAlive) return run
+  const finalized = { ...run, completedAt: run.startedAt, exitCode: -1, abandoned: true }
+  try { atomicWriteJSON(path.join(runDir, 'run.json'), finalized) } catch { /* best effort */ }
+  return finalized
+}
 
 function runsDir(taskId) {
   return path.join(TASKS_DIR, taskId, 'runs')
@@ -23,9 +49,13 @@ export function getRuns(taskId, count = 5) {
   })
 
   const runs = entries.reduce((acc, entry) => {
-    const runFile = path.join(dir, entry, 'run.json')
-    const data = safeReadJSON(runFile)
-    if (data) acc.push(data)
+    const runDir = path.join(dir, entry)
+    const runFile = path.join(runDir, 'run.json')
+    let data = safeReadJSON(runFile)
+    if (data) {
+      data = finalizeAbandonedRun(taskId, data, runDir)
+      acc.push(data)
+    }
     return acc
   }, [])
 
@@ -55,8 +85,11 @@ export function getLatestCompletedRun(taskId) {
 
   let latest = null
   for (const entry of entries) {
-    const data = safeReadJSON(path.join(dir, entry, 'run.json'))
-    if (!data?.completedAt) continue
+    const runDir = path.join(dir, entry)
+    let data = safeReadJSON(path.join(runDir, 'run.json'))
+    if (!data) continue
+    if (!data.completedAt) data = finalizeAbandonedRun(taskId, data, runDir)
+    if (!data.completedAt) continue
     if (!latest || data.startedAt > latest.startedAt) latest = data
   }
   return latest

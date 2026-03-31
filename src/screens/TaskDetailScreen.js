@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react'
 import { Box, Text, useInput } from 'ink'
 import Spinner from 'ink-spinner'
 import fs from 'fs'
+import path from 'path'
 import { useTask } from '../hooks/useTasks.js'
 import { useNotifications } from '../hooks/useNotifications.js'
 import Header from '../components/Header.js'
@@ -16,6 +17,7 @@ import { renderMarkdown } from '../lib/markdown.js'
 import { formatDate, formatRelativeTime } from '../lib/format.js'
 import { bootout, bootstrap, kickstart, plistPath } from '../lib/launchd.js'
 import { setEnabled, deleteTask, taskDir } from '../lib/tasks.js'
+import { getLatestRun, finalizeAbandonedRun } from '../lib/runs.js'
 
 function Field({ label, value, valueColor }) {
   return React.createElement(
@@ -75,6 +77,13 @@ export default function TaskDetailScreen({ taskId, navigate, goBack }) {
         // Kill the entire process group so child commands (e.g. claude) are
         // also terminated, not just the shell wrapper.
         process.kill(-pid, 'SIGTERM')
+        // Eagerly finalize any in-progress run so it doesn't stay stuck as "running".
+        // The shell's EXIT trap will also do this, but may race or not fire if killed hard.
+        const run = getLatestRun(taskId)
+        if (run && !run.completedAt) {
+          const runDir = path.join(taskDir(taskId), 'runs', run.runId)
+          finalizeAbandonedRun(taskId, run, runDir)
+        }
         refresh()
         showToast(`Killed process ${pid}`, 'success')
       } catch (e) {

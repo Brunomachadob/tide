@@ -10,5 +10,6 @@ export default function ResultBadge({ result }) {
     ' running',
   )
   if (result.exitCode === 0) return React.createElement(Text, { color: 'green' }, '✓ ok')
+  if (result.abandoned) return React.createElement(Text, { color: 'yellow' }, '✗ killed')
   return React.createElement(Text, { color: 'red' }, `✗ exit ${result.exitCode}`)
 }
