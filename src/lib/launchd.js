@@ -71,22 +71,16 @@ export function bootout(taskId) {
 }
 
 /**
- * Manually trigger a task immediately.
- * Tries launchctl kickstart first; falls back to running task-runner.sh directly.
+ * Manually trigger a task immediately, skipping jitter.
+ * Runs task-runner.sh directly with TIDE_NO_JITTER=1 so the task starts
+ * without delay regardless of the configured jitterSeconds.
  */
 export function kickstart(taskId) {
-  const result = spawnSync('launchctl', ['kickstart', '-p', `gui/${uid()}/${label(taskId)}`], {
-    encoding: 'utf8',
-    timeout: 10000,
-  })
-  if (result.status === 0) {
-    return { method: 'launchctl' }
-  }
   const runner = path.join(PLUGIN_ROOT, 'scripts', 'task-runner.sh')
-  const env = { ...process.env, TIDE_TASK_ID: taskId }
-  const fallback = spawnSync(runner, [taskId], { encoding: 'utf8', env, timeout: 120000 })
-  if (fallback.status !== 0) {
-    throw new Error(`task-runner.sh failed (exit ${fallback.status}): ${fallback.stderr}`)
+  const env = { ...process.env, TIDE_TASK_ID: taskId, TIDE_NO_JITTER: '1' }
+  const result = spawnSync(runner, [taskId], { encoding: 'utf8', env, timeout: 120000 })
+  if (result.status !== 0) {
+    throw new Error(`task-runner.sh failed (exit ${result.status}): ${result.stderr}`)
   }
   return { method: 'direct' }
 }

@@ -33,17 +33,18 @@ if [[ ! -f "${TASK_FILE}" ]]; then
   exit 1
 fi
 
-# Read config via Node
-eval "$(node "${SCRIPT_DIR}/task-setup.js" "${TASK_FILE}")"
-
-# Jitter: spread tasks after wake so they don't all fire simultaneously
-if [[ ${JITTER_SECONDS} -gt 0 ]]; then
-  sleep ${JITTER_SECONDS}
-fi
-
 STARTED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 echo "=== ${STARTED_AT} ===" >> "${OUTPUT_LOG}"
 echo "=== ${STARTED_AT} ===" >> "${STDERR_LOG}"
+
+# Read config via Node
+eval "$(node "${SCRIPT_DIR}/task-setup.js" "${TASK_FILE}")"
+
+# Jitter: spread tasks after wake so they don't all fire simultaneously.
+# Skipped when TIDE_NO_JITTER=1 (manual runs).
+if [[ ${JITTER_SECONDS} -gt 0 && "${TIDE_NO_JITTER:-0}" != "1" ]]; then
+  sleep ${JITTER_SECONDS}
+fi
 
 # Run with retries
 attempt=0
