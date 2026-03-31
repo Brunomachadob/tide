@@ -10,6 +10,7 @@ import { readSettings } from '../lib/settings.js'
 import { createTask, updateTask } from '../lib/create.js'
 
 const INTERVAL_OPTIONS = [
+  { label: 'Manual only', manual: true },
   { label: '15 min',  seconds: 900 },
   { label: '30 min',  seconds: 1800 },
   { label: '1 hour',  seconds: 3600 },
@@ -21,9 +22,10 @@ const INTERVAL_OPTIONS = [
 
 const STEPS = ['Name', 'Argument', 'Schedule', 'Working Dir', 'Command', 'Claude Stream JSON', 'Review']
 
-function intervalIdxForSeconds(secs) {
-  const idx = INTERVAL_OPTIONS.findIndex(o => o.seconds === secs)
-  return idx >= 0 ? idx : 2
+function intervalIdxForSchedule(schedule) {
+  if (!schedule || schedule.type === 'manual') return 0
+  const idx = INTERVAL_OPTIONS.findIndex(o => o.seconds === schedule.intervalSeconds)
+  return idx >= 0 ? idx : 4  // default to 1h (index 4 after prepending Manual)
 }
 
 export default function CreateTaskScreen({ task: existingTask, goBack }) {
@@ -32,7 +34,7 @@ export default function CreateTaskScreen({ task: existingTask, goBack }) {
   const [name, setName] = useState(existingTask?.name ?? '')
   const [argument, setArgument] = useState(existingTask?.argument ?? '')
   const [intervalIdx, setIntervalIdx] = useState(
-    existingTask ? intervalIdxForSeconds(existingTask.schedule?.intervalSeconds) : 2
+    existingTask ? intervalIdxForSchedule(existingTask.schedule) : 4
   )
   const [workingDir, setWorkingDir] = useState(
     existingTask?.workingDirectory ?? readSettings().defaultWorkingDirectory ?? os.homedir()
@@ -52,7 +54,10 @@ export default function CreateTaskScreen({ task: existingTask, goBack }) {
 
   const handleSave = useCallback(() => {
     try {
-      const schedule = { type: 'interval', intervalSeconds: INTERVAL_OPTIONS[intervalIdx].seconds }
+      const opt = INTERVAL_OPTIONS[intervalIdx]
+      const schedule = opt.manual
+        ? { type: 'manual' }
+        : { type: 'interval', intervalSeconds: opt.seconds }
       const resolvedDir = workingDir.replace(/^~/, os.homedir())
       if (isEdit) {
         updateTask(existingTask, { name: name.trim(), argument: argument.trim(), schedule, workingDirectory: resolvedDir, command: command.trim(), claudeStreamJson })
@@ -163,7 +168,7 @@ export default function CreateTaskScreen({ task: existingTask, goBack }) {
             Box, { flexDirection: 'column' },
             INTERVAL_OPTIONS.map((opt, i) =>
               React.createElement(Text, {
-                key: opt.seconds,
+                key: opt.manual ? 'manual' : opt.seconds,
                 color: i === intervalIdx ? 'cyan' : 'gray',
                 bold: i === intervalIdx,
               }, i === intervalIdx ? `▶ ${opt.label}` : `  ${opt.label}`),
@@ -214,7 +219,8 @@ export default function CreateTaskScreen({ task: existingTask, goBack }) {
     }
 
     // Step 6: Review
-    const schedSummary = `Every ${INTERVAL_OPTIONS[intervalIdx].label}`
+    const schedOpt = INTERVAL_OPTIONS[intervalIdx]
+    const schedSummary = schedOpt.manual ? 'Manual only' : `Every ${schedOpt.label}`
 
     return React.createElement(
       Box, { flexDirection: 'column', paddingX: 1 },

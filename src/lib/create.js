@@ -26,6 +26,7 @@ function xmlEscape(s) {
 }
 
 function buildScheduleXml(schedule) {
+  if (!schedule || schedule.type === 'manual') return ''
   const secs = schedule.intervalSeconds || 3600
   return `  <key>StartInterval</key>\n  <integer>${secs}</integer>`
 }
@@ -113,8 +114,9 @@ export function createTask(config) {
   const workingDirectory = config.workingDirectory || os.homedir()
   const maxRetries = config.maxRetries ?? 0
   const schedule = config.schedule || { type: 'interval', intervalSeconds: 3600 }
-  const intervalSeconds = schedule.intervalSeconds || 3600
-  const jitterSeconds = config.jitterSeconds ?? Math.floor(Math.random() * Math.min(intervalSeconds / 4, 300))
+  const isManual = schedule.type === 'manual'
+  const intervalSeconds = isManual ? 0 : (schedule.intervalSeconds || 3600)
+  const jitterSeconds = config.jitterSeconds ?? (isManual ? 0 : Math.floor(Math.random() * Math.min(intervalSeconds / 4, 300)))
   const timeoutSeconds = config.timeoutSeconds ?? null
   const resultRetentionDays = config.resultRetentionDays ?? 30
   const claudeStreamJson = config.claudeStreamJson ?? false

@@ -100,4 +100,8 @@ describe('formatSchedule', () => {
     assert.equal(formatSchedule({ type: 'interval', seconds: 60 }), 'every 1m')
   })
 
+  test('manual schedule type', () => {
+    assert.equal(formatSchedule({ type: 'manual' }), 'manual')
+  })
+
 })

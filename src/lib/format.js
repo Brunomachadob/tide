@@ -43,6 +43,7 @@ export function formatDate(isoString, settings) {
 /** Format a schedule object for display (e.g. "every 2h"). */
 export function formatSchedule(schedule) {
   if (!schedule) return 'unknown'
+  if (schedule.type === 'manual') return 'manual'
   const secs = schedule.intervalSeconds || schedule.seconds || 3600
   if (secs < 60) return `every ${secs}s`
   if (secs < 3600) return `every ${Math.floor(secs / 60)}m`
