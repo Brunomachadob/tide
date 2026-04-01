@@ -11,7 +11,6 @@ import ConfirmDialog from '../components/ConfirmDialog.js'
 import Toast from '../components/Toast.js'
 import KeyHints from '../components/KeyHints.js'
 import RefreshIndicator from '../components/RefreshIndicator.js'
-import { readSettings } from '../lib/settings.js'
 import { renderMarkdown } from '../lib/markdown.js'
 import { formatDate, formatRelativeTime } from '../lib/format.js'
 import { bootout, kickstart, plistPath } from '../lib/launchd.js'
@@ -36,8 +35,7 @@ function formatDiffValue(val) {
   return String(val)
 }
 
-export default function TaskDetailScreen({ taskId, navigate, goBack, repoRoot, height, tasks, loading, refresh, intervalMs }) {
-  const settings = readSettings()
+export default function TaskDetailScreen({ taskId, navigate, goBack, repoRoot, height, tasks, loading, refresh, intervalMs, settings }) {
   const task = tasks?.find(t => t.id === taskId) ?? null
   const { unreadCount } = useNotifications(intervalMs)
   const [confirm, setConfirm] = useState(null)
