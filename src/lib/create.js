@@ -128,7 +128,6 @@ export function createTask(config) {
 
   const tDir = taskDir(taskId)
   fs.mkdirSync(path.join(tDir, 'logs'), { recursive: true })
-  fs.mkdirSync(path.join(tDir, 'results'), { recursive: true })
 
   const task = {
     id: taskId,
