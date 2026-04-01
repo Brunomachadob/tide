@@ -3,6 +3,7 @@ import { Box, Text, useInput } from 'ink'
 import Spinner from 'ink-spinner'
 import fs from 'fs'
 import path from 'path'
+import { spawnSync } from 'child_process'
 import { useTask } from '../hooks/useTasks.js'
 import { useNotifications } from '../hooks/useNotifications.js'
 import Header from '../components/Header.js'
@@ -17,6 +18,7 @@ import { renderMarkdown } from '../lib/markdown.js'
 import { formatDate, formatRelativeTime } from '../lib/format.js'
 import { bootout, bootstrap, kickstart, plistPath } from '../lib/launchd.js'
 import { setEnabled, deleteTask, taskDir } from '../lib/tasks.js'
+import { applyPending } from '../lib/taskfile.js'
 import { getLatestRun, finalizeAbandonedRun } from '../lib/runs.js'
 
 function Field({ label, value, valueColor }) {
@@ -30,10 +32,16 @@ function Field({ label, value, valueColor }) {
   )
 }
 
-export default function TaskDetailScreen({ taskId, navigate, goBack, height }) {
+function formatDiffValue(val) {
+  if (val === null || val === undefined) return '-'
+  if (typeof val === 'object') return JSON.stringify(val)
+  return String(val)
+}
+
+export default function TaskDetailScreen({ taskId, navigate, goBack, repoRoot, height }) {
   const settings = readSettings()
   const intervalMs = settings.refreshInterval * 1000
-  const { task, loading, refresh } = useTask(taskId, intervalMs)
+  const { task, loading, refresh } = useTask(taskId, intervalMs, repoRoot)
   const { unreadCount } = useNotifications(intervalMs)
   const [confirm, setConfirm] = useState(null)
   const [toast, setToast] = useState(null)
@@ -60,8 +68,22 @@ export default function TaskDetailScreen({ taskId, navigate, goBack, height }) {
       const action = task.enabled ? 'disable' : 'enable'
       setConfirm({ action, message: `${action === 'enable' ? 'Enable' : 'Disable'} "${task.name}"?` })
     }
-    if (key.ctrl && input === 'e' && task) navigate('edit', { task })
-    if (input === 'd') setConfirm({ action: 'delete', message: `Delete "${task?.name}"? This cannot be undone.` })
+    if (key.ctrl && input === 'e' && task?.sourcePath) {
+      const editor = process.env.EDITOR || process.env.VISUAL || 'vi'
+      spawnSync(editor, [task.sourcePath], { stdio: 'inherit' })
+      refresh()
+      return
+    }
+    if (input === 's' && task?.syncStatus) {
+      setConfirm({ action: 'sync', message: `Sync "${task?.name}"?` })
+      return
+    }
+    if (input === 'd') {
+      const msg = task?.sourcePath
+        ? `Delete "${task?.name}"? This will also delete the source file.`
+        : `Delete "${task?.name}"? This cannot be undone.`
+      setConfirm({ action: 'delete', message: msg })
+    }
     if (input === 'l') {
       const latest = getLatestRun(taskId)
       if (latest) navigate('runs', { taskId, taskStatus: task.status, initialRunId: latest.runId })
@@ -69,7 +91,6 @@ export default function TaskDetailScreen({ taskId, navigate, goBack, height }) {
     }
     if (input === 'x') navigate('runs', { taskId, taskStatus: task.status })
     if (input === 'n') navigate('notifications')
-    if (input === 's') navigate('settings')
   })
 
   const handleConfirm = useCallback(() => {
@@ -79,11 +100,7 @@ export default function TaskDetailScreen({ taskId, navigate, goBack, height }) {
       try {
         const pidFile = `${taskDir(taskId)}/running.pid`
         const pid = parseInt(fs.readFileSync(pidFile, 'utf8').trim())
-        // Kill the entire process group so child commands (e.g. claude) are
-        // also terminated, not just the shell wrapper.
         process.kill(-pid, 'SIGTERM')
-        // Eagerly finalize any in-progress run so it doesn't stay stuck as "running".
-        // The shell's EXIT trap will also do this, but may race or not fire if killed hard.
         const run = getLatestRun(taskId)
         if (run && !run.completedAt) {
           const runDir = path.join(taskDir(taskId), 'runs', run.runId)
@@ -105,13 +122,19 @@ export default function TaskDetailScreen({ taskId, navigate, goBack, height }) {
     }
     else if (action === 'enable') runAction('Enable', () => { bootstrap(taskId); setEnabled(taskId, true) })
     else if (action === 'disable') runAction('Disable', () => { bootout(taskId); setEnabled(taskId, false) })
+    else if (action === 'sync') {
+      runAction('Sync', () => {
+        applyPending({ type: task.syncStatus, task, existing: task, diff: task.syncDiff || [] })
+      })
+    }
     else if (action === 'delete') runAction('Delete', () => {
+      if (task?.sourcePath && fs.existsSync(task.sourcePath)) fs.unlinkSync(task.sourcePath)
       bootout(taskId)
       const plist = plistPath(taskId)
       if (fs.existsSync(plist)) fs.unlinkSync(plist)
       deleteTask(taskId)
     }, true)
-  }, [confirm, taskId, runAction])
+  }, [confirm, taskId, task, runAction])
 
   if (loading) {
     return React.createElement(Box, { padding: 1 },
@@ -128,30 +151,66 @@ export default function TaskDetailScreen({ taskId, navigate, goBack, height }) {
 
   const lastRun = formatRelativeTime(task.lastResult?.completedAt)
   const createdAt = formatDate(task.createdAt, settings)
+  const sourceBasename = task.sourcePath ? path.basename(task.sourcePath) : null
+
+  // Sync status banner
+  function SyncBanner() {
+    if (!task.syncStatus) return null
+    if (task.syncStatus === 'create') {
+      return React.createElement(Box, { marginBottom: 1, paddingX: 1, borderStyle: 'single', borderColor: 'yellow' },
+        React.createElement(Text, { color: 'yellow' }, 'Not yet synced — press [s] to register with launchd'),
+      )
+    }
+    if (task.syncStatus === 'orphan') {
+      return React.createElement(Box, { marginBottom: 1, paddingX: 1, borderStyle: 'single', borderColor: 'gray' },
+        React.createElement(Text, { color: 'gray' }, 'Source file not found — press [s] to remove, or [d] to delete'),
+      )
+    }
+    if (task.syncStatus === 'update' && task.syncDiff?.length > 0) {
+      return React.createElement(Box, { marginBottom: 1, flexDirection: 'column', paddingX: 1, borderStyle: 'single', borderColor: 'yellow' },
+        React.createElement(Text, { color: 'yellow', bold: true }, 'Pending changes — press [s] to sync:'),
+        ...task.syncDiff.map(({ field, from, to }) =>
+          React.createElement(Box, { key: field },
+            React.createElement(Box, { width: 22 },
+              React.createElement(Text, { color: 'gray' }, '  ' + field),
+            ),
+            React.createElement(Text, { color: 'red' }, formatDiffValue(from)),
+            React.createElement(Text, { color: 'gray' }, ' → '),
+            React.createElement(Text, { color: 'green' }, formatDiffValue(to)),
+          )
+        ),
+      )
+    }
+    return null
+  }
 
   return React.createElement(
     Box,
     { flexDirection: 'column', height },
     React.createElement(Header, {
-      title: task.name || task.id.slice(0, 8),
+      title: task.name || task.id?.slice(0, 8),
       notificationCount: unreadCount,
     }),
 
     React.createElement(
       Box,
       { flexDirection: 'column', paddingX: 1 },
+      React.createElement(SyncBanner, null),
+
       React.createElement(Box, { marginBottom: 1, gap: 3, flexDirection: 'column' },
         React.createElement(Box, { gap: 3 },
           React.createElement(Box, null,
             React.createElement(Text, { color: 'gray' }, 'Status: '),
-            React.createElement(StatusBadge, { status: task.status }),
+            task.syncStatus === 'create'
+              ? React.createElement(Text, { color: 'gray' }, '-')
+              : React.createElement(StatusBadge, { status: task.status }),
           ),
           React.createElement(Box, null,
             React.createElement(Text, { color: 'gray' }, 'Last result: '),
             React.createElement(ResultBadge, { result: task.lastResult }),
           ),
         ),
-        task.status === 'not loaded'
+        task.status === 'not loaded' && task.syncStatus !== 'create'
           ? React.createElement(Text, { color: 'yellow' }, "→ press 'e' to re-register with launchd")
           : task.status === 'launchd-error'
           ? React.createElement(Box, { flexDirection: 'column' },
@@ -172,6 +231,9 @@ export default function TaskDetailScreen({ taskId, navigate, goBack, height }) {
       React.createElement(Field, { label: 'Max retries', value: task.maxRetries ?? 0 }),
       task.claudeStreamJson
         ? React.createElement(Field, { label: 'Claude stream-json', value: 'enabled', valueColor: 'green' })
+        : null,
+      sourceBasename
+        ? React.createElement(Field, { label: 'Source', value: sourceBasename })
         : null,
       React.createElement(Field, { label: 'Created',    value: createdAt }),
       React.createElement(Field, { label: 'Last run',   value: lastRun }),
@@ -210,7 +272,7 @@ export default function TaskDetailScreen({ taskId, navigate, goBack, height }) {
         ['r', 'run'],
         ...(task.status === 'running' ? [['k', 'kill']] : []),
         ['e', 'en/disable'],
-        ['Ctrl+E', 'edit'],
+        ...(task.sourcePath ? [['Ctrl+E', 'edit file'], ['s', 'sync']] : [['Ctrl+E', 'edit']]),
         ['l', 'logs'],
         ['x', 'runs'],
         ['d', 'delete'],

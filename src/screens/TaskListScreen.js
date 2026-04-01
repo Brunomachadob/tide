@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react'
 import { Box, Text, useInput } from 'ink'
 import Spinner from 'ink-spinner'
 import fs from 'fs'
+import path from 'path'
 import { useTasks } from '../hooks/useTasks.js'
 import { useNotifications } from '../hooks/useNotifications.js'
 import Header from '../components/Header.js'
@@ -15,15 +16,29 @@ import { readSettings } from '../lib/settings.js'
 import { formatDate, formatRelativeTime } from '../lib/format.js'
 import { bootout, bootstrap, kickstart, plistPath } from '../lib/launchd.js'
 import { setEnabled, deleteTask } from '../lib/tasks.js'
+import { applyPending } from '../lib/taskfile.js'
+import { openNewTaskFile } from '../lib/newtask.js'
 import { getLatestRun } from '../lib/runs.js'
 
-export default function TaskListScreen({ navigate, height }) {
+function SyncBadge({ syncStatus }) {
+  if (!syncStatus) return null
+  const map = {
+    create:  ['yellow',  '● pending create'],
+    update:  ['yellow',  '● pending update'],
+    orphan:  ['gray',    '○ orphaned'],
+  }
+  const [color, label] = map[syncStatus] || ['white', syncStatus]
+  return React.createElement(Text, { color }, label)
+}
+
+export default function TaskListScreen({ navigate, repoRoot, height }) {
   const settings = readSettings()
   const intervalMs = settings.refreshInterval * 1000
-  const { tasks, loading, error, refresh } = useTasks(intervalMs)
+  const { tasks, loading, error, refresh } = useTasks(intervalMs, repoRoot)
   const { unreadCount } = useNotifications(intervalMs)
   const [selectedIdx, setSelectedIdx] = useState(0)
-  const [confirm, setConfirm] = useState(null) // { action, taskId, message }
+  const [namespaceFilter, setNamespaceFilter] = useState('current') // 'current' | 'all'
+  const [confirm, setConfirm] = useState(null)
   const [toast, setToast] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
 
@@ -44,46 +59,76 @@ export default function TaskListScreen({ navigate, height }) {
     }
   }, [refresh, showToast])
 
+  // Filter tasks by namespace
+  const visibleTasks = (namespaceFilter === 'current' && repoRoot)
+    ? tasks.filter(t => t.sourcePath?.startsWith(repoRoot))
+    : tasks
+
+  // Pending tasks for [S] sync-all
+  const pendingTasks = visibleTasks.filter(t => t.syncStatus)
+
   useInput((input, key) => {
     if (confirm || actionLoading) return
 
     if (key.upArrow || input === 'k') {
       setSelectedIdx(i => Math.max(0, i - 1))
     } else if (key.downArrow || input === 'j') {
-      setSelectedIdx(i => Math.min((tasks.length || 1) - 1, i + 1))
+      setSelectedIdx(i => Math.min((visibleTasks.length || 1) - 1, i + 1))
     } else if (key.return) {
-      if (tasks[selectedIdx]) navigate('detail', { taskId: tasks[selectedIdx].id })
+      const t = visibleTasks[selectedIdx]
+      if (t && t.id) navigate('detail', { taskId: t.id })
     } else if (input === 'l') {
-      if (tasks[selectedIdx]) {
-        const t = tasks[selectedIdx]
+      const t = visibleTasks[selectedIdx]
+      if (t && t.id) {
         const latest = getLatestRun(t.id)
         if (latest) navigate('runs', { taskId: t.id, taskStatus: t.status, initialRunId: latest.runId })
         else navigate('runs', { taskId: t.id, taskStatus: t.status })
       }
     } else if (input === 'x') {
-      if (tasks[selectedIdx]) navigate('runs', { taskId: tasks[selectedIdx].id, taskStatus: tasks[selectedIdx].status })
+      const t = visibleTasks[selectedIdx]
+      if (t && t.id) navigate('runs', { taskId: t.id, taskStatus: t.status })
     } else if (input === 'r') {
-      if (tasks[selectedIdx]) {
-        const t = tasks[selectedIdx]
-        setConfirm({ action: 'run', taskId: t.id, message: `Run "${t.name}" now?` })
-      }
+      const t = visibleTasks[selectedIdx]
+      if (t && t.id) setConfirm({ action: 'run', taskId: t.id, message: `Run "${t.name}" now?` })
     } else if (input === 'e') {
-      if (tasks[selectedIdx]) {
-        const t = tasks[selectedIdx]
+      const t = visibleTasks[selectedIdx]
+      if (t && t.id) {
         const action = t.enabled ? 'disable' : 'enable'
         setConfirm({ action, taskId: t.id, message: `${action === 'enable' ? 'Enable' : 'Disable'} "${t.name}"?` })
       }
     } else if (input === 'd') {
-      if (tasks[selectedIdx]) {
-        const t = tasks[selectedIdx]
-        setConfirm({ action: 'delete', taskId: t.id, message: `Delete "${t.name}"? This cannot be undone.` })
+      const t = visibleTasks[selectedIdx]
+      if (t && t.id) {
+        const msg = t.sourcePath
+          ? `Delete "${t.name}"? This will also delete the source file.`
+          : `Delete "${t.name}"? This cannot be undone.`
+        setConfirm({ action: 'delete', taskId: t.id, message: msg })
       }
+    } else if (input === 's') {
+      // Sync selected task if it has a pending syncStatus, otherwise go to settings
+      const t = visibleTasks[selectedIdx]
+      if (t && t.syncStatus) {
+        setConfirm({ action: 'sync-one', taskId: t.id, message: `Sync "${t.name}"?` })
+      } else {
+        navigate('settings')
+      }
+    } else if (input === 'S') {
+      // Sync all pending
+      if (pendingTasks.length > 0) {
+        setConfirm({ action: 'sync-all', message: `Apply all ${pendingTasks.length} pending change(s)?` })
+      }
+    } else if (input === 'f') {
+      setNamespaceFilter(f => f === 'current' ? 'all' : 'current')
+      setSelectedIdx(0)
     } else if (input === 'c') {
-      navigate('create')
+      if (repoRoot) {
+        openNewTaskFile(repoRoot)
+        refresh()
+      } else {
+        showToast('No git repo detected in current directory', 'error')
+      }
     } else if (input === 'n') {
       navigate('notifications')
-    } else if (input === 's') {
-      navigate('settings')
     }
   })
 
@@ -104,14 +149,27 @@ export default function TaskListScreen({ navigate, height }) {
       runAction('Disable', () => { bootout(taskId); setEnabled(taskId, false) })
     } else if (action === 'delete') {
       runAction('Delete', () => {
+        const t = tasks.find(t => t.id === taskId)
+        if (t?.sourcePath && fs.existsSync(t.sourcePath)) fs.unlinkSync(t.sourcePath)
         bootout(taskId)
         const plist = plistPath(taskId)
         if (fs.existsSync(plist)) fs.unlinkSync(plist)
         deleteTask(taskId)
         setSelectedIdx(i => Math.max(0, i - 1))
       })
+    } else if (action === 'sync-one') {
+      runAction('Sync', () => {
+        const t = tasks.find(t => t.id === taskId)
+        if (t?.syncStatus) applyPending({ type: t.syncStatus, task: t, existing: t, diff: t.syncDiff })
+      })
+    } else if (action === 'sync-all') {
+      runAction('Sync all', () => {
+        for (const t of pendingTasks) {
+          applyPending({ type: t.syncStatus, task: t, existing: t, diff: t.syncDiff })
+        }
+      })
     }
-  }, [confirm, runAction])
+  }, [confirm, tasks, pendingTasks, runAction, showToast])
 
   if (loading) {
     return React.createElement(Box, { padding: 1 },
@@ -121,14 +179,14 @@ export default function TaskListScreen({ navigate, height }) {
   }
 
   const COLS = [
-    { label: 'NAME',     width: 30 },
-    { label: 'SCHEDULE', width: 18 },
-    { label: 'STATUS',   width: 14 },
+    { label: 'NAME',     width: 28 },
+    { label: 'SCHEDULE', width: 12 },
+    { label: 'STATUS',   width: 20 },
+    { label: 'SYNC',     width: 16 },
     { label: 'LAST RUN', width: 17 },
-    { label: 'LAST RESULTS', width: 18 },
   ]
 
-  function Sparkline({ results, isSelected }) {
+  function Sparkline({ results }) {
     if (!results || results.length === 0) return React.createElement(Text, { color: 'gray' }, '-')
     const dots = [...results].reverse().flatMap((r, i) => {
       if (!r.completedAt) return [React.createElement(Spinner, { key: i, type: 'dots' })]
@@ -143,11 +201,16 @@ export default function TaskListScreen({ navigate, height }) {
     return s.length > w ? s.slice(0, w - 1) + '…' : s.padEnd(w)
   }
 
+  const subtitle = repoRoot
+    ? (namespaceFilter === 'current' ? path.basename(repoRoot) : 'all repos')
+    : null
+
   return React.createElement(
     Box,
     { flexDirection: 'column', height },
     React.createElement(Header, {
       title: null,
+      subtitle,
       notificationCount: unreadCount,
     }),
 
@@ -170,19 +233,23 @@ export default function TaskListScreen({ navigate, height }) {
     ),
 
     // Rows
-    tasks.length === 0
+    visibleTasks.length === 0
       ? React.createElement(Box, { paddingX: 1, paddingY: 1 },
-          React.createElement(Text, { color: 'gray' }, 'No scheduled tasks. Run /tide create to add one.'),
+          React.createElement(Text, { color: 'gray' },
+            repoRoot
+              ? 'No tasks found. Press [c] to create a new task file.'
+              : 'No scheduled tasks. Open tide from a git repository to create tasks.',
+          ),
         )
-      : tasks.map((task, i) => {
+      : visibleTasks.map((task, i) => {
           const isSelected = i === selectedIdx
           const lastRun = formatRelativeTime(task.lastResult?.completedAt)
           return React.createElement(
             Box,
-            { key: task.id, paddingX: 1, backgroundColor: isSelected ? 'blue' : undefined },
+            { key: task.id || i, paddingX: 1, backgroundColor: isSelected ? 'blue' : undefined },
             React.createElement(Box, { width: COLS[0].width },
               React.createElement(Text, { color: isSelected ? 'white' : undefined, bold: isSelected },
-                pad(task.name || task.id.slice(0, 8), COLS[0].width),
+                pad(task.name || task.id?.slice(0, 8), COLS[0].width),
               ),
             ),
             React.createElement(Box, { width: COLS[1].width },
@@ -191,15 +258,17 @@ export default function TaskListScreen({ navigate, height }) {
               ),
             ),
             React.createElement(Box, { width: COLS[2].width },
-              React.createElement(StatusBadge, { status: task.status }),
+              task.syncStatus === 'create'
+                ? React.createElement(Text, { color: 'gray' }, pad('-', COLS[2].width))
+                : React.createElement(StatusBadge, { status: task.status }),
             ),
             React.createElement(Box, { width: COLS[3].width },
-              React.createElement(Text, { color: isSelected ? 'white' : 'gray' },
-                pad(lastRun, COLS[3].width),
-              ),
+              React.createElement(SyncBadge, { syncStatus: task.syncStatus }),
             ),
             React.createElement(Box, { width: COLS[4].width },
-              React.createElement(Sparkline, { results: task.recentResults, isSelected }),
+              task.syncStatus === 'create'
+                ? React.createElement(Text, { color: 'gray' }, '-')
+                : React.createElement(Text, { color: isSelected ? 'white' : 'gray' }, pad(lastRun, COLS[4].width)),
             ),
           )
         }),
@@ -229,11 +298,13 @@ export default function TaskListScreen({ navigate, height }) {
       hints: [
         ['↑↓/jk', 'move'],
         ['↵', 'detail'],
-        ['c', 'create'],
+        ['c', 'new file'],
+        ['s', 'sync / settings'],
+        ['S', 'sync all'],
+        ['f', namespaceFilter === 'current' ? 'show all' : 'filter repo'],
         ['r', 'run'],
         ['e', 'en/disable'],
         ['l', 'logs'],
-        ['x', 'runs'],
         ['d', 'delete'],
         ['q', 'quit'],
       ],

@@ -1,13 +1,12 @@
 import React, { useState, useCallback } from 'react'
 import { Box, useInput, useApp, useStdout } from 'ink'
 import { readSettings } from './lib/settings.js'
+import { findRepoRoot } from './lib/taskfile.js'
 import TaskListScreen from './screens/TaskListScreen.js'
 import TaskDetailScreen from './screens/TaskDetailScreen.js'
 import RunsScreen from './screens/RunsScreen.js'
 import NotificationsScreen from './screens/NotificationsScreen.js'
 import SettingsScreen from './screens/SettingsScreen.js'
-import CreateTaskScreen from './screens/CreateTaskScreen.js'
-
 
 function isFirstRun() {
   return !readSettings().command
@@ -17,6 +16,7 @@ function isFirstRun() {
 export default function App() {
   const { exit } = useApp()
   const { stdout } = useStdout()
+  const repoRoot = findRepoRoot(process.cwd())
   const [stack, setStack] = useState([{ screen: isFirstRun() ? 'setup' : 'list', props: {} }])
 
   const navigate = useCallback((screen, props = {}) => {
@@ -33,7 +33,7 @@ export default function App() {
   })
 
   const current = stack[stack.length - 1]
-  const screenProps = { navigate, goBack, height: stdout?.rows ? stdout.rows - 1 : undefined }
+  const screenProps = { navigate, goBack, repoRoot, height: stdout?.rows ? stdout.rows - 1 : undefined }
 
   switch (current.screen) {
     case 'list':
@@ -48,10 +48,6 @@ export default function App() {
       return React.createElement(SettingsScreen, { ...screenProps, ...current.props })
     case 'setup':
       return React.createElement(SettingsScreen, { ...screenProps, onSave: () => navigate('list'), ...current.props })
-    case 'create':
-      return React.createElement(CreateTaskScreen, { ...screenProps, ...current.props })
-    case 'edit':
-      return React.createElement(CreateTaskScreen, { ...screenProps, ...current.props })
     default:
       return React.createElement(TaskListScreen, screenProps)
   }

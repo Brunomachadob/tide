@@ -87,7 +87,7 @@ ${timeoutXml}
 `
 }
 
-function writePlist(taskId, config) {
+export function writePlist(taskId, config) {
   const plist = plistPath(taskId)
   fs.writeFileSync(plist, generatePlist(taskId, config))
   const lint = spawnSync('plutil', ['-lint', plist], { encoding: 'utf8' })
