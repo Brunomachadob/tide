@@ -62,8 +62,19 @@ function runScript(...args) {
   })
 }
 
-function notifFile() {
-  return path.join(TMP, '.tide', 'notifications.json')
+function notifDir() {
+  return path.join(TMP, '.tide', 'notifications')
+}
+
+function readNotifDir() {
+  const dir = notifDir()
+  try {
+    return fs.readdirSync(dir)
+      .filter(f => f.endsWith('.json') && !f.endsWith('.tmp'))
+      .map(f => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')))
+  } catch {
+    return []
+  }
 }
 
 // ── tests ──────────────────────────────────────────────────────────────────
@@ -103,24 +114,23 @@ describe('task-postprocess', () => {
     assert.ok(run.runId, 'runId should be present')
   })
 
-  test('appends to notifications.json', () => {
+  test('writes notification to spool directory', () => {
     runPost('run-notif-01', { exitCode: '1' })
-    const entries = JSON.parse(fs.readFileSync(notifFile(), 'utf8'))
-    assert.ok(entries.length >= 1)
-    const entry = entries[entries.length - 1]
+    const entries = readNotifDir()
+    const entry = entries.find(e => e.runId === 'run-notif-01')
+    assert.ok(entry, 'notification file should exist for run-notif-01')
     assert.equal(entry.taskId, taskId)
     assert.equal(entry.exitCode, 1)
     assert.ok(entry.completedAt)
     assert.equal(entry.read, false)
   })
 
-  test('appends to existing notifications rather than replacing', () => {
-    const existing = [{ taskId: 'other', exitCode: 0 }]
-    fs.writeFileSync(notifFile(), JSON.stringify(existing))
+  test('two concurrent runs each produce their own notification file', () => {
     runPost('run-notif-02')
-    const entries = JSON.parse(fs.readFileSync(notifFile(), 'utf8'))
-    assert.ok(entries.length >= 2)
-    assert.equal(entries[0].taskId, 'other')
+    runPost('run-notif-03')
+    const entries = readNotifDir()
+    assert.ok(entries.some(e => e.runId === 'run-notif-02'), 'run-notif-02 should have a notification')
+    assert.ok(entries.some(e => e.runId === 'run-notif-03'), 'run-notif-03 should have a notification')
   })
 
   test('truncates output summary to 300 chars in notification', () => {
@@ -129,9 +139,8 @@ describe('task-postprocess', () => {
     const runDir = makeRunDir(taskId, runId, now)
     fs.writeFileSync(path.join(runDir, 'output.log'), 'x'.repeat(500))
     runScript(taskFile, '0', now, now, '1', runDir)
-    const entries = JSON.parse(fs.readFileSync(notifFile(), 'utf8'))
-    const last = entries[entries.length - 1]
-    assert.equal(last.summary.length, 300)
+    const entry = JSON.parse(fs.readFileSync(path.join(notifDir(), `${runId}.json`), 'utf8'))
+    assert.equal(entry.summary.length, 300)
   })
 
   test('rotates output log when it exceeds 5MB', () => {

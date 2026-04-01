@@ -48,11 +48,13 @@ fs.writeFileSync(runFile, JSON.stringify({
   attempts,
 }, null, 2))
 
-// Append notification (atomic)
-const notifFile = path.join(TIDE_DIR, 'notifications.json')
-let entries = []
-try { entries = JSON.parse(fs.readFileSync(notifFile, 'utf8')) } catch { /* ok */ }
-entries.push({
+// Write notification as a single file in the spool directory — naturally concurrent-safe,
+// no read-modify-write race between simultaneous task completions.
+const notifDir = path.join(TIDE_DIR, 'notifications')
+fs.mkdirSync(notifDir, { recursive: true })
+const notifFile = path.join(notifDir, `${runId}.json`)
+const tmp = notifFile + '.tmp'
+fs.writeFileSync(tmp, JSON.stringify({
   taskId,
   taskName,
   runId,
@@ -61,9 +63,7 @@ entries.push({
   resultFile: runFile,
   summary: output.slice(0, 300),
   read: false,
-})
-const tmp = notifFile + '.tmp'
-fs.writeFileSync(tmp, JSON.stringify(entries, null, 2))
+}, null, 2))
 fs.renameSync(tmp, notifFile)
 
 // Log rotation: cap at 5MB, keep last 2MB
