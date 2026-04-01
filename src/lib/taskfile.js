@@ -107,24 +107,31 @@ export function parseTaskFile(filePath) {
  * Only the 4 internal keys (_id, _createdAt, _jitter, _enabled) are touched; user keys are left unchanged.
  */
 export function writeTideFields(filePath, fields) {
-  let raw = fs.readFileSync(filePath, 'utf8')
+  const raw = fs.readFileSync(filePath, 'utf8')
+  // Split into frontmatter block and everything after the closing ---
+  // Format: ---\n<yaml>\n---\n<body>
+  const fmEnd = raw.indexOf('\n---', raw.indexOf('---') + 3)
+  const fmBlock = fmEnd !== -1 ? raw.slice(0, fmEnd + 4) : raw
+  const bodyPart = fmEnd !== -1 ? raw.slice(fmEnd + 4) : ''
+
+  let fm = fmBlock
   for (const [k, v] of Object.entries(fields)) {
     const yamlValue = typeof v === 'boolean' ? String(v) : JSON.stringify(v)
-    // Try to update an existing key (quoted or unquoted form)
+    // Try to update an existing key (quoted or unquoted form) — only within fm block
     const quotedKey = `'${k}'`
-    const replaced = raw.replace(
+    const replaced = fm.replace(
       new RegExp(`^(${quotedKey}|${k}):\\s*.+$`, 'm'),
       `${k}: ${yamlValue}`
     )
-    if (replaced !== raw) {
-      raw = replaced
+    if (replaced !== fm) {
+      fm = replaced
     } else {
       // Key not found — insert before closing ---
-      raw = raw.replace(/^---$/m, match => `${k}: ${yamlValue}\n${match}`)
+      fm = fm.replace(/^---$/m, match => `${k}: ${yamlValue}\n${match}`)
     }
   }
   const tmp = filePath + '.tmp'
-  fs.writeFileSync(tmp, raw)
+  fs.writeFileSync(tmp, fm + bodyPart)
   fs.renameSync(tmp, filePath)
 }
 
