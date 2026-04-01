@@ -9,26 +9,27 @@ import RunsScreen from './screens/RunsScreen.js'
 import NotificationsScreen from './screens/NotificationsScreen.js'
 import SettingsScreen from './screens/SettingsScreen.js'
 
-function isFirstRun() {
-  return !readSettings().command
-}
-
 // Navigation stack: each entry is { screen, props }
 export default function App() {
   const { exit } = useApp()
   const { stdout } = useStdout()
   const repoRoot = findRepoRoot(process.cwd())
-  const settings = readSettings()
+  const [settings, setSettings] = useState(() => readSettings())
   const intervalMs = settings.refreshInterval * 1000
   const { tasks, loading, error, refresh } = useTasks(intervalMs, repoRoot)
-  const [stack, setStack] = useState([{ screen: isFirstRun() ? 'setup' : 'list', props: {} }])
+  const [stack, setStack] = useState([{ screen: settings.command ? 'list' : 'setup', props: {} }])
 
   const navigate = useCallback((screen, props = {}) => {
     setStack(s => [...s, { screen, props }])
   }, [])
 
   const goBack = useCallback(() => {
-    setStack(s => s.length <= 1 ? s : s.slice(0, -1))
+    setStack(s => {
+      if (s.length <= 1) return s
+      const leaving = s[s.length - 1].screen
+      if (leaving === 'settings' || leaving === 'setup') setSettings(readSettings())
+      return s.slice(0, -1)
+    })
   }, [])
 
   useInput((input, key) => {
@@ -37,7 +38,7 @@ export default function App() {
   })
 
   const current = stack[stack.length - 1]
-  const screenProps = { navigate, goBack, repoRoot, height: stdout?.rows ? stdout.rows - 1 : undefined, tasks, loading, error, refresh, intervalMs }
+  const screenProps = { navigate, goBack, repoRoot, height: stdout?.rows ? stdout.rows - 1 : undefined, tasks, loading, error, refresh, intervalMs, settings }
 
   switch (current.screen) {
     case 'list':

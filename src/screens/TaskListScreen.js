@@ -11,7 +11,6 @@ import ConfirmDialog from '../components/ConfirmDialog.js'
 import Toast from '../components/Toast.js'
 import KeyHints from '../components/KeyHints.js'
 import RefreshIndicator from '../components/RefreshIndicator.js'
-import { readSettings } from '../lib/settings.js'
 import { formatDate, formatRelativeTime } from '../lib/format.js'
 import { bootout, kickstart, plistPath } from '../lib/launchd.js'
 import { setEnabled, deleteTask } from '../lib/tasks.js'
@@ -30,8 +29,7 @@ function SyncBadge({ syncStatus }) {
   return React.createElement(Text, { color }, label)
 }
 
-export default function TaskListScreen({ navigate, repoRoot, height, tasks, loading, error, refresh, intervalMs }) {
-  const settings = readSettings()
+export default function TaskListScreen({ navigate, repoRoot, height, tasks, loading, error, refresh, intervalMs, settings }) {
   const { unreadCount } = useNotifications(intervalMs)
   const [selectedIdx, setSelectedIdx] = useState(0)
   const [namespaceFilter, setNamespaceFilter] = useState('current') // 'current' | 'all'
