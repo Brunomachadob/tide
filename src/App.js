@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react'
 import { Box, useInput, useApp, useStdout } from 'ink'
 import { readSettings } from './lib/settings.js'
 import { findRepoRoot } from './lib/taskfile.js'
+import { useTasks } from './hooks/useTasks.js'
 import TaskListScreen from './screens/TaskListScreen.js'
 import TaskDetailScreen from './screens/TaskDetailScreen.js'
 import RunsScreen from './screens/RunsScreen.js'
@@ -17,6 +18,9 @@ export default function App() {
   const { exit } = useApp()
   const { stdout } = useStdout()
   const repoRoot = findRepoRoot(process.cwd())
+  const settings = readSettings()
+  const intervalMs = settings.refreshInterval * 1000
+  const { tasks, loading, error, refresh } = useTasks(intervalMs, repoRoot)
   const [stack, setStack] = useState([{ screen: isFirstRun() ? 'setup' : 'list', props: {} }])
 
   const navigate = useCallback((screen, props = {}) => {
@@ -33,7 +37,7 @@ export default function App() {
   })
 
   const current = stack[stack.length - 1]
-  const screenProps = { navigate, goBack, repoRoot, height: stdout?.rows ? stdout.rows - 1 : undefined }
+  const screenProps = { navigate, goBack, repoRoot, height: stdout?.rows ? stdout.rows - 1 : undefined, tasks, loading, error, refresh, intervalMs }
 
   switch (current.screen) {
     case 'list':

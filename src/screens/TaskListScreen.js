@@ -3,7 +3,6 @@ import { Box, Text, useInput } from 'ink'
 import Spinner from 'ink-spinner'
 import fs from 'fs'
 import path from 'path'
-import { useTasks } from '../hooks/useTasks.js'
 import { useNotifications } from '../hooks/useNotifications.js'
 import Header from '../components/Header.js'
 import StatusBadge from '../components/StatusBadge.js'
@@ -14,7 +13,7 @@ import KeyHints from '../components/KeyHints.js'
 import RefreshIndicator from '../components/RefreshIndicator.js'
 import { readSettings } from '../lib/settings.js'
 import { formatDate, formatRelativeTime } from '../lib/format.js'
-import { bootout, bootstrap, kickstart, plistPath } from '../lib/launchd.js'
+import { bootout, kickstart, plistPath } from '../lib/launchd.js'
 import { setEnabled, deleteTask } from '../lib/tasks.js'
 import { applyPending } from '../lib/taskfile.js'
 import { openNewTaskFile } from '../lib/newtask.js'
@@ -31,10 +30,8 @@ function SyncBadge({ syncStatus }) {
   return React.createElement(Text, { color }, label)
 }
 
-export default function TaskListScreen({ navigate, repoRoot, height }) {
+export default function TaskListScreen({ navigate, repoRoot, height, tasks, loading, error, refresh, intervalMs }) {
   const settings = readSettings()
-  const intervalMs = settings.refreshInterval * 1000
-  const { tasks, loading, error, refresh } = useTasks(intervalMs, repoRoot)
   const { unreadCount } = useNotifications(intervalMs)
   const [selectedIdx, setSelectedIdx] = useState(0)
   const [namespaceFilter, setNamespaceFilter] = useState('current') // 'current' | 'all'
@@ -144,9 +141,9 @@ export default function TaskListScreen({ navigate, repoRoot, height }) {
         showToast(e.message, 'error')
       }
     } else if (action === 'enable') {
-      runAction('Enable', () => { bootstrap(taskId); setEnabled(taskId, true) })
+      runAction('Enable', () => { setEnabled(taskId, true) })
     } else if (action === 'disable') {
-      runAction('Disable', () => { bootout(taskId); setEnabled(taskId, false) })
+      runAction('Disable', () => { setEnabled(taskId, false) })
     } else if (action === 'delete') {
       runAction('Delete', () => {
         const t = tasks.find(t => t.id === taskId)
@@ -179,11 +176,12 @@ export default function TaskListScreen({ navigate, repoRoot, height }) {
   }
 
   const COLS = [
-    { label: 'NAME',     width: 28 },
-    { label: 'SCHEDULE', width: 12 },
-    { label: 'STATUS',   width: 20 },
-    { label: 'SYNC',     width: 16 },
-    { label: 'LAST RUN', width: 17 },
+    { label: 'NAME',         width: 28 },
+    { label: 'SCHEDULE',     width: 12 },
+    { label: 'STATUS',       width: 20 },
+    { label: 'SYNC',         width: 16 },
+    { label: 'LAST RUN',     width: 17 },
+    { label: 'LAST RESULTS', width: 14 },
   ]
 
   function Sparkline({ results }) {
@@ -269,6 +267,11 @@ export default function TaskListScreen({ navigate, repoRoot, height }) {
               task.syncStatus === 'create'
                 ? React.createElement(Text, { color: 'gray' }, '-')
                 : React.createElement(Text, { color: isSelected ? 'white' : 'gray' }, pad(lastRun, COLS[4].width)),
+            ),
+            React.createElement(Box, { width: COLS[5].width },
+              task.syncStatus === 'create'
+                ? null
+                : React.createElement(Sparkline, { results: task.recentResults }),
             ),
           )
         }),

@@ -1,10 +1,8 @@
 import React, { useState, useCallback } from 'react'
 import { Box, Text, useInput } from 'ink'
-import Spinner from 'ink-spinner'
 import fs from 'fs'
 import path from 'path'
 import { spawnSync } from 'child_process'
-import { useTask } from '../hooks/useTasks.js'
 import { useNotifications } from '../hooks/useNotifications.js'
 import Header from '../components/Header.js'
 import StatusBadge from '../components/StatusBadge.js'
@@ -16,7 +14,7 @@ import RefreshIndicator from '../components/RefreshIndicator.js'
 import { readSettings } from '../lib/settings.js'
 import { renderMarkdown } from '../lib/markdown.js'
 import { formatDate, formatRelativeTime } from '../lib/format.js'
-import { bootout, bootstrap, kickstart, plistPath } from '../lib/launchd.js'
+import { bootout, kickstart, plistPath } from '../lib/launchd.js'
 import { setEnabled, deleteTask, taskDir } from '../lib/tasks.js'
 import { applyPending } from '../lib/taskfile.js'
 import { getLatestRun, finalizeAbandonedRun } from '../lib/runs.js'
@@ -38,10 +36,9 @@ function formatDiffValue(val) {
   return String(val)
 }
 
-export default function TaskDetailScreen({ taskId, navigate, goBack, repoRoot, height }) {
+export default function TaskDetailScreen({ taskId, navigate, goBack, repoRoot, height, tasks, loading, refresh, intervalMs }) {
   const settings = readSettings()
-  const intervalMs = settings.refreshInterval * 1000
-  const { task, loading, refresh } = useTask(taskId, intervalMs, repoRoot)
+  const task = tasks?.find(t => t.id === taskId) ?? null
   const { unreadCount } = useNotifications(intervalMs)
   const [confirm, setConfirm] = useState(null)
   const [toast, setToast] = useState(null)
@@ -120,8 +117,8 @@ export default function TaskDetailScreen({ taskId, navigate, goBack, repoRoot, h
         showToast(e.message, 'error')
       }
     }
-    else if (action === 'enable') runAction('Enable', () => { bootstrap(taskId); setEnabled(taskId, true) })
-    else if (action === 'disable') runAction('Disable', () => { bootout(taskId); setEnabled(taskId, false) })
+    else if (action === 'enable') runAction('Enable', () => { setEnabled(taskId, true) })
+    else if (action === 'disable') runAction('Disable', () => { setEnabled(taskId, false) })
     else if (action === 'sync') {
       runAction('Sync', () => {
         applyPending({ type: task.syncStatus, task, existing: task, diff: task.syncDiff || [] })
@@ -136,7 +133,7 @@ export default function TaskDetailScreen({ taskId, navigate, goBack, repoRoot, h
     }, true)
   }, [confirm, taskId, task, runAction])
 
-  if (loading) {
+  if (loading && !task) {
     return React.createElement(Box, { padding: 1 },
       React.createElement(Spinner, { type: 'dots' }),
       React.createElement(Text, null, ' Loading...'),
