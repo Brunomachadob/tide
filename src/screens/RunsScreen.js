@@ -154,7 +154,7 @@ export default function RunsScreen({ taskId, taskStatus, initialRunId, navigate,
   const [selectedIdx, setSelectedIdx] = useState(0)
   const count = COUNT_OPTIONS[countIdx]
 
-  const { runs, loading, refresh } = useRuns(taskId, count)
+  const { runs, loading, refresh } = useRuns(taskId, count, settings.refreshInterval * 1000)
   const { unreadCount } = useNotifications(10000)
 
   useEffect(() => {

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getRuns } from '../lib/runs.js'
 
-export function useRuns(taskId, count = 5) {
+export function useRuns(taskId, count = 5, intervalMs = 5000) {
   const [runs, setRuns] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -17,7 +17,9 @@ export function useRuns(taskId, count = 5) {
 
   useEffect(() => {
     refresh()
-  }, [refresh])
+    const id = setInterval(refresh, intervalMs)
+    return () => clearInterval(id)
+  }, [refresh, intervalMs])
 
   return { runs, loading, refresh }
 }
