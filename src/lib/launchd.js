@@ -1,5 +1,4 @@
 // launchctl operations
-import fs from 'fs'
 import { spawnSync, spawn } from 'child_process'
 import path from 'path'
 import os from 'os'
@@ -54,15 +53,6 @@ export function bootstrap(taskId) {
     timeout: 10000,
   })
   const plist = plistPath(taskId)
-  // Self-heal: if the plist references an old runner path, update it in place
-  const expectedRunner = path.join(PLUGIN_ROOT, 'scripts', 'tide.sh')
-  try {
-    const contents = fs.readFileSync(plist, 'utf8')
-    if (!contents.includes(expectedRunner)) {
-      const fixed = contents.replace(/<string>([^<]*scripts\/[^<]+\.sh)<\/string>/, `<string>${expectedRunner}</string>`)
-      fs.writeFileSync(plist, fixed)
-    }
-  } catch { /* plist doesn't exist yet — createTask will write it */ }
   const result = spawnSync('launchctl', ['bootstrap', `gui/${uid()}`, plist], {
     encoding: 'utf8',
     timeout: 10000,
