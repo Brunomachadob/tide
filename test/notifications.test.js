@@ -1,4 +1,4 @@
-import { test, describe, before, after } from 'node:test'
+import { test, describe, before, after, beforeEach } from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import os from 'node:os'
@@ -17,7 +17,20 @@ const {
 } = await import('../src/lib/notifications.js?bust=1')
 
 const TIDE_DIR = path.join(TMP, '.tide')
-const NOTIF_FILE = path.join(TIDE_DIR, 'notifications.json')
+const NOTIF_DIR = path.join(TIDE_DIR, 'notifications')
+
+function writeNotif(runId, data) {
+  fs.mkdirSync(NOTIF_DIR, { recursive: true })
+  fs.writeFileSync(path.join(NOTIF_DIR, `${runId}.json`), JSON.stringify(data))
+}
+
+function clearNotifDir() {
+  try {
+    for (const f of fs.readdirSync(NOTIF_DIR)) {
+      fs.unlinkSync(path.join(NOTIF_DIR, f))
+    }
+  } catch { /* ok if missing */ }
+}
 
 before(() => {
   fs.mkdirSync(TIDE_DIR, { recursive: true })
@@ -27,57 +40,67 @@ after(() => {
   fs.rmSync(TMP, { recursive: true, force: true })
 })
 
+beforeEach(() => {
+  clearNotifDir()
+})
+
 describe('getNotifications', () => {
-  test('returns [] when file does not exist', () => {
-    if (fs.existsSync(NOTIF_FILE)) fs.unlinkSync(NOTIF_FILE)
+  test('returns [] when directory does not exist', () => {
+    try { fs.rmSync(NOTIF_DIR, { recursive: true }) } catch { /* ok */ }
     assert.deepEqual(getNotifications(), [])
   })
 
-  test('returns [] for corrupt JSON', () => {
-    fs.writeFileSync(NOTIF_FILE, 'bad-json')
+  test('returns [] when directory is empty', () => {
+    fs.mkdirSync(NOTIF_DIR, { recursive: true })
     assert.deepEqual(getNotifications(), [])
   })
 
-  test('returns parsed array when file is valid', () => {
-    const data = [{ taskId: 'abc', message: 'done', read: false }]
-    fs.writeFileSync(NOTIF_FILE, JSON.stringify(data))
-    assert.deepEqual(getNotifications(), data)
+  test('returns [] for corrupt JSON file', () => {
+    fs.mkdirSync(NOTIF_DIR, { recursive: true })
+    fs.writeFileSync(path.join(NOTIF_DIR, 'run-bad.json'), 'bad-json')
+    assert.deepEqual(getNotifications(), [])
+  })
+
+  test('returns parsed notifications sorted by completedAt', () => {
+    writeNotif('run-b', { runId: 'run-b', taskId: 'abc', completedAt: '2024-01-02T00:00:00Z', read: false })
+    writeNotif('run-a', { runId: 'run-a', taskId: 'abc', completedAt: '2024-01-01T00:00:00Z', read: false })
+    const result = getNotifications()
+    assert.equal(result.length, 2)
+    assert.equal(result[0].runId, 'run-a')
+    assert.equal(result[1].runId, 'run-b')
   })
 })
 
 describe('dismissNotification', () => {
   test('removes only the matching taskId + completedAt', () => {
-    const data = [
-      { taskId: 'a', completedAt: '2024-01-01T00:00:00Z', read: false },
-      { taskId: 'b', completedAt: '2024-01-01T00:01:00Z', read: false },
-      { taskId: 'c', completedAt: '2024-01-01T00:02:00Z', read: false },
-    ]
-    fs.writeFileSync(NOTIF_FILE, JSON.stringify(data))
+    writeNotif('run-a', { runId: 'run-a', taskId: 'a', completedAt: '2024-01-01T00:00:00Z', read: false })
+    writeNotif('run-b', { runId: 'run-b', taskId: 'b', completedAt: '2024-01-01T00:01:00Z', read: false })
+    writeNotif('run-c', { runId: 'run-c', taskId: 'c', completedAt: '2024-01-01T00:02:00Z', read: false })
     dismissNotification('b', '2024-01-01T00:01:00Z')
-    assert.deepEqual(getNotifications(), [data[0], data[2]])
+    const result = getNotifications()
+    assert.equal(result.length, 2)
+    assert.ok(result.every(n => n.taskId !== 'b'))
   })
 
   test('does not remove other runs of the same task', () => {
-    const data = [
-      { taskId: 'a', completedAt: '2024-01-01T00:00:00Z', read: false },
-      { taskId: 'a', completedAt: '2024-01-01T00:01:00Z', read: false },
-    ]
-    fs.writeFileSync(NOTIF_FILE, JSON.stringify(data))
+    writeNotif('run-a1', { runId: 'run-a1', taskId: 'a', completedAt: '2024-01-01T00:00:00Z', read: false })
+    writeNotif('run-a2', { runId: 'run-a2', taskId: 'a', completedAt: '2024-01-01T00:01:00Z', read: false })
     dismissNotification('a', '2024-01-01T00:00:00Z')
-    assert.deepEqual(getNotifications(), [data[1]])
+    const result = getNotifications()
+    assert.equal(result.length, 1)
+    assert.equal(result[0].runId, 'run-a2')
   })
 
   test('is a no-op for an unknown taskId', () => {
-    const data = [{ taskId: 'a', completedAt: '2024-01-01T00:00:00Z', read: false }]
-    fs.writeFileSync(NOTIF_FILE, JSON.stringify(data))
+    writeNotif('run-a', { runId: 'run-a', taskId: 'a', completedAt: '2024-01-01T00:00:00Z', read: false })
     dismissNotification('z', '2024-01-01T00:00:00Z')
-    assert.deepEqual(getNotifications(), data)
+    assert.equal(getNotifications().length, 1)
   })
 })
 
 describe('clearNotifications', () => {
-  test('writes an empty array', () => {
-    fs.writeFileSync(NOTIF_FILE, JSON.stringify([{ taskId: 'x', read: false }]))
+  test('removes all notifications', () => {
+    writeNotif('run-x', { runId: 'run-x', taskId: 'x', completedAt: '2024-01-01T00:00:00Z', read: false })
     clearNotifications()
     assert.deepEqual(getNotifications(), [])
   })
@@ -91,20 +114,16 @@ describe('clearNotifications', () => {
 
 describe('markNotificationRead', () => {
   test('marks only the matching notification as read', () => {
-    const data = [
-      { taskId: 'a', completedAt: '2024-01-01T00:00:00Z', read: false },
-      { taskId: 'b', completedAt: '2024-01-01T00:01:00Z', read: false },
-    ]
-    fs.writeFileSync(NOTIF_FILE, JSON.stringify(data))
+    writeNotif('run-a', { runId: 'run-a', taskId: 'a', completedAt: '2024-01-01T00:00:00Z', read: false })
+    writeNotif('run-b', { runId: 'run-b', taskId: 'b', completedAt: '2024-01-01T00:01:00Z', read: false })
     markNotificationRead('a', '2024-01-01T00:00:00Z')
     const result = getNotifications()
-    assert.equal(result[0].read, true)
-    assert.equal(result[1].read, false)
+    assert.equal(result.find(n => n.runId === 'run-a').read, true)
+    assert.equal(result.find(n => n.runId === 'run-b').read, false)
   })
 
   test('is a no-op for unknown taskId', () => {
-    const data = [{ taskId: 'a', completedAt: '2024-01-01T00:00:00Z', read: false }]
-    fs.writeFileSync(NOTIF_FILE, JSON.stringify(data))
+    writeNotif('run-a', { runId: 'run-a', taskId: 'a', completedAt: '2024-01-01T00:00:00Z', read: false })
     markNotificationRead('z', '2024-01-01T00:00:00Z')
     assert.equal(getNotifications()[0].read, false)
   })
@@ -112,11 +131,8 @@ describe('markNotificationRead', () => {
 
 describe('markAllNotificationsRead', () => {
   test('marks all notifications as read', () => {
-    const data = [
-      { taskId: 'a', completedAt: '2024-01-01T00:00:00Z', read: false },
-      { taskId: 'b', completedAt: '2024-01-01T00:01:00Z', read: false },
-    ]
-    fs.writeFileSync(NOTIF_FILE, JSON.stringify(data))
+    writeNotif('run-a', { runId: 'run-a', taskId: 'a', completedAt: '2024-01-01T00:00:00Z', read: false })
+    writeNotif('run-b', { runId: 'run-b', taskId: 'b', completedAt: '2024-01-01T00:01:00Z', read: false })
     markAllNotificationsRead()
     const result = getNotifications()
     assert.ok(result.every(n => n.read === true))
@@ -125,12 +141,9 @@ describe('markAllNotificationsRead', () => {
 
 describe('clearReadNotifications', () => {
   test('removes only read notifications', () => {
-    const data = [
-      { taskId: 'a', completedAt: '2024-01-01T00:00:00Z', read: true },
-      { taskId: 'b', completedAt: '2024-01-01T00:01:00Z', read: false },
-      { taskId: 'c', completedAt: '2024-01-01T00:02:00Z', read: true },
-    ]
-    fs.writeFileSync(NOTIF_FILE, JSON.stringify(data))
+    writeNotif('run-a', { runId: 'run-a', taskId: 'a', completedAt: '2024-01-01T00:00:00Z', read: true })
+    writeNotif('run-b', { runId: 'run-b', taskId: 'b', completedAt: '2024-01-01T00:01:00Z', read: false })
+    writeNotif('run-c', { runId: 'run-c', taskId: 'c', completedAt: '2024-01-01T00:02:00Z', read: true })
     clearReadNotifications()
     const result = getNotifications()
     assert.equal(result.length, 1)
@@ -138,9 +151,8 @@ describe('clearReadNotifications', () => {
   })
 
   test('is a no-op when no notifications are read', () => {
-    const data = [{ taskId: 'a', completedAt: '2024-01-01T00:00:00Z', read: false }]
-    fs.writeFileSync(NOTIF_FILE, JSON.stringify(data))
+    writeNotif('run-a', { runId: 'run-a', taskId: 'a', completedAt: '2024-01-01T00:00:00Z', read: false })
     clearReadNotifications()
-    assert.deepEqual(getNotifications(), data)
+    assert.equal(getNotifications().length, 1)
   })
 })
