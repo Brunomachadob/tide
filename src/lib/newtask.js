@@ -7,14 +7,13 @@ import { readSettings } from './settings.js'
 
 function buildTemplate(settings, repoRoot) {
   const workDir = repoRoot || settings.defaultWorkingDirectory || os.homedir()
-  const command = settings.command || '/opt/homebrew/bin/claude --permission-mode bypassPermissions -p'
   return `---
 name: My task
 schedule: 1h
-command: ${command}
 workingDirectory: ${workDir}
-maxRetries: 0
-claudeStreamJson: false
+# command: /opt/homebrew/bin/claude --permission-mode bypassPermissions -p
+# maxRetries: 0
+# claudeStreamJson: false
 ---
 
 Describe what this task should do.
