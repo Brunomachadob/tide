@@ -7,127 +7,177 @@ import path from 'node:path'
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'tide-test-tasks-'))
 process.env.HOME = TMP
 
-// Cache-buster ensures this import gets its own module instance with the
-// HOME we just set (the static import above already captured the real home).
-const { readTask, readTasks, writeTask, setEnabled, deleteTask, taskDir, taskFile } =
+const { readTask, readTasks, setEnabled, deleteTask, taskDir } =
   await import('../src/lib/tasks.js?bust=1')
 
 const TASKS_DIR = path.join(TMP, '.tide', 'tasks')
+const LAUNCH_AGENTS_DIR = path.join(TMP, 'Library', 'LaunchAgents')
+const MD_DIR = path.join(TMP, 'repo', '.tide')
 
-function makeTask(overrides = {}) {
-  return {
-    id: 'aabbccdd',
-    name: 'My task',
-    argument: 'Do something',
-    command: 'claude',
-    extraArgs: [],
-    schedule: { type: 'interval', intervalSeconds: 3600 },
-    createdAt: '2024-01-01T09:00:00Z',
-    enabled: true,
-    maxRetries: 0,
-    workingDirectory: '/tmp',
-    env: {},
-    resultRetentionDays: 30,
-    ...overrides,
-  }
+fs.mkdirSync(LAUNCH_AGENTS_DIR, { recursive: true })
+fs.mkdirSync(MD_DIR, { recursive: true })
+
+// ── helpers ────────────────────────────────────────────────────────────────
+
+function writeMd(id, fields = {}) {
+  const {
+    name = 'My task',
+    schedule = '1h',
+    createdAt = '2024-01-01T09:00:00Z',
+    enabled = true,
+    jitter = 0,
+    argument = 'Do something',
+    ...rest
+  } = fields
+  const frontmatter = [
+    `_id: ${id}`,
+    `_createdAt: '${createdAt}'`,
+    `_jitter: ${jitter}`,
+    `_enabled: ${enabled}`,
+    `name: ${name}`,
+    `schedule: ${schedule}`,
+    ...Object.entries(rest).map(([k, v]) => `${k}: ${JSON.stringify(v)}`),
+  ].join('\n')
+  const mdPath = path.join(MD_DIR, `${id}.md`)
+  fs.writeFileSync(mdPath, `---\n${frontmatter}\n---\n\n${argument}`)
+  return mdPath
 }
 
-// ── taskDir / taskFile ─────────────────────────────────────────────────────
+function writePlistFor(id, mdPath) {
+  const plistContent = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.tide.${id}</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>TIDE_TASK_ID</key>
+    <string>${id}</string>
+    <key>TIDE_TASK_FILE</key>
+    <string>${mdPath}</string>
+    <key>HOME</key>
+    <string>${TMP}</string>
+    <key>PATH</key>
+    <string>/usr/bin:/bin</string>
+  </dict>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/fake/tide.sh</string>
+    <string>${id}</string>
+  </array>
+  <key>RunAtLoad</key>
+  <false/>
+</dict>
+</plist>`
+  const plistFile = path.join(LAUNCH_AGENTS_DIR, `com.tide.${id}.plist`)
+  fs.writeFileSync(plistFile, plistContent)
+  return plistFile
+}
 
-describe('taskDir / taskFile', () => {
-  test('taskDir returns path under TASKS_DIR', () => {
+// ── taskDir ────────────────────────────────────────────────────────────────
+
+describe('taskDir', () => {
+  test('returns path under TASKS_DIR', () => {
     assert.equal(taskDir('abc'), path.join(TASKS_DIR, 'abc'))
-  })
-
-  test('taskFile returns task.json path', () => {
-    assert.equal(taskFile('abc'), path.join(TASKS_DIR, 'abc', 'task.json'))
   })
 })
 
 // ── readTask ───────────────────────────────────────────────────────────────
 
-describe('readTask', () => {
-  before(() => {
-    // write a valid task file
-    const dir = path.join(TASKS_DIR, 'aabbccdd', 'logs')
-    fs.mkdirSync(dir, { recursive: true })
-    fs.mkdirSync(path.join(TASKS_DIR, 'aabbccdd', 'results'), { recursive: true })
-    fs.writeFileSync(
-      path.join(TASKS_DIR, 'aabbccdd', 'task.json'),
-      JSON.stringify(makeTask())
-    )
-    // write a corrupt file
-    const corruptDir = path.join(TASKS_DIR, 'corrupt', 'logs')
-    fs.mkdirSync(corruptDir, { recursive: true })
-    fs.writeFileSync(path.join(TASKS_DIR, 'corrupt', 'task.json'), 'not-json')
-  })
+// Set up fixtures at module level so all describe blocks share them
+const _md1 = writeMd('aabbccdd', { name: 'My task' })
+writePlistFor('aabbccdd', _md1)
+const _md2 = writeMd('11223344', { name: 'Earlier Task', createdAt: '2023-06-01T00:00:00Z' })
+writePlistFor('11223344', _md2)
 
-  test('returns task when file exists and is valid', () => {
+describe('readTask', () => {
+
+  test('returns task when plist and .md exist', () => {
     const task = readTask('aabbccdd')
     assert.equal(task.id, 'aabbccdd')
     assert.equal(task.name, 'My task')
   })
 
-  test('returns null when id does not exist', () => {
+  test('returns null when plist does not exist', () => {
     assert.equal(readTask('nonexistent'), null)
   })
 
-  test('returns null when file is corrupt JSON', () => {
-    assert.equal(readTask('corrupt'), null)
+  test('returns null when TIDE_TASK_FILE .md is missing', () => {
+    // Write plist pointing to non-existent md
+    const plistContent = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.tide.missingmd</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>TIDE_TASK_FILE</key><string>/nonexistent/path/task.md</string>
+  </dict>
+</dict>
+</plist>`
+    fs.writeFileSync(path.join(LAUNCH_AGENTS_DIR, 'com.tide.missingmd.plist'), plistContent)
+    assert.equal(readTask('missingmd'), null)
   })
 })
 
 // ── readTasks ──────────────────────────────────────────────────────────────
 
 describe('readTasks', () => {
-  test('returns tasks sorted by createdAt', () => {
+  test('returns all tasks from plists', () => {
     const { tasks } = readTasks()
     assert.ok(Array.isArray(tasks))
-    // aabbccdd should be in there
-    assert.ok(tasks.some(t => t.id === 'aabbccdd'))
+    const ids = tasks.map(t => t.id)
+    assert.ok(ids.includes('aabbccdd'))
+    assert.ok(ids.includes('11223344'))
   })
 
   test('sorts by createdAt ascending', () => {
     const { tasks } = readTasks()
-    for (let i = 1; i < tasks.length; i++) {
-      assert.ok((tasks[i - 1].createdAt || '') <= (tasks[i].createdAt || ''))
-    }
-  })
-})
-
-// ── writeTask ──────────────────────────────────────────────────────────────
-
-describe('writeTask', () => {
-  test('writes and can be read back', () => {
-    const task = makeTask({ id: 'writetest', name: 'Write Test' })
-    fs.mkdirSync(path.join(TASKS_DIR, 'writetest', 'logs'), { recursive: true })
-    fs.mkdirSync(path.join(TASKS_DIR, 'writetest', 'results'), { recursive: true })
-    writeTask(task)
-    const read = readTask('writetest')
-    assert.equal(read.name, 'Write Test')
+    const relevant = tasks.filter(t => ['aabbccdd', '11223344'].includes(t.id))
+    assert.equal(relevant[0].id, '11223344')  // earlier createdAt comes first
+    assert.equal(relevant[1].id, 'aabbccdd')
   })
 
-  test('overwrites existing task', () => {
-    const task = makeTask({ id: 'writetest', name: 'Updated Name' })
-    writeTask(task)
-    assert.equal(readTask('writetest').name, 'Updated Name')
+  test('skips plists without TIDE_TASK_FILE', () => {
+    const noMdPlist = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.tide.nomd</string>
+  <key>EnvironmentVariables</key><dict><key>TIDE_TASK_ID</key><string>nomd</string></dict>
+</dict>
+</plist>`
+    fs.writeFileSync(path.join(LAUNCH_AGENTS_DIR, 'com.tide.nomd.plist'), noMdPlist)
+    const { tasks } = readTasks()
+    assert.ok(!tasks.some(t => t.id === 'nomd'))
   })
 })
 
 // ── setEnabled ─────────────────────────────────────────────────────────────
 
 describe('setEnabled', () => {
-  test('disables a task', () => {
+  test('disable: removes plist and writes _enabled=false to .md', () => {
+    const plist = path.join(LAUNCH_AGENTS_DIR, 'com.tide.aabbccdd.plist')
+    // Ensure plist exists (re-create if a prior test removed it)
+    writePlistFor('aabbccdd', _md1)
+    assert.ok(fs.existsSync(plist), 'plist should exist before disable')
     setEnabled('aabbccdd', false)
-    assert.equal(readTask('aabbccdd').enabled, false)
+    assert.ok(!fs.existsSync(plist), 'plist should be deleted after disable')
+    const raw = fs.readFileSync(_md1, 'utf8')
+    assert.ok(raw.includes('_enabled: false'), 'md should have _enabled: false')
   })
 
-  test('re-enables a task', () => {
-    setEnabled('aabbccdd', true)
-    assert.equal(readTask('aabbccdd').enabled, true)
+  test('enable: writes _enabled=true to .md (bootstrap is a no-op in tests)', () => {
+    // Re-create plist pointing to md so setEnabled(true) can find the .md path
+    writePlistFor('aabbccdd', _md1)
+    // bootstrap will call launchctl — it may fail with a fake plist, that's acceptable
+    try { setEnabled('aabbccdd', true) } catch { /* launchctl not available in test env */ }
+    const raw = fs.readFileSync(_md1, 'utf8')
+    assert.ok(raw.includes('_enabled: true'), 'md should have _enabled: true')
   })
 
-  test('throws for unknown id', () => {
+  test('throws for unknown id (no plist)', () => {
     assert.throws(() => setEnabled('nope', true), /not found/)
   })
 })
@@ -135,14 +185,12 @@ describe('setEnabled', () => {
 // ── deleteTask ─────────────────────────────────────────────────────────────
 
 describe('deleteTask', () => {
-  test('removes the task directory', () => {
-    const task = makeTask({ id: 'todelete' })
-    fs.mkdirSync(path.join(TASKS_DIR, 'todelete', 'logs'), { recursive: true })
-    fs.mkdirSync(path.join(TASKS_DIR, 'todelete', 'results'), { recursive: true })
-    writeTask(task)
-    assert.ok(readTask('todelete'))
+  test('removes the task run directory', () => {
+    const dir = path.join(TASKS_DIR, 'todelete', 'runs')
+    fs.mkdirSync(dir, { recursive: true })
+    assert.ok(fs.existsSync(path.join(TASKS_DIR, 'todelete')))
     deleteTask('todelete')
-    assert.equal(readTask('todelete'), null)
+    assert.ok(!fs.existsSync(path.join(TASKS_DIR, 'todelete')))
   })
 
   test('is a no-op for a non-existent id', () => {

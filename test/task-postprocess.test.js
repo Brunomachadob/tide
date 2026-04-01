@@ -19,27 +19,31 @@ function setup() {
   return taskId
 }
 
-function writeTaskFile(taskId, overrides = {}) {
-  const taskDir = path.join(TMP, '.tide', 'tasks', taskId)
-  const task = {
-    id: taskId,
-    name: 'Test Task',
-    command: 'echo',
-    extraArgs: [],
-    maxRetries: 0,
-    workingDirectory: TMP,
-    resultRetentionDays: 30,
-    ...overrides,
-  }
-  const taskFile = path.join(taskDir, 'task.json')
-  fs.writeFileSync(taskFile, JSON.stringify(task, null, 2))
-  return taskFile
+function writeTaskMd(taskId, overrides = {}) {
+  const repoTideDir = path.join(TMP, 'repo', '.tide')
+  fs.mkdirSync(repoTideDir, { recursive: true })
+  const {
+    name = 'Test Task',
+    resultRetentionDays = 30,
+    ...rest
+  } = overrides
+
+  const frontmatter = [
+    `_id: ${taskId}`,
+    `_enabled: true`,
+    `name: ${name}`,
+    `resultRetentionDays: ${resultRetentionDays}`,
+    ...Object.entries(rest).map(([k, v]) => `${k}: ${JSON.stringify(v)}`),
+  ].join('\n')
+
+  const mdPath = path.join(repoTideDir, `${taskId}.md`)
+  fs.writeFileSync(mdPath, `---\n${frontmatter}\n---\n\nsome argument`)
+  return mdPath
 }
 
 function makeRunDir(taskId, runId, startedAt = new Date().toISOString()) {
   const runDir = path.join(TMP, '.tide', 'tasks', taskId, 'runs', runId)
   fs.mkdirSync(runDir, { recursive: true })
-  // Write initial run.json (as task-setup.js would)
   fs.writeFileSync(path.join(runDir, 'run.json'), JSON.stringify({
     runId,
     taskId,
@@ -70,7 +74,7 @@ describe('task-postprocess', () => {
 
   before(() => {
     taskId = setup()
-    taskFile = writeTaskFile(taskId)
+    taskFile = writeTaskMd(taskId)
   })
 
   after(() => { fs.rmSync(TMP, { recursive: true, force: true }) })
@@ -154,7 +158,6 @@ describe('task-postprocess', () => {
   })
 
   test('deletes run directories older than retentionDays', () => {
-    // Create an old run directory with a backdated startedAt
     const oldRunId = 'run-old-01'
     const oldRunDir = path.join(TMP, '.tide', 'tasks', taskId, 'runs', oldRunId)
     fs.mkdirSync(oldRunDir, { recursive: true })

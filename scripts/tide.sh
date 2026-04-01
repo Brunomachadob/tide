@@ -6,7 +6,7 @@ set -uo pipefail
 TASK_ID="${1:?tide.sh requires a task ID}"
 TIDE_DIR="${HOME}/.tide"
 TASK_DIR="${TIDE_DIR}/tasks/${TASK_ID}"
-TASK_FILE="${TASK_DIR}/task.json"
+TASK_FILE="${TIDE_TASK_FILE:?TIDE_TASK_FILE must be set (plist missing TIDE_TASK_FILE env var)}"
 SCRIPT_DIR="${0:A:h}"
 
 now() { date -u '+%Y-%m-%dT%H:%M:%SZ' }

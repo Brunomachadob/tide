@@ -10,32 +10,57 @@ The primary use case for Tide is scheduling AI tasks (Claude prompts). These pro
 
 ## Decision
 
-Task configuration is now authored as a markdown file inside the repository where the task is relevant:
+Task configuration is authored as a markdown file inside the repository where the task is relevant:
 
 ```
 <repo>/.tide/<taskname>.md
 ```
 
-The file body is the task's prompt (argument). All scheduling metadata lives in YAML frontmatter. Example:
+The file body is the task's prompt (argument). All scheduling metadata lives in YAML frontmatter. The launchd plist is the only derived artifact — generated directly from the markdown file.
 
+**User-authored frontmatter** (written by hand):
 ```markdown
 ---
 name: Daily standup summary
 schedule: 1h
+workingDirectory: ~/projects/myrepo
 ---
 
 Summarize the git log from the last 24 hours.
 ```
 
-`task.json` is now a *derived artifact* of the markdown file — the same relationship that previously existed between `task.json` and the launchd plist. When Tide detects a change in the markdown file, it shows it as a pending sync operation in the UI. The user reviews and applies changes explicitly.
+**Internal frontmatter** (underscore-prefixed, written by Tide — do not edit):
+```markdown
+---
+_id: 3f640f65
+_createdAt: 2026-04-01T10:00:00Z
+_jitter: 42
+_enabled: true
+name: Daily standup summary
+schedule: 1h
+---
+```
 
-The `id` field is the only field Tide writes back into the frontmatter — generated once on first sync and stable forever after.
+The `_` prefix reserves internal fields that Tide manages. These are valid YAML keys and survive round-trips through any YAML-aware editor, but should not be changed manually.
+
+### How sync works
+
+The plist contains a `TIDE_TASK_FILE` environment variable pointing back to the source `.md` file. At runtime, `tide.sh` reads `TIDE_TASK_FILE` and passes the `.md` path to `task-setup.js` and `task-postprocess.js`, which parse it directly.
+
+Only fields that the plist actually encodes need a sync step to take effect: `schedule`, `workingDirectory`, `env`, `_enabled`, `timeoutSeconds`. All other field changes (name, argument, command, maxRetries, etc.) take effect at the next run automatically — no sync required.
+
+The TUI shows a pending-update badge when a plist-encoded field changes in the `.md` file. Pressing `[s]` applies the change (rewrites the plist and re-registers with launchd).
+
+### Cross-repo visibility and orphan detection
+
+Because all registered tasks have plists in `~/Library/LaunchAgents/`, `readTasks()` scans `com.tide.*.plist` files globally. Orphan detection is trivially global: check `existsSync(TIDE_TASK_FILE)` for each plist.
 
 ## Consequences
 
 - Task prompts can be committed to git, reviewed in PRs, and diffed over time.
-- Tasks from any repo where Tide has been launched are visible in the TUI (cross-repo via `task.json` `sourcePath` field).
-- Shell scripts (`tide.sh`, `task-setup.js`, `task-postprocess.js`) are unchanged — they still read `task.json`.
+- `task.json` is no longer written or read. The plist is the only derived artifact.
+- Shell scripts (`tide.sh`, `task-setup.js`, `task-postprocess.js`) read the `.md` file directly at runtime via `TIDE_TASK_FILE`.
 - Deleting a markdown file marks the task as `orphaned` in the UI; the user confirms removal.
-- The 7-step CreateTaskScreen wizard is removed. Creating a task means creating a `.md` file (`[c]` opens `$EDITOR`).
-- A future Phase 2 plan (`plans/phase2-plist-as-source.md`) documents how to remove `task.json` entirely and drive launchd directly from the markdown file.
+- Creating a task means creating a `.md` file (`[c]` opens `$EDITOR`).
+- Changes to prompt/command/name take effect at the next scheduled run without any sync step.
+- `writeTideFields` / `writeTideFieldsInline` use regex-based in-place replacement rather than `matter.stringify` to avoid YAML key quoting issues (gray-matter quotes keys containing special characters, which would corrupt the `_key` format on round-trips).

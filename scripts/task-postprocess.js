@@ -1,18 +1,23 @@
 #!/usr/bin/env node
 // task-postprocess.js — completes run.json, writes notification, rotates logs, prunes old runs
 // Usage:
-//   node task-postprocess.js <task-file> <exit-code> <started-at> <completed-at> <attempts> <run-dir>
+//   node task-postprocess.js <task-file.md> <exit-code> <started-at> <completed-at> <attempts> <run-dir>
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
+import matter from 'gray-matter'
 
 const TIDE_DIR = path.join(os.homedir(), '.tide')
 const [,, taskFile, exitCodeStr, startedAt, completedAt, attemptsStr, runDir] = process.argv
 
-const task = JSON.parse(fs.readFileSync(taskFile, 'utf8'))
+const raw = fs.readFileSync(taskFile, 'utf8')
+const { data: fm } = matter(raw)
+
+const taskId = fm['_id']
+const taskName = fm.name || path.basename(taskFile, '.md')
+const retentionDays = fm.resultRetentionDays ?? 30
 const exitCode = parseInt(exitCodeStr)
 const attempts = parseInt(attemptsStr)
-const retentionDays = task.resultRetentionDays ?? 30
 
 // Read runId from the initial run.json written by task-setup.js
 const runFile = path.join(runDir, 'run.json')
@@ -35,8 +40,8 @@ try {
 // Complete run.json (overwrite with full record)
 fs.writeFileSync(runFile, JSON.stringify({
   runId,
-  taskId: task.id,
-  taskName: task.name,
+  taskId,
+  taskName,
   startedAt,
   completedAt,
   exitCode,
@@ -48,8 +53,8 @@ const notifFile = path.join(TIDE_DIR, 'notifications.json')
 let entries = []
 try { entries = JSON.parse(fs.readFileSync(notifFile, 'utf8')) } catch { /* ok */ }
 entries.push({
-  taskId: task.id,
-  taskName: task.name,
+  taskId,
+  taskName,
   runId,
   completedAt,
   exitCode,
@@ -76,7 +81,7 @@ for (const logFile of [outputLog, stderrLog]) {
 }
 
 // Run retention: delete run directories older than retentionDays
-const runsDir = path.join(TIDE_DIR, 'tasks', task.id, 'runs')
+const runsDir = path.join(TIDE_DIR, 'tasks', taskId, 'runs')
 const cutoff = Date.now() - retentionDays * 86400 * 1000
 try {
   for (const entry of fs.readdirSync(runsDir)) {

@@ -1,6 +1,6 @@
 # Data Directory
 
-All Tide data lives in `~/.tide/`.
+All Tide runtime data lives in `~/.tide/`.
 
 ## Structure
 
@@ -10,13 +10,19 @@ All Tide data lives in `~/.tide/`.
 ├── notifications.json
 └── tasks/
     └── <id>/
-        ├── task.json
         ├── running.pid          — present only while a run is active
         └── runs/
             └── <runId>/         — short hex ID, e.g. a3f9c1b2
                 ├── run.json
                 ├── output.log
                 └── stderr.log
+```
+
+Task configuration lives in the repository, not in `~/.tide/`:
+
+```
+<repo>/.tide/
+└── <taskname>.md    — source of truth for task config + prompt
 ```
 
 ## Files
@@ -39,20 +45,16 @@ Array of notification entries for completed runs not yet reviewed. Appended to a
 
 Does not exist until the first task run completes.
 
-### `~/.tide/tasks/<id>/task.json`
-
-The authoritative config for a task. See [Task Model](/reference/task-model) for full schema.
-
 ### `~/.tide/tasks/<id>/runs/<runId>/run.json`
 
 Metadata for a single run. Written twice: once at start (with `runId`, `taskId`, `taskName`, `startedAt`), and again at completion with the full record including `completedAt`, `exitCode`, and `attempts`.
 
-A run directory without a `completedAt` field in `run.json` indicates an in-progress or interrupted run.
+A run directory without a `completedAt` field indicates an in-progress or interrupted run.
 
 ```json
 {
   "runId": "a3f9c1b2",
-  "taskId": "...",
+  "taskId": "3f640f65",
   "taskName": "My Task",
   "startedAt": "2026-03-30T10:00:00Z",
   "completedAt": "2026-03-30T10:00:45Z",
@@ -73,31 +75,25 @@ Run directories older than `resultRetentionDays` (default 30) are deleted after 
 
 ## LaunchAgents
 
-Tide also writes to `~/Library/LaunchAgents/`:
+Tide writes a plist to `~/Library/LaunchAgents/` for each enabled task:
 
 ```
 ~/Library/LaunchAgents/
 └── com.tide.<id>.plist   — one per enabled task
 ```
 
-These are derived artifacts — they can be regenerated from `task.json`. See [ADR-0002](/adr/0002-task-json-as-source-of-truth).
+These are derived artifacts — generated from the source `.md` file. Each plist contains a `TIDE_TASK_FILE` env var pointing back to the `.md` file, which is how `tide.sh` finds the task config at runtime.
 
 ## Backup and migration
 
-To back up all tasks:
+To back up all task run history:
 
 ```sh
 cp -r ~/.tide ~/tide-backup
 ```
 
-To restore on a new machine:
+Task definitions live in your repos (`.tide/*.md`) and are versioned with git. After restoring `~/.tide/` on a new machine, tasks will show as `not loaded` (no plists). Re-enable each task from the TUI to regenerate and register the plists.
 
-```sh
-cp -r ~/tide-backup ~/.tide
-```
-
-After restoring, tasks will show as `not loaded` (launchd has no plists). Re-enable each task from the TUI to regenerate and register the plists.
-
-::: tip Exporting tasks
-Task data is plain JSON with no binary or platform-specific content. The `task.json` files can be versioned in git, synced via iCloud, or shared between machines.
+::: tip Task definitions are in git
+The prompts and scheduling config for each task live in the `.tide/` directory of your repos — commit them to git for version control and portability.
 :::

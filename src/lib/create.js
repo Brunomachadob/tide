@@ -1,13 +1,14 @@
-// create a new scheduled task: write task.json, generate plist, register with launchd
+// create a new scheduled task: write tide: fields to .md, generate plist, register with launchd
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import crypto from 'crypto'
 import { spawnSync } from 'child_process'
 import { fileURLToPath } from 'url'
-import { writeTask, taskDir } from './tasks.js'
+import { taskDir } from './tasks.js'
 import { bootstrap, plistPath, label } from './launchd.js'
 import { readSettings } from './settings.js'
+import { writeTideFields } from './taskfile.js'
 
 const PLUGIN_ROOT = path.resolve(fileURLToPath(import.meta.url), '../../..')
 const LAUNCH_AGENTS_DIR = path.join(os.homedir(), 'Library', 'LaunchAgents')
@@ -52,6 +53,10 @@ function generatePlist(taskId, config) {
     ? `  <key>TimeOut</key>\n  <integer>${effectiveTimeout}</integer>`
     : ''
 
+  const tideTaskFileXml = config.sourcePath
+    ? `    <key>TIDE_TASK_FILE</key>\n    <string>${xmlEscape(config.sourcePath)}</string>\n`
+    : ''
+
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -67,7 +72,7 @@ function generatePlist(taskId, config) {
   <dict>
     <key>TIDE_TASK_ID</key>
     <string>${xmlEscape(taskId)}</string>
-    <key>HOME</key>
+${tideTaskFileXml}    <key>HOME</key>
     <string>${xmlEscape(os.homedir())}</string>
     <key>PATH</key>
     <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
@@ -141,11 +146,21 @@ export function createTask(config) {
     ...(timeoutSeconds !== null && { timeoutSeconds }),
     resultRetentionDays,
     claudeStreamJson,
+    sourcePath: config.sourcePath || null,
     ...(config.parentRunId ? { parentRunId: config.parentRunId } : {}),
   }
-  writeTask(task)
 
-  const plist = writePlist(taskId, { ...config, command, workingDirectory, schedule, jitterSeconds })
+  // Write internal fields back to the source .md file
+  if (config.sourcePath) {
+    writeTideFields(config.sourcePath, {
+      '_id': taskId,
+      '_createdAt': createdAt,
+      '_jitter': jitterSeconds,
+      '_enabled': true,
+    })
+  }
+
+  const plist = writePlist(taskId, task)
   bootstrap(taskId)
 
   return { task, plistPath: plist }
@@ -170,8 +185,10 @@ export function updateTask(existing, changes) {
     claudeStreamJson: changes.claudeStreamJson ?? existing.claudeStreamJson ?? false,
   }
 
-  writeTask(task)
-  writePlist(task.id, { ...task, command, workingDirectory, schedule })
+  if (task.sourcePath) {
+    writeTideFields(task.sourcePath, { '_enabled': task.enabled })
+  }
+  writePlist(task.id, task)
   if (task.enabled) bootstrap(task.id)
 
   return task

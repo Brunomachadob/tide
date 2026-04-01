@@ -10,53 +10,69 @@ A task's lifecycle involves three distinct layers:
 
 1. **launchd** — owns scheduling and process execution. Each task is a plist in `~/Library/LaunchAgents/`. launchd fires `scripts/tide.sh <id>` on schedule.
 2. **tide.sh** — thin shell wrapper. Reads config via `task-setup.js`, runs the command with retry logic, then delegates all post-run work (result JSON, notifications, log rotation, retention) to `task-postprocess.js`.
-3. **TUI** (`src/`) — reads `~/.tide/` on a polling interval and calls `launchctl print` per task to get live status. Never writes to launchd directly except on create/enable/disable/delete.
+3. **TUI** (`src/`) — polls task state on an interval via a background worker thread. Never writes to launchd directly except on create/enable/disable/delete.
 
 ### Task data assembly
 
-What the UI shows for each task is merged from three sources at display time (see `src/hooks/useTasks.js`):
+What the UI shows for each task is assembled from two sources at display time (see `src/lib/load-tasks.js`):
 
 | Field | Source |
 |---|---|
-| Config (`name`, `schedule`, `command`, etc.) | `~/.tide/tasks/<id>/task.json` |
+| Config (`name`, `schedule`, `command`, etc.) | `<repo>/.tide/<task>.md` frontmatter + body |
 | `status` (disabled / loaded / running / not loaded) | `launchctl print` via `getStatus()` |
-| `lastResult` (exit code, timestamps, output) | latest `~/.tide/tasks/<id>/results/*.json` |
+| `lastResult` (exit code, timestamps, output) | latest run in `~/.tide/tasks/<id>/runs/` |
+
+`readTasks()` scans `~/Library/LaunchAgents/com.tide.*.plist` files. Each plist contains a `TIDE_TASK_FILE` env var pointing back to the source `.md` file.
 
 If launchd has no record of the task (plist missing or never bootstrapped), `getStatus()` returns `{ loaded: false }` and the task shows as `not loaded` — it does not crash or disappear. The user can re-enable it from the UI.
+
+### UI refresh model
+
+`loadTasks()` calls `spawnSync` (for `plutil` and `launchctl`) and reads files synchronously — it would block the Node.js event loop and freeze Ink's render loop if run on the main thread. Instead:
+
+- `useTasks` (in `App`) spawns a `worker_threads` Worker per poll cycle. The worker runs `loadTasks()`, posts the result back, and exits. The main thread is never blocked.
+- If a worker is still running when the next interval fires, the tick is skipped.
+- The resulting `tasks` array is held in `App` state and passed as props to all screens. `TaskDetailScreen` looks up its task via `tasks.find()` — no separate poll loop, no spinner on navigation.
 
 ### Module responsibilities
 
 ```
 src/lib/
   io.js           — safeReadJSON, atomicWriteJSON (shared primitives)
-  tasks.js        — task CRUD against ~/.tide/tasks/
+  tasks.js        — readTask/readTasks scan plists + .md files; setEnabled writes _enabled back
   results.js      — read result JSON files
   logs.js         — read stdout/stderr/output log files
   notifications.js — read/clear pending-notifications.json
   settings.js     — read/write ~/.tide/settings.json
   format.js       — formatDate, formatRelativeTime, formatSchedule (pure, no I/O)
   launchd.js      — launchctl wrappers (getStatus, bootstrap, bootout, kickstart)
-  create.js       — createTask: writes task.json + prompt.txt + plist, calls bootstrap
+  create.js       — createTask: writes underscore-prefixed internal fields to .md + generates plist, calls bootstrap
+  taskfile.js     — parseTaskFile, writeTideFields, computePending, applyPending
+  load-tasks.js   — loadTasks(): merges .md + launchd + lastResult into display objects (run in worker)
+  tasks-worker.js — worker thread entry point: calls loadTasks(), posts result to main thread
   constants.js    — DATE_FORMATS, TIMEZONES
 
 scripts/
-  tide.sh        — executed by launchd; runs the command, handles retries
-  task-setup.js         — reads task.json and emits shell variables before the run
-  task-postprocess.js   — writes result JSON, notifications, rotates logs, prunes old results
+  tide.sh              — executed by launchd; reads TIDE_TASK_FILE from env, handles retries
+  task-setup.js        — reads .md via gray-matter, emits shell variables before the run
+  task-postprocess.js  — writes run.json, notifications, rotates logs, prunes old runs
+  migrate-to-phase2.js — one-off migration: injects underscore-prefixed internal fields from old task.json files
 
 src/hooks/
-  useTasks.js       — polls loadTasks() (merges task.json + launchd + lastResult)
-  useResults.js     — polls getResults()
-  useLogs.js        — polls log files
+  useTasks.js         — spawns worker per tick; holds shared task list in App
+  useResults.js       — polls getResults()
+  useLogs.js          — polls log files
   useNotifications.js — polls pending-notifications.json
 ```
 
 ### Key invariants
 
-- `task.json` is the source of truth for task config. launchd's plist is derived from it and can be regenerated.
-- All JSON writes use an atomic tmp-then-rename pattern (`atomicWriteJSON` in `io.js`).
-- `readTasks()` no longer has side effects — it does not create `pending-notifications.json`. That file is created on first write by `task-postprocess.js` (post-run).
-- The `attempts` field in result JSON is the total number of runs (1 = ran once, 2 = ran + 1 retry). The shell increments the counter before breaking on success or exhausting retries.
+- The `.md` file in `<repo>/.tide/` is the source of truth for task config. The plist is derived from it.
+- Underscore-prefixed frontmatter keys (`_id`, `_createdAt`, `_jitter`, `_enabled`) are managed by Tide. User keys have no prefix.
+- `task.json` is no longer written or read.
+- Only plist-encoded fields (`schedule`, `workingDirectory`, `env`, `timeoutSeconds`, `enabled`) require a sync step. Other field changes take effect at the next run.
+- `readTasks()` has no side effects — it does not create `pending-notifications.json`. That file is created by `task-postprocess.js` (post-run).
+- The `attempts` field in run.json is the total number of runs (1 = ran once, 2 = ran + 1 retry). The shell increments the counter before breaking on success or exhausting retries.
 
 ---
 

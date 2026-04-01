@@ -15,21 +15,33 @@ function makeTmp() {
 
 function makeTask(tmp, taskId, overrides = {}) {
   const taskDir = path.join(tmp, '.tide', 'tasks', taskId)
-  fs.mkdirSync(taskDir, { recursive: true })
+  fs.mkdirSync(path.join(taskDir, 'runs'), { recursive: true })
 
-  const task = {
-    id: taskId,
-    name: 'Test Task',
-    argument: 'Do something useful.',
-    command: '', // filled in per-test via a fake command script
-    extraArgs: [],
-    maxRetries: 0,
-    workingDirectory: tmp,
-    resultRetentionDays: 30,
-    ...overrides,
-  }
-  fs.writeFileSync(path.join(taskDir, 'task.json'), JSON.stringify(task, null, 2))
-  return taskDir
+  const {
+    command = '',
+    maxRetries = 0,
+    workingDirectory = tmp,
+    resultRetentionDays = 30,
+    claudeStreamJson = false,
+    argument = 'Do something useful.',
+  } = overrides
+
+  const repoTideDir = path.join(tmp, 'repo', '.tide')
+  fs.mkdirSync(repoTideDir, { recursive: true })
+  const frontmatter = [
+    `_id: ${taskId}`,
+    `_jitter: 0`,
+    `_enabled: true`,
+    `name: Test Task`,
+    ...(command ? [`command: ${command}`] : []),
+    `maxRetries: ${maxRetries}`,
+    `workingDirectory: ${workingDirectory}`,
+    `resultRetentionDays: ${resultRetentionDays}`,
+    ...(claudeStreamJson ? ['claudeStreamJson: true'] : []),
+  ].join('\n')
+  const mdPath = path.join(repoTideDir, `${taskId}.md`)
+  fs.writeFileSync(mdPath, `---\n${frontmatter}\n---\n\n${argument}`)
+  return { taskDir, mdPath }
 }
 
 function makeFakeCommand(tmp, { exitCode = 0, output = 'fake output' } = {}) {
@@ -52,7 +64,7 @@ function makeFakeStreamCommand(tmp, { exitCode = 0, text = 'streamed output' } =
   return script
 }
 
-function runRunner(tmp, taskId) {
+function runRunner(tmp, taskId, mdPath) {
   return spawnSync('zsh', [SCRIPT, taskId], {
     encoding: 'utf8',
     env: {
@@ -60,6 +72,7 @@ function runRunner(tmp, taskId) {
       HOME: tmp,
       PATH: process.env.PATH,
       TIDE_NO_NOTIFY: '1',
+      TIDE_TASK_FILE: mdPath,
     },
     timeout: 15000,
   })
@@ -123,14 +136,12 @@ describe('task-runner.sh', () => {
     assert.match(stderr, /requires a task ID/)
   })
 
-  test('exits 1 when task file is missing', () => {
+  test('exits 1 when TIDE_TASK_FILE points to missing file', () => {
     const tmp = makeTmp()
     after(() => fs.rmSync(tmp, { recursive: true, force: true }))
     const taskId = 'no-task'
-    const taskDir = path.join(tmp, '.tide', 'tasks', taskId)
-    fs.mkdirSync(taskDir, { recursive: true })
-    // no task.json
-    const { status } = runRunner(tmp, taskId)
+    fs.mkdirSync(path.join(tmp, '.tide', 'tasks', taskId), { recursive: true })
+    const { status } = runRunner(tmp, taskId, '/nonexistent/task.md')
     assert.equal(status, 1)
   })
 
@@ -139,9 +150,9 @@ describe('task-runner.sh', () => {
     after(() => fs.rmSync(tmp, { recursive: true, force: true }))
     const taskId = 'success-task'
     const fakeCmd = makeFakeCommand(tmp, { exitCode: 0, output: 'all good' })
-    makeTask(tmp, taskId, { command: fakeCmd })
+    const { mdPath } = makeTask(tmp, taskId, { command: fakeCmd })
 
-    const { status } = runRunner(tmp, taskId)
+    const { status } = runRunner(tmp, taskId, mdPath)
     assert.equal(status, 0)
 
     const run = readLatestRun(tmp, taskId)
@@ -157,9 +168,9 @@ describe('task-runner.sh', () => {
     after(() => fs.rmSync(tmp, { recursive: true, force: true }))
     const taskId = 'fail-task'
     const fakeCmd = makeFakeCommand(tmp, { exitCode: 1, output: 'something broke' })
-    makeTask(tmp, taskId, { command: fakeCmd })
+    const { mdPath } = makeTask(tmp, taskId, { command: fakeCmd })
 
-    runRunner(tmp, taskId)
+    runRunner(tmp, taskId, mdPath)
 
     const run = readLatestRun(tmp, taskId)
     assert.ok(run, 'run.json should exist')
@@ -171,9 +182,9 @@ describe('task-runner.sh', () => {
     after(() => fs.rmSync(tmp, { recursive: true, force: true }))
     const taskId = 'log-task'
     const fakeCmd = makeFakeCommand(tmp, { output: 'log me' })
-    makeTask(tmp, taskId, { command: fakeCmd })
+    const { mdPath } = makeTask(tmp, taskId, { command: fakeCmd })
 
-    runRunner(tmp, taskId)
+    runRunner(tmp, taskId, mdPath)
 
     const log = readLatestRunLog(tmp, taskId)
     assert.ok(log, 'output.log should exist in run dir')
@@ -185,9 +196,9 @@ describe('task-runner.sh', () => {
     after(() => fs.rmSync(tmp, { recursive: true, force: true }))
     const taskId = 'pid-task'
     const fakeCmd = makeFakeCommand(tmp)
-    makeTask(tmp, taskId, { command: fakeCmd })
+    const { mdPath } = makeTask(tmp, taskId, { command: fakeCmd })
 
-    runRunner(tmp, taskId)
+    runRunner(tmp, taskId, mdPath)
 
     const pidFile = path.join(tmp, '.tide', 'tasks', taskId, 'running.pid')
     assert.ok(!fs.existsSync(pidFile), 'PID file should be removed after run')
@@ -198,9 +209,9 @@ describe('task-runner.sh', () => {
     after(() => fs.rmSync(tmp, { recursive: true, force: true }))
     const taskId = 'pid-fail-task'
     const fakeCmd = makeFakeCommand(tmp, { exitCode: 1 })
-    makeTask(tmp, taskId, { command: fakeCmd })
+    const { mdPath } = makeTask(tmp, taskId, { command: fakeCmd })
 
-    runRunner(tmp, taskId)
+    runRunner(tmp, taskId, mdPath)
 
     const pidFile = path.join(tmp, '.tide', 'tasks', taskId, 'running.pid')
     assert.ok(!fs.existsSync(pidFile), 'PID file should be removed even after failed run')
@@ -211,13 +222,13 @@ describe('task-runner.sh', () => {
     after(() => fs.rmSync(tmp, { recursive: true, force: true }))
     const taskId = 'overlap-task'
     const fakeCmd = makeFakeCommand(tmp)
-    makeTask(tmp, taskId, { command: fakeCmd })
+    const { mdPath } = makeTask(tmp, taskId, { command: fakeCmd })
 
     // Write a PID file pointing to a real running process (this test process)
     const pidFile = path.join(tmp, '.tide', 'tasks', taskId, 'running.pid')
     fs.writeFileSync(pidFile, String(process.pid))
 
-    const { status, stderr } = runRunner(tmp, taskId)
+    const { status, stderr } = runRunner(tmp, taskId, mdPath)
     assert.equal(status, 0) // exits 0 (skip is not an error)
     assert.match(stderr, /Skipping/)
 
@@ -232,13 +243,13 @@ describe('task-runner.sh', () => {
     after(() => fs.rmSync(tmp, { recursive: true, force: true }))
     const taskId = 'stale-pid-task'
     const fakeCmd = makeFakeCommand(tmp, { exitCode: 0 })
-    makeTask(tmp, taskId, { command: fakeCmd })
+    const { mdPath } = makeTask(tmp, taskId, { command: fakeCmd })
 
     // PID 99999 is virtually guaranteed to not exist
     const pidFile = path.join(tmp, '.tide', 'tasks', taskId, 'running.pid')
     fs.writeFileSync(pidFile, '99999')
 
-    const { status } = runRunner(tmp, taskId)
+    const { status } = runRunner(tmp, taskId, mdPath)
     assert.equal(status, 0)
 
     const run = readLatestRun(tmp, taskId)
@@ -251,9 +262,9 @@ describe('task-runner.sh', () => {
     after(() => fs.rmSync(tmp, { recursive: true, force: true }))
     const taskId = 'no-retry-task'
     const fakeCmd = makeFakeCommand(tmp, { exitCode: 1 })
-    makeTask(tmp, taskId, { command: fakeCmd, maxRetries: 0 })
+    const { mdPath } = makeTask(tmp, taskId, { command: fakeCmd, maxRetries: 0 })
 
-    runRunner(tmp, taskId)
+    runRunner(tmp, taskId, mdPath)
 
     const run = readLatestRun(tmp, taskId)
     assert.ok(run)
@@ -266,9 +277,9 @@ describe('task-runner.sh', () => {
     after(() => fs.rmSync(tmp, { recursive: true, force: true }))
     const taskId = 'success-attempt-task'
     const fakeCmd = makeFakeCommand(tmp, { exitCode: 0 })
-    makeTask(tmp, taskId, { command: fakeCmd, maxRetries: 0 })
+    const { mdPath } = makeTask(tmp, taskId, { command: fakeCmd, maxRetries: 0 })
 
-    runRunner(tmp, taskId)
+    runRunner(tmp, taskId, mdPath)
 
     const run = readLatestRun(tmp, taskId)
     assert.ok(run)
@@ -281,9 +292,9 @@ describe('task-runner.sh', () => {
     after(() => fs.rmSync(tmp, { recursive: true, force: true }))
     const taskId = 'stream-task'
     const fakeCmd = makeFakeStreamCommand(tmp, { exitCode: 0, text: 'hello stream' })
-    makeTask(tmp, taskId, { command: fakeCmd, claudeStreamJson: true })
+    const { mdPath } = makeTask(tmp, taskId, { command: fakeCmd, claudeStreamJson: true })
 
-    const { status } = runRunner(tmp, taskId)
+    const { status } = runRunner(tmp, taskId, mdPath)
     assert.equal(status, 0)
 
     const log = readLatestRunLog(tmp, taskId)
@@ -297,9 +308,9 @@ describe('task-runner.sh', () => {
     after(() => fs.rmSync(tmp, { recursive: true, force: true }))
     const taskId = 'stream-fail-task'
     const fakeCmd = makeFakeStreamCommand(tmp, { exitCode: 1, text: 'oops' })
-    makeTask(tmp, taskId, { command: fakeCmd, claudeStreamJson: true })
+    const { mdPath } = makeTask(tmp, taskId, { command: fakeCmd, claudeStreamJson: true })
 
-    runRunner(tmp, taskId)
+    runRunner(tmp, taskId, mdPath)
 
     const run = readLatestRun(tmp, taskId)
     assert.ok(run)
