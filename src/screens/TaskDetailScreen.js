@@ -115,7 +115,10 @@ export default function TaskDetailScreen({ taskId, navigate, goBack, repoRoot, h
         showToast(e.message, 'error')
       }
     }
-    else if (action === 'enable') runAction('Enable', () => { setEnabled(taskId, true) })
+    else if (action === 'enable') runAction('Enable', () => {
+      setEnabled(taskId, true, task?.sourcePath)
+      if (task) applyPending({ type: 'update', task, existing: task, diff: [] })
+    })
     else if (action === 'disable') runAction('Disable', () => { setEnabled(taskId, false) })
     else if (action === 'sync') {
       runAction('Sync', () => {

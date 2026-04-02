@@ -139,7 +139,11 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
         showToast(e.message, 'error')
       }
     } else if (action === 'enable') {
-      runAction('Enable', () => { setEnabled(taskId, true) })
+      runAction('Enable', () => {
+        const t = tasks.find(t => t.id === taskId)
+        setEnabled(taskId, true, t?.sourcePath)
+        if (t) applyPending({ type: 'update', task: t, existing: t, diff: [] })
+      })
     } else if (action === 'disable') {
       runAction('Disable', () => { setEnabled(taskId, false) })
     } else if (action === 'delete') {

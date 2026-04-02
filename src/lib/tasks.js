@@ -136,19 +136,27 @@ export function disable(id) {
 }
 
 /**
- * Write _enabled=true to the .md so that the next applyPending will bootstrap it.
- * Returns the .md path so the caller can immediately applyPending if desired.
+ * Disable a task or mark it as enabled in the .md.
+ * For enable: only writes _enabled=true to the .md. The caller is responsible for
+ * re-creating the plist via applyPending (taskfile.js) if needed.
+ * sourcePath is optional — if the plist was already deleted, callers must supply it.
  */
-export function setEnabled(id, enabled) {
+export function setEnabled(id, enabled, sourcePath) {
   if (!enabled) return disable(id)
-  // For enable: find the .md via the existing plist (task was previously enabled and synced)
-  const plist = path.join(LAUNCH_AGENTS_DIR, `com.tide.${id}.plist`)
-  if (!fs.existsSync(plist)) throw new Error(`Task ${id} not found`)
-  const plistJson = readPlistJson(plist)
-  const mdPath = plistJson?.EnvironmentVariables?.TIDE_TASK_FILE
+
+  // Resolve the .md path: prefer caller-supplied sourcePath, fall back to plist lookup
+  let mdPath = sourcePath
+  if (!mdPath || !fs.existsSync(mdPath)) {
+    const plist = path.join(LAUNCH_AGENTS_DIR, `com.tide.${id}.plist`)
+    if (fs.existsSync(plist)) {
+      const plistJson = readPlistJson(plist)
+      mdPath = plistJson?.EnvironmentVariables?.TIDE_TASK_FILE
+    }
+  }
   if (!mdPath || !fs.existsSync(mdPath)) throw new Error(`Task ${id}: source .md not found`)
+
   writeTideFieldsInline(mdPath, { '_enabled': true })
-  bootstrap(id)  // throws if launchctl fails — .md is already updated at this point
+  // Caller must invoke applyPending to re-create the plist and bootstrap.
 }
 
 /** Inline version of writeTideFields to avoid circular import with taskfile.js */
@@ -171,8 +179,8 @@ function writeTideFieldsInline(filePath, fields) {
     if (replaced !== fm) {
       fm = replaced
     } else {
-      // Key not found — insert before closing ---
-      fm = fm.replace(/^---$/m, match => `${k}: ${yamlValue}\n${match}`)
+      // Key not found — insert before closing --- (replace the trailing \n--- in fmBlock)
+      fm = fm.replace(/\n---$/, `\n${k}: ${yamlValue}\n---`)
     }
   }
   const tmp = filePath + '.tmp'
