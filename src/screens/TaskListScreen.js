@@ -29,10 +29,9 @@ function SyncBadge({ syncStatus }) {
   return React.createElement(Text, { color }, label)
 }
 
-export default function TaskListScreen({ navigate, repoRoot, height, tasks, loading, error, refresh, intervalMs, settings }) {
+export default function TaskListScreen({ navigate, repoRoot, height, tasks, loading, error, refresh, intervalMs, settings, scopeIdx = 0, setScopeIdx }) {
   const { unreadCount } = useNotifications(intervalMs)
   const [selectedIdx, setSelectedIdx] = useState(0)
-  const [scopeIdx, setScopeIdx] = useState(0)  // index into scopes array
   const [confirm, setConfirm] = useState(null)
   const [toast, setToast] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
@@ -194,13 +193,13 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
   const showRepo = currentScope === null
   const COLS = [
     { label: 'NAME',         width: 28 },
-    ...(showRepo ? [{ label: 'REPO', width: 14 }] : []),
     { label: 'SCHEDULE',     width: 12 },
     { label: 'STATUS',       width: 20 },
     { label: 'SYNC',         width: 16 },
     { label: 'LAST RUN',     width: 17 },
     { label: 'LAST RESULTS', width: 14 },
   ]
+  const totalWidth = COLS.reduce((s, c) => s + c.width, 0)
 
   function Sparkline({ results }) {
     if (!results || results.length === 0) return React.createElement(Text, { color: 'gray' }, '-')

@@ -18,6 +18,7 @@ export default function App() {
   const intervalMs = settings.refreshInterval * 1000
   const { tasks, loading, error, refresh } = useTasks(intervalMs, repoRoot)
   const [stack, setStack] = useState([{ screen: settings.command ? 'list' : 'setup', props: {} }])
+  const [scopeIdx, setScopeIdx] = useState(0)
 
   const navigate = useCallback((screen, props = {}) => {
     setStack(s => [...s, { screen, props }])
@@ -65,7 +66,7 @@ export default function App() {
     return parts.length ? parts.join(' › ') : null
   })()
 
-  const screenProps = { navigate, goBack, repoRoot, height: stdout?.rows ? stdout.rows - 1 : undefined, tasks, loading, error, refresh, intervalMs, settings, breadcrumb }
+  const screenProps = { navigate, goBack, repoRoot, height: stdout?.rows ? stdout.rows - 1 : undefined, tasks, loading, error, refresh, intervalMs, settings, breadcrumb, scopeIdx, setScopeIdx }
 
   switch (current.screen) {
     case 'list':
