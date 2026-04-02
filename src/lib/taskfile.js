@@ -248,8 +248,20 @@ export function computePending(repoRoot) {
     }
   }
 
-  if (repoRoot) {
-    const mdFiles = discoverTaskFiles(repoRoot)
+  // Collect all .tide/ roots to scan for pending creates/updates:
+  // - the current repoRoot (from cwd)
+  // - all roots inferred from existing plist TIDE_TASK_FILE paths
+  const tideRoots = new Set()
+  if (repoRoot) tideRoots.add(repoRoot)
+  for (const entry of allPlists) {
+    if (entry.tideTaskFile) {
+      // TIDE_TASK_FILE is <root>/.tide/<name>.md — root is two levels up
+      tideRoots.add(path.dirname(path.dirname(entry.tideTaskFile)))
+    }
+  }
+
+  for (const root of tideRoots) {
+    const mdFiles = discoverTaskFiles(root)
     for (const filePath of mdFiles) {
       try {
         const id = ensureTaskId(filePath)
