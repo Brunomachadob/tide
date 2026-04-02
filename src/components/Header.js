@@ -1,7 +1,8 @@
 import React from 'react'
 import { Box, Text } from 'ink'
 
-export default function Header({ breadcrumb, subtitle, notificationCount = 0 }) {
+// scopeToggle: { label: string } — renders an interactive scope indicator next to the title
+export default function Header({ breadcrumb, scopeToggle, notificationCount = 0 }) {
   return React.createElement(
     Box,
     { flexDirection: 'column', borderStyle: 'single', borderColor: 'cyan', paddingX: 1, marginBottom: 1 },
@@ -10,10 +11,13 @@ export default function Header({ breadcrumb, subtitle, notificationCount = 0 }) 
       { justifyContent: 'space-between' },
       React.createElement(
         Box,
-        null,
+        { gap: 1 },
         React.createElement(Text, { bold: true, color: 'cyan' }, '≋ Tide'),
-        subtitle
-          ? React.createElement(Text, { color: 'gray' }, '  ' + subtitle)
+        scopeToggle
+          ? React.createElement(React.Fragment, null,
+              React.createElement(Text, { color: 'gray' }, '[Tab]'),
+              React.createElement(Text, { color: 'cyan' }, scopeToggle.label + ' ▾'),
+            )
           : null,
       ),
       React.createElement(

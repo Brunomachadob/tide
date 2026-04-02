@@ -112,7 +112,7 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
       if (pendingTasks.length > 0) {
         setConfirm({ action: 'sync-all', message: `Apply all ${pendingTasks.length} pending change(s)?` })
       }
-    } else if (input === 'f') {
+    } else if (key.tab) {
       setNamespaceFilter(f => f === 'current' ? 'all' : 'current')
       setSelectedIdx(0)
     } else if (input === 'c') {
@@ -201,15 +201,15 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
     return s.length > w ? s.slice(0, w - 1) + '…' : s.padEnd(w)
   }
 
-  const subtitle = repoRoot
+  const scopeLabel = repoRoot
     ? (namespaceFilter === 'current' ? path.basename(repoRoot) : 'all repos')
-    : null
+    : 'all repos'
 
   return React.createElement(
     Box,
     { flexDirection: 'column', height },
     React.createElement(Header, {
-      subtitle,
+      scopeToggle: { label: scopeLabel },
       notificationCount: unreadCount,
     }),
 
@@ -306,7 +306,6 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
         ['s', 'settings'],
         ['Ctrl+S', 'sync'],
         ['S', 'sync all'],
-        ['f', namespaceFilter === 'current' ? 'show all' : 'filter repo'],
         ['r', 'run'],
         ['e', 'en/disable'],
         ['l', 'logs'],
