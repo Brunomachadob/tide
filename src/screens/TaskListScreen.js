@@ -32,10 +32,23 @@ function SyncBadge({ syncStatus }) {
 export default function TaskListScreen({ navigate, repoRoot, height, tasks, loading, error, refresh, intervalMs, settings }) {
   const { unreadCount } = useNotifications(intervalMs)
   const [selectedIdx, setSelectedIdx] = useState(0)
-  const [namespaceFilter, setNamespaceFilter] = useState('current') // 'current' | 'all'
+  const [scopeIdx, setScopeIdx] = useState(0)  // index into scopes array
   const [confirm, setConfirm] = useState(null)
   const [toast, setToast] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
+
+  // Build scope list from task sourcePaths: unique repo roots, repoRoot first, then null = all
+  const knownRepos = React.useMemo(() => {
+    const roots = new Set()
+    for (const t of tasks) {
+      if (t.sourcePath) roots.add(path.dirname(path.dirname(t.sourcePath)))
+    }
+    if (repoRoot) roots.delete(repoRoot)
+    return repoRoot ? [repoRoot, ...roots] : [...roots]
+  }, [tasks, repoRoot])
+  // scopes: each known repo root + null (= all)
+  const scopes = [...knownRepos, null]
+  const currentScope = scopes[scopeIdx % scopes.length] ?? null
 
   const showToast = useCallback((message, type = 'info') => {
     setToast({ message, type })
@@ -54,9 +67,9 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
     }
   }, [refresh, showToast])
 
-  // Filter tasks by namespace
-  const visibleTasks = (namespaceFilter === 'current' && repoRoot)
-    ? tasks.filter(t => t.sourcePath?.startsWith(repoRoot))
+  // Filter tasks by current scope (null = all)
+  const visibleTasks = currentScope
+    ? tasks.filter(t => t.sourcePath?.startsWith(currentScope))
     : tasks
 
   // Pending tasks for [S] sync-all
@@ -113,14 +126,15 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
         setConfirm({ action: 'sync-all', message: `Apply all ${pendingTasks.length} pending change(s)?` })
       }
     } else if (key.tab) {
-      setNamespaceFilter(f => f === 'current' ? 'all' : 'current')
+      setScopeIdx(i => (i + 1) % scopes.length)
       setSelectedIdx(0)
     } else if (input === 'c') {
-      if (repoRoot) {
-        openNewTaskFile(repoRoot)
+      const targetRepo = currentScope || repoRoot
+      if (targetRepo) {
+        openNewTaskFile(targetRepo)
         refresh()
       } else {
-        showToast('No git repo detected in current directory', 'error')
+        showToast('No git repo detected', 'error')
       }
     } else if (input === 'n') {
       navigate('notifications')
@@ -201,15 +215,13 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
     return s.length > w ? s.slice(0, w - 1) + '…' : s.padEnd(w)
   }
 
-  const scopeLabel = repoRoot
-    ? (namespaceFilter === 'current' ? path.basename(repoRoot) : 'all repos')
-    : 'all repos'
+  const scopeLabel = currentScope ? path.basename(currentScope) : 'all repos'
 
   return React.createElement(
     Box,
     { flexDirection: 'column', height },
     React.createElement(Header, {
-      scopeToggle: { label: scopeLabel },
+      scopeToggle: scopes.length > 1 ? { label: scopeLabel } : null,
       notificationCount: unreadCount,
     }),
 
@@ -235,7 +247,7 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
     visibleTasks.length === 0
       ? React.createElement(Box, { paddingX: 1, paddingY: 1 },
           React.createElement(Text, { color: 'gray' },
-            repoRoot
+            (currentScope || repoRoot)
               ? 'No tasks found. Press [c] to create a new task file.'
               : 'No scheduled tasks. Open tide from a git repository to create tasks.',
           ),
