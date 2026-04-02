@@ -72,12 +72,28 @@ export function bootout(taskId) {
 
 /**
  * Manually trigger a task immediately, skipping jitter.
- * Runs task-runner.sh directly with TIDE_NO_JITTER=1 so the task starts
- * without delay regardless of the configured jitterSeconds.
+ * Runs tide.sh directly with TIDE_NO_JITTER=1 and TIDE_TASK_FILE from the plist.
  */
 export function kickstart(taskId) {
   const runner = path.join(PLUGIN_ROOT, 'scripts', 'tide.sh')
-  const env = { ...process.env, TIDE_TASK_ID: taskId, TIDE_NO_JITTER: '1' }
+
+  // Read TIDE_TASK_FILE from the plist so tide.sh can find the .md source
+  let tideTaskFile = ''
+  try {
+    const plist = plistPath(taskId)
+    const r = spawnSync('plutil', ['-convert', 'json', '-o', '-', plist], { encoding: 'utf8' })
+    if (r.status === 0) {
+      const parsed = JSON.parse(r.stdout)
+      tideTaskFile = parsed?.EnvironmentVariables?.TIDE_TASK_FILE || ''
+    }
+  } catch { /* fall through — tide.sh will error with a clear message */ }
+
+  const env = {
+    ...process.env,
+    TIDE_TASK_ID: taskId,
+    TIDE_NO_JITTER: '1',
+    ...(tideTaskFile ? { TIDE_TASK_FILE: tideTaskFile } : {}),
+  }
   const child = spawn(runner, [taskId], {
     env,
     detached: true,

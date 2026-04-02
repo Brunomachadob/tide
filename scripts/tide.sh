@@ -10,6 +10,7 @@ TASK_FILE="${TIDE_TASK_FILE:?TIDE_TASK_FILE must be set (plist missing TIDE_TASK
 SCRIPT_DIR="${0:A:h}"
 
 now() { date -u '+%Y-%m-%dT%H:%M:%SZ' }
+log() { echo "[$(now)] [${TASK_NAME:-${TASK_ID}}] [${RUN_ID:-init}] $*" >> "${OUTPUT_LOG:-/dev/stderr}" }
 
 if [[ ! -f "${TASK_FILE}" ]]; then
   echo "[$(now)] ERROR: task file not found: ${TASK_FILE}" >&2
@@ -34,6 +35,7 @@ attempt=0
 finish() {
   rm -f "${PID_FILE}"
   local COMPLETED_AT="$(now)"
+  log "finished: exit=${EXIT_CODE} attempts=${attempt}"
   node "${SCRIPT_DIR}/task-postprocess.js" \
     "${TASK_FILE}" "${EXIT_CODE}" "${STARTED_AT}" "${COMPLETED_AT}" "${attempt}" \
     "${RUN_DIR}"
@@ -46,22 +48,26 @@ eval "$(node "${SCRIPT_DIR}/task-setup.js" "${TASK_FILE}")"
 OUTPUT_LOG="${RUN_DIR}/output.log"
 STDERR_LOG="${RUN_DIR}/stderr.log"
 
+log "starting"
+
 # Jitter: spread tasks after wake so they don't all fire simultaneously.
 # Skipped when TIDE_NO_JITTER=1 (manual runs).
 if [[ ${JITTER_SECONDS} -gt 0 && "${TIDE_NO_JITTER:-0}" != "1" ]]; then
-  echo "[$(now)] Jitter: waiting ${JITTER_SECONDS}s before starting..." >> "${OUTPUT_LOG}"
+  log "jitter: sleeping ${JITTER_SECONDS}s..."
   sleep ${JITTER_SECONDS}
+  log "jitter: done, proceeding"
 fi
 
 # Run with retries
 while [[ ${attempt} -le ${MAX_RETRIES} ]]; do
   if [[ ${attempt} -gt 0 ]]; then
     BACKOFF=$((attempt * 30))
-    echo "[$(now)] Retry ${attempt}/${MAX_RETRIES} after ${BACKOFF}s..." >> "${OUTPUT_LOG}"
+    log "retry ${attempt}/${MAX_RETRIES} after ${BACKOFF}s..."
     sleep ${BACKOFF}
   fi
 
   CMD_ARRAY=(${=COMMAND})
+  log "command starting: ${CMD_ARRAY[@]} ${=EXTRA_ARGS} ${ARGUMENT}"
   set +e
   if [[ "${CLAUDE_STREAM_JSON}" == "1" ]]; then
     cd "${WORKING_DIR}" && "${CMD_ARRAY[@]}" ${=EXTRA_ARGS} "${ARGUMENT}" 2>> "${STDERR_LOG}" | \
@@ -72,6 +78,7 @@ while [[ ${attempt} -le ${MAX_RETRIES} ]]; do
     EXIT_CODE=$?
   fi
   set -e
+  log "command finished: exit=${EXIT_CODE}"
 
   attempt=$((attempt + 1))
   [[ ${EXIT_CODE} -eq 0 ]] && break
@@ -94,4 +101,4 @@ if [[ "${TIDE_NO_NOTIFY:-0}" != "1" ]]; then
   fi
 fi
 
-echo "[$(now)] Task '${TASK_NAME}' (${TASK_ID}) run=${RUN_ID} exit=${EXIT_CODE} attempts=${attempt}"
+log "done: exit=${EXIT_CODE} attempts=${attempt}"
