@@ -108,6 +108,41 @@ describe('renderMarkdown', () => {
     assert.ok(!out.includes(REVERSE))
   })
 
+  const OSC8 = '\x1b]8;;'
+
+  test('link — clickable OSC 8 hyperlink with underlined label', () => {
+    const url = 'https://github.com/n26/terraform/pull/40075'
+    const out = renderMarkdown(`[n26/terraform#40075](${url})`)
+    assert.ok(out.includes(UNDERLINE), 'link text should be underlined')
+    assert.ok(out.includes('n26/terraform#40075'), 'should contain link text')
+    assert.ok(out.includes(OSC8 + url), 'should contain OSC 8 open sequence with url')
+    assert.ok(out.includes(OSC8 + '\x1b\\'), 'should contain OSC 8 close sequence')
+    assert.ok(!out.includes('[n26/terraform#40075]'), 'should strip [] markers')
+    assert.ok(!out.includes(`(${url})`), 'should not show url in parentheses')
+  })
+
+  test('link — surrounding text is preserved', () => {
+    const out = renderMarkdown('See [PR here](https://example.com) for details')
+    assert.ok(out.includes('PR here'))
+    assert.ok(out.includes('See'))
+    assert.ok(out.includes('for details'))
+    assert.ok(!out.includes('(https://example.com)'), 'url should not appear in parentheses')
+  })
+
+  test('link — multiple links on one line', () => {
+    const out = renderMarkdown('[foo](https://a.com) and [bar](https://b.com)')
+    assert.ok(out.includes('foo'))
+    assert.ok(out.includes('bar'))
+    assert.ok(out.includes(OSC8 + 'https://a.com'))
+    assert.ok(out.includes(OSC8 + 'https://b.com'))
+  })
+
+  test('link inside fenced code block is not processed', () => {
+    const out = renderMarkdown('```\n[foo](https://example.com)\n```')
+    assert.ok(!out.includes(UNDERLINE), 'links inside code blocks should not be processed')
+    assert.ok(out.includes('[foo](https://example.com)'), 'raw link syntax should be preserved')
+  })
+
   test('multiline document', () => {
     const doc = [
       '# Title',
