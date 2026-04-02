@@ -31,10 +31,17 @@ const PLIST_DIFFABLE_FIELDS = ['schedule', 'workingDirectory', 'env', 'timeoutSe
 // System env keys injected by Tide — excluded when extracting user env from plist
 const SYSTEM_ENV_KEYS = new Set(['TIDE_TASK_ID', 'TIDE_TASK_FILE', 'HOME', 'PATH'])
 
-/** Returns startDir if it contains a .tide/ folder, otherwise null. */
+/** Walk up from startDir until a .git directory is found, then check for .tide/. Returns the repo root or null. */
 export function findRepoRoot(startDir) {
-  const dir = path.resolve(startDir)
-  return fs.existsSync(path.join(dir, '.tide')) ? dir : null
+  let dir = path.resolve(startDir)
+  while (true) {
+    if (fs.existsSync(path.join(dir, '.git'))) {
+      return fs.existsSync(path.join(dir, '.tide')) ? dir : null
+    }
+    const parent = path.dirname(dir)
+    if (parent === dir) return null  // filesystem root
+    dir = parent
+  }
 }
 
 /** Return all .md file paths in <repoRoot>/.tide/ */
