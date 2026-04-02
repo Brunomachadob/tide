@@ -38,7 +38,34 @@ export default function App() {
   })
 
   const current = stack[stack.length - 1]
-  const screenProps = { navigate, goBack, repoRoot, height: stdout?.rows ? stdout.rows - 1 : undefined, tasks, loading, error, refresh, intervalMs, settings }
+
+  const breadcrumb = (() => {
+    const parts = []
+    for (const entry of stack) {
+      if (entry.screen === 'list') {
+        // no breadcrumb segment for the root list
+      } else if (entry.screen === 'detail') {
+        const task = tasks?.find(t => t.id === entry.props.taskId)
+        parts.push(task?.name || entry.props.taskId)
+      } else if (entry.screen === 'runs') {
+        // Only push task name if we didn't already get it from a 'detail' entry
+        if (!parts.length) {
+          const task = tasks?.find(t => t.id === entry.props.taskId)
+          parts.push(task?.name || entry.props.taskId)
+        }
+        parts.push('Runs')
+      } else if (entry.screen === 'notifications') {
+        parts.push('Notifications')
+      } else if (entry.screen === 'settings' || entry.screen === 'setup') {
+        parts.push('Settings')
+      }
+    }
+    // If we're inside a run detail (RunsScreen manages that internally), the run id
+    // is not tracked in the App stack — RunsScreen passes it via Header directly.
+    return parts.length ? parts.join(' › ') : null
+  })()
+
+  const screenProps = { navigate, goBack, repoRoot, height: stdout?.rows ? stdout.rows - 1 : undefined, tasks, loading, error, refresh, intervalMs, settings, breadcrumb }
 
   switch (current.screen) {
     case 'list':

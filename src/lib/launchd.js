@@ -73,8 +73,12 @@ export function bootout(taskId) {
 /**
  * Manually trigger a task immediately, skipping jitter.
  * Runs tide.sh directly with TIDE_NO_JITTER=1 and TIDE_TASK_FILE from the plist.
+ *
+ * options:
+ *   overrideArgument  string  — passed as TIDE_OVERRIDE_ARGUMENT; replaces the task's argument for this run
+ *   parentRunId       string  — passed as TIDE_PARENT_RUN_ID; recorded in run.json for follow-up chains
  */
-export function kickstart(taskId) {
+export function kickstart(taskId, { overrideArgument, parentRunId } = {}) {
   const runner = path.join(PLUGIN_ROOT, 'scripts', 'tide.sh')
 
   // Read TIDE_TASK_FILE from the plist so tide.sh can find the .md source
@@ -93,6 +97,8 @@ export function kickstart(taskId) {
     TIDE_TASK_ID: taskId,
     TIDE_NO_JITTER: '1',
     ...(tideTaskFile ? { TIDE_TASK_FILE: tideTaskFile } : {}),
+    ...(overrideArgument !== undefined ? { TIDE_OVERRIDE_ARGUMENT: overrideArgument } : {}),
+    ...(parentRunId ? { TIDE_PARENT_RUN_ID: parentRunId } : {}),
   }
   const child = spawn(runner, [taskId], {
     env,

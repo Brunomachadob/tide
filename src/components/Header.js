@@ -1,7 +1,7 @@
 import React from 'react'
 import { Box, Text } from 'ink'
 
-export default function Header({ title, subtitle, notificationCount = 0, onNotifications, onSettings }) {
+export default function Header({ breadcrumb, subtitle, notificationCount = 0 }) {
   return React.createElement(
     Box,
     { flexDirection: 'column', borderStyle: 'single', borderColor: 'cyan', paddingX: 1, marginBottom: 1 },
@@ -25,8 +25,8 @@ export default function Header({ title, subtitle, notificationCount = 0, onNotif
         React.createElement(Text, { color: 'gray' }, '[s] settings'),
       ),
     ),
-    title
-      ? React.createElement(Text, { bold: true }, title)
+    breadcrumb
+      ? React.createElement(Text, { bold: true }, breadcrumb)
       : null,
   )
 }

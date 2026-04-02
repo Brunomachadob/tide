@@ -67,7 +67,7 @@ while [[ ${attempt} -le ${MAX_RETRIES} ]]; do
   fi
 
   CMD_ARRAY=(${=COMMAND})
-  log "command starting: ${CMD_ARRAY[@]} ${=EXTRA_ARGS} ${ARGUMENT}"
+  log "command starting: ${CMD_ARRAY[@]} ${=EXTRA_ARGS}"
   set +e
   if [[ "${CLAUDE_STREAM_JSON}" == "1" ]]; then
     cd "${WORKING_DIR}" && "${CMD_ARRAY[@]}" ${=EXTRA_ARGS} "${ARGUMENT}" 2>> "${STDERR_LOG}" | \

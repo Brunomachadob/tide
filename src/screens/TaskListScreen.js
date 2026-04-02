@@ -99,14 +99,14 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
           : `Delete "${t.name}"? This cannot be undone.`
         setConfirm({ action: 'delete', taskId: t.id, message: msg })
       }
-    } else if (input === 's') {
-      // Sync selected task if it has a pending syncStatus, otherwise go to settings
+    } else if (key.ctrl && input === 's') {
+      // Sync selected task if it has a pending syncStatus
       const t = visibleTasks[selectedIdx]
       if (t && t.syncStatus) {
         setConfirm({ action: 'sync-one', taskId: t.id, message: `Sync "${t.name}"?` })
-      } else {
-        navigate('settings')
       }
+    } else if (!key.ctrl && input === 's') {
+      navigate('settings')
     } else if (input === 'S') {
       // Sync all pending
       if (pendingTasks.length > 0) {
@@ -205,7 +205,6 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
     Box,
     { flexDirection: 'column', height },
     React.createElement(Header, {
-      title: null,
       subtitle,
       notificationCount: unreadCount,
     }),
@@ -300,7 +299,8 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
         ['↑↓/jk', 'move'],
         ['↵', 'detail'],
         ['c', 'new file'],
-        ['s', 'sync / settings'],
+        ['s', 'settings'],
+        ['Ctrl+S', 'sync'],
         ['S', 'sync all'],
         ['f', namespaceFilter === 'current' ? 'show all' : 'filter repo'],
         ['r', 'run'],

@@ -35,7 +35,7 @@ function formatDiffValue(val) {
   return String(val)
 }
 
-export default function TaskDetailScreen({ taskId, navigate, goBack, repoRoot, height, tasks, loading, refresh, intervalMs, settings }) {
+export default function TaskDetailScreen({ taskId, navigate, goBack, repoRoot, height, tasks, loading, refresh, intervalMs, settings, breadcrumb }) {
   const task = tasks?.find(t => t.id === taskId) ?? null
   const { unreadCount } = useNotifications(intervalMs)
   const [confirm, setConfirm] = useState(null)
@@ -59,17 +59,17 @@ export default function TaskDetailScreen({ taskId, navigate, goBack, repoRoot, h
     if (key.escape || input === 'q') { goBack(); return }
     if (input === 'k' && task?.status === 'running') setConfirm({ action: 'kill', message: `Kill "${task.name}"? The running process will be terminated.` })
     if (input === 'r') setConfirm({ action: 'run', message: `Run "${task?.name}" now?` })
-    if (input === 'e' && task) {
-      const action = task.enabled ? 'disable' : 'enable'
-      setConfirm({ action, message: `${action === 'enable' ? 'Enable' : 'Disable'} "${task.name}"?` })
-    }
     if (key.ctrl && input === 'e' && task?.sourcePath) {
       const editor = process.env.EDITOR || process.env.VISUAL || 'vi'
       spawnSync(editor, [task.sourcePath], { stdio: 'inherit' })
       refresh()
       return
     }
-    if (input === 's' && task?.syncStatus) {
+    if (!key.ctrl && input === 'e' && task) {
+      const action = task.enabled ? 'disable' : 'enable'
+      setConfirm({ action, message: `${action === 'enable' ? 'Enable' : 'Disable'} "${task.name}"?` })
+    }
+    if (key.ctrl && input === 's' && task?.syncStatus) {
       setConfirm({ action: 'sync', message: `Sync "${task?.name}"?` })
       return
     }
@@ -153,7 +153,7 @@ export default function TaskDetailScreen({ taskId, navigate, goBack, repoRoot, h
     if (!task.syncStatus) return null
     if (task.syncStatus === 'create') {
       return React.createElement(Box, { marginBottom: 1, paddingX: 1, borderStyle: 'single', borderColor: 'yellow' },
-        React.createElement(Text, { color: 'yellow' }, 'Not yet synced — press [s] to register with launchd'),
+        React.createElement(Text, { color: 'yellow' }, 'Not yet synced — press [Ctrl+S] to register with launchd'),
       )
     }
     if (task.syncStatus === 'orphan') {
@@ -163,7 +163,7 @@ export default function TaskDetailScreen({ taskId, navigate, goBack, repoRoot, h
     }
     if (task.syncStatus === 'update' && task.syncDiff?.length > 0) {
       return React.createElement(Box, { marginBottom: 1, flexDirection: 'column', paddingX: 1, borderStyle: 'single', borderColor: 'yellow' },
-        React.createElement(Text, { color: 'yellow', bold: true }, 'Pending changes — press [s] to sync:'),
+        React.createElement(Text, { color: 'yellow', bold: true }, 'Pending changes — press [Ctrl+S] to sync:'),
         ...task.syncDiff.map(({ field, from, to }) =>
           React.createElement(Box, { key: field },
             React.createElement(Box, { width: 22 },
@@ -183,7 +183,7 @@ export default function TaskDetailScreen({ taskId, navigate, goBack, repoRoot, h
     Box,
     { flexDirection: 'column', height },
     React.createElement(Header, {
-      title: task.name || task.id?.slice(0, 8),
+      breadcrumb,
       notificationCount: unreadCount,
     }),
 
@@ -227,6 +227,9 @@ export default function TaskDetailScreen({ taskId, navigate, goBack, repoRoot, h
       task.claudeStreamJson
         ? React.createElement(Field, { label: 'Claude stream-json', value: 'enabled', valueColor: 'green' })
         : null,
+      task.env && Object.keys(task.env).length > 0
+        ? React.createElement(Field, { label: 'Env', value: Object.entries(task.env).map(([k, v]) => `${k}=${v}`).join(', ') })
+        : null,
       sourceBasename
         ? React.createElement(Field, { label: 'Source', value: sourceBasename })
         : null,
@@ -267,7 +270,7 @@ export default function TaskDetailScreen({ taskId, navigate, goBack, repoRoot, h
         ['r', 'run'],
         ...(task.status === 'running' ? [['k', 'kill']] : []),
         ['e', 'en/disable'],
-        ...(task.sourcePath ? [['Ctrl+E', 'edit file'], ['s', 'sync']] : [['Ctrl+E', 'edit']]),
+        ...(task.sourcePath ? [['Ctrl+E', 'edit file'], ['Ctrl+S', 'sync']] : [['Ctrl+E', 'edit']]),
         ['l', 'logs'],
         ['x', 'runs'],
         ['d', 'delete'],

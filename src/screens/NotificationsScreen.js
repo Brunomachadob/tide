@@ -10,7 +10,7 @@ import RefreshIndicator from '../components/RefreshIndicator.js'
 import { readSettings } from '../lib/settings.js'
 import { formatDate } from '../lib/format.js'
 
-export default function NotificationsScreen({ navigate, goBack, height }) {
+export default function NotificationsScreen({ navigate, goBack, height, breadcrumb }) {
   const settings = readSettings()
   const intervalMs = settings.refreshInterval * 1000
   const { notifications, loading, clear, clearRead, dismiss, markRead, markAllRead, unreadCount } = useNotifications(intervalMs)
@@ -62,7 +62,7 @@ export default function NotificationsScreen({ navigate, goBack, height }) {
     Box,
     { flexDirection: 'column', height },
     React.createElement(Header, {
-      title: 'Notifications',
+      breadcrumb,
       notificationCount: unreadCount,
     }),
 

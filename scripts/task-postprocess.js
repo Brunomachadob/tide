@@ -19,12 +19,16 @@ const retentionDays = fm.resultRetentionDays ?? 30
 const exitCode = parseInt(exitCodeStr)
 const attempts = parseInt(attemptsStr)
 
-// Read runId from the initial run.json written by task-setup.js
+// Read initial run.json written by task-setup.js — preserve argument and parentRunId
 const runFile = path.join(runDir, 'run.json')
 let runId = path.basename(runDir)
+let savedArgument
+let savedParentRunId
 try {
   const existing = JSON.parse(fs.readFileSync(runFile, 'utf8'))
   runId = existing.runId ?? runId
+  savedArgument = existing.argument
+  savedParentRunId = existing.parentRunId
 } catch { /* use dirname as fallback */ }
 
 const outputLog = path.join(runDir, 'output.log')
@@ -37,8 +41,8 @@ try {
   output = buf.slice(-300)
 } catch { /* ok */ }
 
-// Complete run.json (overwrite with full record)
-fs.writeFileSync(runFile, JSON.stringify({
+// Complete run.json (overwrite with full record, preserving argument and parentRunId)
+const completedRecord = {
   runId,
   taskId,
   taskName,
@@ -46,7 +50,10 @@ fs.writeFileSync(runFile, JSON.stringify({
   completedAt,
   exitCode,
   attempts,
-}, null, 2))
+}
+if (savedArgument !== undefined) completedRecord.argument = savedArgument
+if (savedParentRunId !== undefined) completedRecord.parentRunId = savedParentRunId
+fs.writeFileSync(runFile, JSON.stringify(completedRecord, null, 2))
 
 // Write notification as a single file in the spool directory — naturally concurrent-safe,
 // no read-modify-write race between simultaneous task completions.

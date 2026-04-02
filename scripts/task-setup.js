@@ -33,7 +33,8 @@ try {
 } catch { /* no settings file */ }
 
 const jitterSeconds = fm['_jitter'] ?? 0
-const argument = body.trim()
+const argument = process.env.TIDE_OVERRIDE_ARGUMENT ?? body.trim()
+const parentRunId = process.env.TIDE_PARENT_RUN_ID || fm.parentRunId || undefined
 
 // Initialize run
 const runId = crypto.randomBytes(4).toString('hex')
@@ -47,7 +48,7 @@ const runRecord = {
   startedAt,
   argument,
 }
-if (fm.parentRunId) runRecord.parentRunId = fm.parentRunId
+if (parentRunId) runRecord.parentRunId = parentRunId
 fs.writeFileSync(path.join(runDir, 'run.json'), JSON.stringify(runRecord, null, 2))
 
 const q = v => `'${String(v).replace(/'/g, "'\\''")}'`
