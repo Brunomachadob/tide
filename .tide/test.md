@@ -9,7 +9,7 @@ claudeStreamJson: true
 _id: 3aca1ea4
 _createdAt: '2026-03-30T10:15:52Z'
 _jitter: 58
-_enabled: true
+_enabled: false
 ---
 
 the answer to everything

@@ -9,7 +9,7 @@ claudeStreamJson: true
 _id: 036b8712
 _createdAt: '2026-03-30T09:56:46Z'
 _jitter: 55
-_enabled: true
+_enabled: false
 ---
 
 ping
