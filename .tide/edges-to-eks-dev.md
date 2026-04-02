@@ -1,17 +1,15 @@
-_jitter: 95
-_enabled: true
 ---
 name: Edges to EKS - DEV
 schedule: 30m
 command: /opt/homebrew/bin/claude26 --permission-mode bypassPermissions -p
 workingDirectory: /Users/brunobrandao/n26/git
 claudeStreamJson: false
-_id: "21366c0f"
-_createdAt: "2026-03-31T15:36:01Z"
-_jitter: 95
-_enabled: true
 env:
   CLAUDE_CODE_MAX_OUTPUT_TOKENS: '8192'
+_id: "529b1778"
+_createdAt: "2026-03-31T15:36:01Z"
+_jitter: 95
+_enabled: false
 ---
 
 You are orchestrating the EKS migration for Edge services in the DEV environment.

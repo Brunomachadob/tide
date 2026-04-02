@@ -126,8 +126,8 @@ export function writeTideFields(filePath, fields) {
     if (replaced !== fm) {
       fm = replaced
     } else {
-      // Key not found — insert before closing ---
-      fm = fm.replace(/^---$/m, match => `${k}: ${yamlValue}\n${match}`)
+      // Key not found — insert before closing --- (replace the trailing \n--- in fmBlock)
+      fm = fm.replace(/\n---$/, `\n${k}: ${yamlValue}\n---`)
     }
   }
   const tmp = filePath + '.tmp'
