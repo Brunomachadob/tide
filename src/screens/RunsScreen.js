@@ -265,16 +265,18 @@ export default function RunsScreen({ taskId, taskStatus, initialRunId, navigate,
   const [countIdx, setCountIdx] = useState(0)
   const [selectedRunId, setSelectedRunId] = useState(null)
   const [detailRun, setDetailRun] = useState(null)  // frozen snapshot for RunDetail
+  const initialSeeded = React.useRef(false)
   const count = COUNT_OPTIONS[countIdx]
 
   const { runs, loading, refresh } = useRuns(taskId, count, settings.refreshInterval * 1000)
   const { unreadCount } = useNotifications(10000)
 
-  // Seed selection from initialRunId once runs are loaded
+  // Seed selection from initialRunId — fires only once when runs first load
   useEffect(() => {
-    if (!initialRunId || loading || runs.length === 0) return
+    if (!initialRunId || loading || runs.length === 0 || initialSeeded.current) return
     const found = runs.find(r => r.runId === initialRunId)
     if (found) {
+      initialSeeded.current = true
       setSelectedRunId(initialRunId)
       setDetailRun(found)
       setView('detail')
