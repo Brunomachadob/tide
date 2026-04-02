@@ -69,7 +69,7 @@ export function loadTasks(repoRoot) {
     }
   })
 
-  // Ghost entries for pending-create (no plist yet)
+  // Ghost entries for pending-create and orphans (no live task entry to attach to)
   for (const entry of Object.values(pendingMap)) {
     if (entry.type === 'create') {
       result.push({
@@ -80,6 +80,19 @@ export function loadTasks(repoRoot) {
         recentResults: [],
         scheduleLabel: formatSchedule(entry.task.schedule),
         syncStatus: entry.task.enabled === false ? null : 'create',
+        syncDiff: [],
+      })
+    } else if (entry.type === 'orphan') {
+      result.push({
+        id: entry.task.id,
+        name: entry.task.id,  // no .md to read a name from
+        sourcePath: entry.task.sourcePath,
+        status: 'not loaded',
+        launchdExitCode: null,
+        lastResult: null,
+        recentResults: [],
+        scheduleLabel: '-',
+        syncStatus: 'orphan',
         syncDiff: [],
       })
     }
