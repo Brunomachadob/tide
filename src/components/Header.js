@@ -1,25 +1,24 @@
 import React from 'react'
 import { Box, Text } from 'ink'
 
-// scopeToggle: { label: string } — renders an interactive scope indicator next to the title
+// scopeToggle: { label: string } — renders a scope indicator in the subtitle line
 export default function Header({ breadcrumb, scopeToggle, notificationCount = 0 }) {
+  const subtitle = scopeToggle
+    ? React.createElement(Box, { gap: 1 },
+        React.createElement(Text, { color: 'gray' }, '[Tab]'),
+        React.createElement(Text, { color: 'cyan' }, scopeToggle.label + ' ▾'),
+      )
+    : breadcrumb
+    ? React.createElement(Text, { bold: true }, breadcrumb)
+    : null
+
   return React.createElement(
     Box,
     { flexDirection: 'column', borderStyle: 'single', borderColor: 'cyan', paddingX: 1, marginBottom: 1 },
     React.createElement(
       Box,
       { justifyContent: 'space-between' },
-      React.createElement(
-        Box,
-        { gap: 1 },
-        React.createElement(Text, { bold: true, color: 'cyan' }, '≋ Tide'),
-        scopeToggle
-          ? React.createElement(React.Fragment, null,
-              React.createElement(Text, { color: 'gray' }, '[Tab]'),
-              React.createElement(Text, { color: 'cyan' }, scopeToggle.label + ' ▾'),
-            )
-          : null,
-      ),
+      React.createElement(Text, { bold: true, color: 'cyan' }, '≋ Tide'),
       React.createElement(
         Box,
         { gap: 2 },
@@ -29,8 +28,6 @@ export default function Header({ breadcrumb, scopeToggle, notificationCount = 0 
         React.createElement(Text, { color: 'gray' }, '[s] settings'),
       ),
     ),
-    breadcrumb
-      ? React.createElement(Text, { bold: true }, breadcrumb)
-      : null,
+    subtitle,
   )
 }
