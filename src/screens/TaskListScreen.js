@@ -191,8 +191,10 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
     )
   }
 
+  const showRepo = currentScope === null
   const COLS = [
     { label: 'NAME',         width: 28 },
+    ...(showRepo ? [{ label: 'REPO', width: 14 }] : []),
     { label: 'SCHEDULE',     width: 12 },
     { label: 'STATUS',       width: 20 },
     { label: 'SYNC',         width: 16 },
@@ -263,25 +265,32 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
                 pad(task.name || task.id?.slice(0, 8), COLS[0].width),
               ),
             ),
-            React.createElement(Box, { width: COLS[1].width },
+            showRepo
+              ? React.createElement(Box, { width: 14 },
+                  React.createElement(Text, { color: isSelected ? 'white' : 'gray' },
+                    pad(task.sourcePath ? path.basename(path.dirname(path.dirname(task.sourcePath))) : '-', 14),
+                  ),
+                )
+              : null,
+            React.createElement(Box, { width: 12 },
               React.createElement(Text, { color: isSelected ? 'white' : 'cyan' },
-                pad(task.scheduleLabel, COLS[1].width),
+                pad(task.scheduleLabel, 12),
               ),
             ),
-            React.createElement(Box, { width: COLS[2].width },
+            React.createElement(Box, { width: 20 },
               task.syncStatus === 'create'
-                ? React.createElement(Text, { color: 'gray' }, pad('-', COLS[2].width))
+                ? React.createElement(Text, { color: 'gray' }, pad('-', 20))
                 : React.createElement(StatusBadge, { status: task.status }),
             ),
-            React.createElement(Box, { width: COLS[3].width },
+            React.createElement(Box, { width: 16 },
               React.createElement(SyncBadge, { syncStatus: task.syncStatus }),
             ),
-            React.createElement(Box, { width: COLS[4].width },
+            React.createElement(Box, { width: 17 },
               task.syncStatus === 'create'
                 ? React.createElement(Text, { color: 'gray' }, '-')
-                : React.createElement(Text, { color: isSelected ? 'white' : 'gray' }, pad(lastRun, COLS[4].width)),
+                : React.createElement(Text, { color: isSelected ? 'white' : 'gray' }, pad(lastRun, 17)),
             ),
-            React.createElement(Box, { width: COLS[5].width },
+            React.createElement(Box, { width: 14 },
               task.syncStatus === 'create'
                 ? null
                 : React.createElement(Sparkline, { results: task.recentResults }),
