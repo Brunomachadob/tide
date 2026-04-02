@@ -53,6 +53,17 @@ describe('writeTideFields', () => {
     assert.equal(dashes.length, 2, 'should have exactly 2 --- delimiters')
   })
 
+  test('deduplicates key when already present multiple times', () => {
+    const p = write('dup.md', '---\nname: dup\n_id: "old1"\n_id: "old2"\n---\nbody\n')
+    writeTideFields(p, { _id: 'fixed' })
+    const raw = fs.readFileSync(p, 'utf8')
+    const { data } = matter(raw)
+    assert.equal(data._id, 'fixed')
+    // Only one _id line
+    const idLines = raw.split('\n').filter(l => l.startsWith('_id:'))
+    assert.equal(idLines.length, 1, 'should have exactly one _id line')
+  })
+
   test('preserves body content after ---', () => {
     const p = write('body.md', '---\nname: baz\n---\n\nSome **body** content.\n')
     writeTideFields(p, { _id: 'y1' })

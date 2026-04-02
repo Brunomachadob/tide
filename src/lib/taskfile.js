@@ -117,18 +117,11 @@ export function writeTideFields(filePath, fields) {
   let fm = fmBlock
   for (const [k, v] of Object.entries(fields)) {
     const yamlValue = typeof v === 'boolean' ? String(v) : JSON.stringify(v)
-    // Try to update an existing key (quoted or unquoted form) — only within fm block
     const quotedKey = `'${k}'`
-    const replaced = fm.replace(
-      new RegExp(`^(${quotedKey}|${k}):\\s*.+$`, 'm'),
-      `${k}: ${yamlValue}`
-    )
-    if (replaced !== fm) {
-      fm = replaced
-    } else {
-      // Key not found — insert before closing --- (replace the trailing \n--- in fmBlock)
-      fm = fm.replace(/\n---$/, `\n${k}: ${yamlValue}\n---`)
-    }
+    const keyRe = new RegExp(`^(${quotedKey}|${k}):\\s*.+$\n?`, 'mg')
+    const stripped = fm.replace(keyRe, '')
+    // Insert before closing ---
+    fm = stripped.replace(/\n---$/, `\n${k}: ${yamlValue}\n---`)
   }
   const tmp = filePath + '.tmp'
   fs.writeFileSync(tmp, fm + bodyPart)

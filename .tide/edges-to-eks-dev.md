@@ -9,7 +9,7 @@ env:
 _id: "529b1778"
 _createdAt: "2026-03-31T15:36:01Z"
 _jitter: 95
-_enabled: false
+_enabled: true
 ---
 
 You are orchestrating the EKS migration for Edge services in the DEV environment.
