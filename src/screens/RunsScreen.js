@@ -264,6 +264,7 @@ export default function RunsScreen({ taskId, taskStatus, initialRunId, navigate,
   const [view, setView] = useState('list')
   const [countIdx, setCountIdx] = useState(0)
   const [selectedRunId, setSelectedRunId] = useState(null)
+  const [detailRun, setDetailRun] = useState(null)  // frozen snapshot for RunDetail
   const count = COUNT_OPTIONS[countIdx]
 
   const { runs, loading, refresh } = useRuns(taskId, count, settings.refreshInterval * 1000)
@@ -275,6 +276,7 @@ export default function RunsScreen({ taskId, taskStatus, initialRunId, navigate,
     const found = runs.find(r => r.runId === initialRunId)
     if (found) {
       setSelectedRunId(initialRunId)
+      setDetailRun(found)
       setView('detail')
     }
   }, [initialRunId, loading, runs])
@@ -290,7 +292,10 @@ export default function RunsScreen({ taskId, taskStatus, initialRunId, navigate,
   const selectedRun = runs[effectiveIdx] ?? null
 
   const openDetail = () => {
-    if (selectedRun) setView('detail')
+    if (selectedRun) {
+      setDetailRun(selectedRun)
+      setView('detail')
+    }
   }
 
   useInput((input, key) => {
@@ -313,11 +318,11 @@ export default function RunsScreen({ taskId, taskStatus, initialRunId, navigate,
     if (input === 's') navigate('settings')
   })
 
-  if (view === 'detail' && selectedRun) {
+  if (view === 'detail' && detailRun) {
     return React.createElement(RunDetail, {
       taskId,
       taskStatus,
-      run: selectedRun,
+      run: detailRun,
       isLatest: effectiveIdx === 0,
       navigate,
       onBack: () => setView('list'),
