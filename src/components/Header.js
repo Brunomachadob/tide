@@ -6,7 +6,7 @@ export default function Header({ breadcrumb, scopeToggle, notificationCount = 0 
   const subtitle = scopeToggle
     ? React.createElement(Box, { gap: 1 },
         React.createElement(Text, { color: 'gray' }, '[Tab]'),
-        React.createElement(Text, { color: 'cyan' }, scopeToggle.label + ' ▾'),
+        React.createElement(Text, { color: 'cyan' }, '▾ ' + scopeToggle.label),
       )
     : breadcrumb
     ? React.createElement(Text, { bold: true }, breadcrumb)
