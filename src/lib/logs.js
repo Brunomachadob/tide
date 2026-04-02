@@ -3,24 +3,47 @@ import fs from 'fs'
 import path from 'path'
 import { TASKS_DIR } from './tasks.js'
 
+// Maximum bytes to read from the tail of a file. Log rotation caps files at 5 MB
+// (keeping last 2 MB), so 256 KB covers the common case of N ≤ 50 lines comfortably.
+const TAIL_BUFFER_SIZE = 256 * 1024
+
 function runLogsDir(taskId, runId) {
   return path.join(TASKS_DIR, taskId, 'runs', runId)
 }
 
-function readLastLines(filePath, n) {
+/**
+ * Read at most `bufferSize` bytes from the end of `filePath` and return as a string.
+ * Returns null if the file does not exist, '' if the file is empty.
+ */
+function readTailBuffer(filePath, bufferSize) {
   if (!fs.existsSync(filePath)) return null
-  const content = fs.readFileSync(filePath, 'utf8')
-  if (!content) return ''
-  const lines = content.split('\n')
+  const stat = fs.statSync(filePath)
+  if (stat.size === 0) return ''
+  const readSize = Math.min(stat.size, bufferSize)
+  const buf = Buffer.allocUnsafe(readSize)
+  const fd = fs.openSync(filePath, 'r')
+  try {
+    fs.readSync(fd, buf, 0, readSize, stat.size - readSize)
+  } finally {
+    fs.closeSync(fd)
+  }
+  return buf.toString('utf8')
+}
+
+function readLastLines(filePath, n) {
+  const tail = readTailBuffer(filePath, TAIL_BUFFER_SIZE)
+  if (tail === null) return null
+  if (tail === '') return ''
+  const lines = tail.split('\n')
   if (lines[lines.length - 1] === '') lines.pop()
   return lines.slice(-n).join('\n')
 }
 
 function countLines(filePath) {
-  if (!fs.existsSync(filePath)) return null
-  const content = fs.readFileSync(filePath, 'utf8')
-  if (!content) return 0
-  const lines = content.split('\n')
+  const tail = readTailBuffer(filePath, TAIL_BUFFER_SIZE)
+  if (tail === null) return null
+  if (tail === '') return 0
+  const lines = tail.split('\n')
   if (lines[lines.length - 1] === '') lines.pop()
   return lines.length
 }
