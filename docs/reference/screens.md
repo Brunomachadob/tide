@@ -2,22 +2,31 @@
 
 ## Task List (default)
 
-The main screen. Shows all tasks with status, schedule, and last result.
+The main screen. Shows all tasks with status, schedule, last result, and pending sync state.
+
+### Scope selector
+
+The header subtitle shows the current scope (`▾ <repo-name>` or `▾ all repos`). Press `Tab` to cycle through all known repos and "all repos". The selector is hidden when only one repo has tasks.
+
+When multiple repos are visible ("all repos" mode), tasks are grouped by repo with a section header between groups.
 
 **Keyboard shortcuts:**
 
 | Key | Action |
 |-----|--------|
-| `↑` / `↓` | Navigate tasks |
+| `↑` / `↓` / `j` / `k` | Navigate tasks |
 | `Enter` | Open Task Detail |
-| `c` | Create new task |
+| `Tab` | Cycle scope (current repo → other repos → all repos) |
+| `c` | Create new task file in current scope's repo |
 | `r` | Run selected task now |
 | `e` | Toggle enable/disable |
+| `l` | Open latest run log for selected task |
 | `x` | Open Runs for selected task |
 | `d` | Delete selected task (with confirmation) |
+| `Ctrl+S` | Sync selected task (if pending) |
+| `S` | Sync all pending tasks |
 | `n` | Open Notifications |
 | `s` | Open Settings |
-| `R` | Refresh |
 | `q` / `Ctrl+C` | Quit |
 
 **Status badges:**
@@ -26,24 +35,29 @@ The main screen. Shows all tasks with status, schedule, and last result.
 |-------|---------|
 | `running` | Task is currently executing |
 | `loaded` | Registered with launchd, not currently running |
-| `disabled` | `enabled: false` in task.json — not registered with launchd |
-| `not loaded` | Plist is missing or was never bootstrapped — can be re-enabled |
+| `disabled` | `_enabled: false` in `.md` — not registered with launchd |
+| `not loaded` | Plist is missing or was never bootstrapped — re-enable to restore |
+
+**Sync badges:**
+
+| Badge | Meaning |
+|-------|---------|
+| `● pending create` | `.md` file exists but no plist — press `Ctrl+S` to register |
+| `● pending update` | A plist-encoded field changed in the `.md` — press `Ctrl+S` to apply |
+| `○ orphaned` | Plist exists but its source `.md` was deleted or moved — press `Ctrl+S` to remove |
 
 ## Task Detail
 
-Full view of a single task's config and live status.
-
-Shows config from `task.json`, live launchd state, and the last run result.
+Full view of a single task's config and live status. Shows all frontmatter fields, live launchd state, and the last run result.
 
 | Key | Action |
 |-----|--------|
 | `r` | Run task now |
-| `k` | Kill running task (only shown when running) |
 | `e` | Toggle enable/disable |
-| `E` | Edit task |
+| `Ctrl+E` | Open `.md` file in `$EDITOR` |
+| `Ctrl+S` | Sync task (if pending) |
 | `x` | Open Runs |
 | `d` | Delete task |
-| `R` | Refresh |
 | `Esc` / `q` | Back |
 
 ## Runs
@@ -64,23 +78,18 @@ Shows all runs newest-first. Each row displays start time, exit code badge, dura
 
 ### Run detail
 
-Shows metadata for the selected run (time, exit code, duration, attempts) and its log output — scoped to that run only.
+Shows metadata for the selected run (time, exit code, duration, attempts) and its log output — scoped to that run only. Tide log lines are dimmed; markdown in Claude output is rendered.
 
 | Key | Action |
 |-----|--------|
-| `Tab` | Switch between OUTPUT and STDERR |
-| `f` | Toggle auto-refresh (live follow) |
+| `Tab` | Switch between OUTPUT and STDERR tabs |
+| `f` | Start a follow-up run (completed runs only) |
+| `o` | Open log file in `$EDITOR` (read-only) |
 | `+` / `-` | Show more / fewer log lines |
 | `r` | Refresh |
 | `←` / `Esc` / `q` | Back to runs list |
 
 Auto-refresh is enabled automatically when viewing the latest run of a currently-running task.
-
-## Create / Edit Task
-
-Form for creating or editing a task. Fields: name, argument, interval (seconds), working directory, max retries.
-
-`Esc` cancels without saving.
 
 ## Notifications
 

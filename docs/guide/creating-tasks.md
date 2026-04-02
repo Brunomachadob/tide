@@ -1,8 +1,16 @@
 # Creating Tasks
 
+## Task file location
+
+Task files live at `<repo>/.tide/<taskname>.md`. Tide discovers which repo to use based on where it is launched:
+
+- If the current directory (or any parent, up to a `.git` boundary) contains a `.tide/` folder, that is the active repo.
+- A bare `.tide/` directory with no `.git` ancestor is also valid (e.g. `~/n26/git/.tide/`).
+- Tasks from **all** repos are always visible globally via their plists — the repo only affects which tasks are shown in scoped view and where `[c]` creates new files.
+
 ## Create a task file
 
-Press `c` on the task list to open a new `.md` file in `$EDITOR`. The file is created at `<repo>/.tide/<name>.md`.
+Press `c` on the task list to open a new `.md` file in `$EDITOR`. The file is created at `<repo>/.tide/<name>.md` for the currently scoped repo.
 
 A minimal task file looks like this:
 
@@ -83,6 +91,16 @@ Press `t` on the task list to toggle a task on/off. This writes `_enabled` back 
 
 - **Disable:** `launchctl bootout` removes the task from launchd. The task will not fire.
 - **Enable:** The plist is regenerated and `launchctl bootstrap` re-registers it.
+
+## Moving tasks between repos
+
+To move a task to a different repo:
+
+1. Move the `.md` file to the target repo's `.tide/` directory.
+2. In Tide, the task will appear as **orphaned** (stale plist pointing to the old path). Sync it away with `Ctrl+S`.
+3. Open Tide from the target repo (or ensure the target `.tide/` is discovered). The moved `.md` appears as **pending create**. Sync it to register with launchd.
+
+The task's run history is preserved — it lives in `~/.tide/tasks/<id>/` and is keyed by `_id`, not by file path.
 
 ## Deleting a task
 

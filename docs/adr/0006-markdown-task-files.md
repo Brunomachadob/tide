@@ -55,6 +55,8 @@ The TUI shows a pending-update badge when a plist-encoded field changes in the `
 
 Because all registered tasks have plists in `~/Library/LaunchAgents/`, `readTasks()` scans `com.tide.*.plist` files globally. Orphan detection is trivially global: check `existsSync(TIDE_TASK_FILE)` for each plist.
 
+Multi-repo scope, pending-create discovery across all `.tide/` roots, and the UI scope selector are covered in [ADR-0008](0008-multi-repo-scope.md).
+
 ## Consequences
 
 - Task prompts can be committed to git, reviewed in PRs, and diffed over time.
