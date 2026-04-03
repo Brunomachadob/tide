@@ -17,24 +17,22 @@ Tide solves this by delegating execution to **macOS launchd** (`~/Library/Launch
 
 ## How it works
 
-Tide has three distinct layers:
+Tide has two distinct layers:
 
 ```
 launchd (scheduling)
-  └─ tide.sh (jitter, execution, retries)
-       ├─ task-setup.js      (reads task.json, creates run dir, emits shell variables)
-       ├─ claude-stream-extract.js  (optional: extracts text from Claude stream-json output)
-       └─ task-postprocess.js (writes run.json, notifications, rotates logs, prunes old runs)
+  └─ tide.sh → tsh aws --exec → agent-runner.js
+                                  ├─ @anthropic-ai/claude-agent-sdk (runs Claude)
+                                  ├─ streams output to ~/.tide/tasks/<id>/runs/<runId>/output.log
+                                  └─ writes run.json, notifications, rotates logs, prunes old runs
 
 TUI (src/) — reads ~/.tide/, never writes to launchd except on create/enable/disable/delete
 ```
 
 1. **launchd** owns the schedule. Each task is a plist in `~/Library/LaunchAgents/`. launchd fires `tide.sh <id>` on your configured interval.
-2. **tide.sh** is a thin zsh wrapper. It reads config from `task.json` via `task-setup.js`, applies jitter, runs your command (with retries), and delegates all post-run work to Node.
-3. **task-setup.js** reads `task.json`, creates the run directory, writes an initial `run.json`, and emits shell variable assignments that `tide.sh` evaluates before running the command.
-4. **claude-stream-extract.js** is used when a task has `claudeStreamJson` enabled. It pipes Claude's `--output-format=stream-json` NDJSON output and writes plain text tokens to the log in real time, so you can follow output as the task runs.
-5. **task-postprocess.js** runs after the command exits. It completes `run.json` with the exit code and timestamps, appends a notification entry, rotates logs if they exceed 5 MB, and prunes run directories older than the retention period.
-6. **The TUI** polls `~/.tide/` on an interval and calls `launchctl print` per task to get live status. It only writes to launchd when you create, enable, disable, or delete a task.
+2. **tide.sh** is a thin shim. It reads the `agentAuth` block from the task's `.md` file and `exec`s into `tsh aws --exec node agent-runner.js`, handing off to Node with AWS credentials already in the environment.
+3. **agent-runner.js** owns the full run lifecycle: PID overlap detection, jitter, calling Claude via the Agent SDK, streaming tokens to `output.log` in real time, writing `run.json`, sending notifications, rotating logs, and pruning old runs.
+4. **The TUI** polls `~/.tide/` on an interval and calls `launchctl print` per task to get live status. It only writes to launchd when you create, enable, disable, or delete a task.
 
 ## Limitations
 

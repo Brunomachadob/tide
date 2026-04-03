@@ -2,35 +2,9 @@
 
 Press `s` from the task list to open the Settings screen.
 
-## Run command
-
-The **run command** is the full command Tide invokes for every task, with the task's `argument` appended as the final argument.
-
-Example for running Claude prompts:
-
-```
-/opt/homebrew/bin/claude --permission-mode bypassPermissions -p
-```
-
-When a task with argument `"Summarize my git log"` runs, Tide executes:
-
-```sh
-/opt/homebrew/bin/claude --permission-mode bypassPermissions -p "Summarize my git log"
-```
-
-::: tip Use the full path
-launchd jobs run in a minimal environment and may not have your shell's `$PATH`. Use the full absolute path to your command binary.
-
-To find the full path: `which claude` → `/opt/homebrew/bin/claude`
-:::
-
-::: warning Required on first launch
-Tide will not show the task list until a run command is configured. On first launch you are taken directly to the Settings screen.
-:::
-
 ## Default working directory
 
-The working directory the command runs in, if no per-task working directory is set. Defaults to your home directory (`~`).
+The working directory tasks run in when no per-task `workingDirectory` is set. Defaults to your home directory (`~`).
 
 ## Date format
 
@@ -48,34 +22,32 @@ Settings are stored in `~/.tide/settings.json`:
 
 ```json
 {
-  "command": "/opt/homebrew/bin/claude --permission-mode bypassPermissions -p",
-  "workingDirectory": "/Users/you",
-  "dateFormat": "YYYY-MM-DD"
+  "defaultWorkingDirectory": "/Users/you",
+  "dateFormat": "YYYY-MM-DD",
+  "agentAuth": {
+    "strategy": "tsh-okta-bedrock",
+    "app": "n26-dev-eu",
+    "awsRole": "bedrock-developer-user",
+    "teleportProxy": "teleport.access26.de:443",
+    "model": "arn:aws:bedrock:eu-central-1:538639307912:application-inference-profile/xswegkx4emk1"
+  }
 }
 ```
 
-You can edit this file directly. Changes take effect the next time Tide reads it (on the next poll cycle, approximately 1 second).
+You can edit this file directly. Changes take effect the next time Tide reads it (on the next poll cycle).
 
 ::: warning Atomic writes
 Tide writes settings atomically (temp-then-rename). If you edit `settings.json` while Tide is running, your changes will be preserved unless Tide writes settings at the same moment. Avoid holding the file open.
 :::
+
+## Default agentAuth
+
+Add an `agentAuth` block to `settings.json` to avoid repeating auth configuration in every task file. Any task that does not include its own `agentAuth` frontmatter block will use this default.
+
+Task-level `agentAuth` overrides the settings default entirely (no field-level merge).
 
 ## Terminal app
 
 The terminal app to open when you click a task completion notification. Requires [`terminal-notifier`](https://github.com/julienXX/terminal-notifier) (`brew install terminal-notifier`) — without it, notifications are sent via `osascript` and clicking opens Script Editor instead.
 
 Options: Terminal, iTerm2, Warp, Ghostty, Alacritty, Kitty.
-
-## Per-task command override
-
-A task can override the global run command by setting `command` in its `task.json`:
-
-```json
-{
-  "id": "3f640f65",
-  "command": "/usr/bin/python3 /path/to/my-script.py",
-  ...
-}
-```
-
-The TUI does not expose this field. Edit `task.json` directly in `~/.tide/tasks/<id>/task.json` to use it. The change takes effect on the next run.

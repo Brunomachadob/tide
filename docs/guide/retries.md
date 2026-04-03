@@ -2,7 +2,7 @@
 
 ## Configuration
 
-Set `maxRetries` when creating or editing a task. The default is `0` (no retries — run once and record the result).
+Retries are handled by `agent-runner.js`. Set `maxRetries` in the task frontmatter. The default is `0` (no retries — run once and record the result).
 
 | `maxRetries` | Behavior |
 |-------------|---------|
@@ -22,7 +22,7 @@ Retries use **fixed delay backoff**:
 | 4 (retry 3) | 90s |
 | … | +30s per retry |
 
-The shell increments an attempt counter before each run. On success, the loop breaks immediately. On exhausting all retries, the final non-zero exit code is recorded.
+On success the loop breaks immediately. On exhausting all retries, the final non-zero exit code is recorded.
 
 ## Result recording
 
@@ -32,7 +32,7 @@ The result JSON records the **total number of attempts**:
 {
   "exitCode": 0,
   "startedAt": "2026-03-30T10:00:00Z",
-  "finishedAt": "2026-03-30T10:00:45Z",
+  "completedAt": "2026-03-30T10:00:45Z",
   "attempts": 2
 }
 ```
@@ -41,13 +41,13 @@ The result JSON records the **total number of attempts**:
 
 ## When to use retries
 
-Retries are useful for commands that can fail transiently:
-- Network-dependent operations (API calls, fetching remote data)
-- Commands that require a service to be available (database, VPN)
-- Claude CLI calls that may hit rate limits
+Retries are useful for operations that can fail transiently:
+- Network-dependent API calls
+- Commands that require a service to be available (VPN, database)
+- Bedrock calls that hit transient rate limits
 
 For tasks that are expected to fail (e.g. a health check that should alert on failure), keep `maxRetries: 0` — retries would suppress the failure signal.
 
 ::: warning Retries extend run duration
-A task with `maxRetries: 3` and backoff of 30s/60s/90s could run for up to 3 minutes before completing. launchd will fire the next scheduled interval from when `tide.sh` exits, so longer-running tasks effectively reduce their own run frequency.
+A task with `maxRetries: 3` and backoff of 30s/60s/90s could run for several minutes before completing. launchd fires the next scheduled interval after the runner exits, so longer-running tasks effectively reduce their own run frequency.
 :::

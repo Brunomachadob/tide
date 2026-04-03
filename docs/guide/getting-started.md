@@ -17,38 +17,26 @@ This fetches the latest version and launches the TUI.
 
 ## First launch
 
-On first launch, Tide detects that no **run command** is configured and drops you into the Settings screen.
+On first launch you land on the task list — empty for now.
 
-The run command is the full command Tide will invoke for each task, with the task's argument appended as the final argument. For running Claude prompts:
-
-```
-/opt/homebrew/bin/claude --permission-mode bypassPermissions -p
-```
-
-::: tip Finding your Claude path
-Run `which claude` in your terminal to get the full path.
+::: tip Configure default agentAuth in settings
+Press `s` to open Settings and add a default `agentAuth` block to `~/.tide/settings.json`. This way you don't have to repeat it in every task file.
 :::
-
-Once saved, you land on the task list — empty for now.
 
 ## Create your first task
 
-Press `n` on the task list to open the **Create Task** screen.
+Press `c` on the task list to open a new task `.md` file in `$EDITOR`. The template is pre-filled with your default `agentAuth` from settings.
 
-Fill in:
+Edit the file:
+- Set `name` and `schedule`
+- Update `workingDirectory` if needed
+- Write your prompt as the file body (below the `---`)
 
-| Field | Description |
-|-------|-------------|
-| **Name** | A human-readable label shown in the TUI |
-| **Argument** | The argument appended to the run command when the task fires |
-| **Interval** | How often to run, in seconds |
-| **Working directory** | Directory the command runs in (defaults to your home directory) |
+Save and close the editor. Tide detects the new file and shows it as **pending create**. Press `[s]` to register it with launchd.
 
-Press `Enter` to save. Tide writes a `task.json`, generates a launchd plist, and registers it with launchd immediately.
-
-::: info What happens on save
-1. `~/.tide/tasks/<id>/task.json` is written with your config
-2. `~/Library/LaunchAgents/com.tide.<id>.plist` is generated from `task.json`
+::: info What happens on sync
+1. Tide writes `_id`, `_createdAt`, `_jitter`, `_enabled` back to the `.md` file
+2. `~/Library/LaunchAgents/com.tide.<id>.plist` is generated pointing to `tide.sh`
 3. `launchctl bootstrap` registers the plist — the task is now live
 :::
 

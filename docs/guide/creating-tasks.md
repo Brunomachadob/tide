@@ -18,6 +18,12 @@ A minimal task file looks like this:
 ---
 name: Daily standup summary
 schedule: 1h
+agentAuth:
+  strategy: tsh-okta-bedrock
+  app: n26-dev-eu
+  awsRole: bedrock-developer-user
+  teleportProxy: teleport.access26.de:443
+  model: arn:aws:bedrock:eu-central-1:538639307912:application-inference-profile/xswegkx4emk1
 ---
 
 Summarize the git log from the last 24 hours in this repo.
@@ -52,27 +58,17 @@ Summarize the git log from the last 24 hours in this repo.
 
 ## When changes need a sync vs take effect automatically
 
-Changes to `schedule`, `workingDirectory`, `env`, or `timeoutSeconds` require a sync — these are encoded in the plist. All other changes (prompt body, `name`, `command`, `maxRetries`, `claudeStreamJson`, etc.) take effect at the next scheduled run automatically because `tide.sh` reads the `.md` file directly at runtime.
+Changes to `schedule`, `workingDirectory`, `env`, or `timeoutSeconds` require a sync — these are encoded in the plist. All other changes (prompt body, `name`, `agentAuth`, etc.) take effect at the next scheduled run automatically because `tide.sh` reads the `.md` file directly at runtime.
 
-## How the run command is assembled
+## How a task runs
 
-When a task fires, Tide invokes:
+When a task fires, `tide.sh` reads the `agentAuth` block and hands off to `agent-runner.js` inside a `tsh aws` credential context:
 
 ```
-<command> [extraArgs...] <prompt body>
+tide.sh → tsh aws --exec → agent-runner.js → Claude Agent SDK → claude binary
 ```
 
-For example, with settings command `/opt/homebrew/bin/claude --permission-mode bypassPermissions -p` and the prompt body `Summarize open PRs in /my/repo`:
-
-```sh
-/opt/homebrew/bin/claude --permission-mode bypassPermissions -p "Summarize open PRs in /my/repo"
-```
-
-The body is passed as a single quoted shell word.
-
-::: tip Per-task command override
-Set `command` in the frontmatter to override the global run command for a specific task.
-:::
+The prompt body (below the `---`) is passed as the prompt to Claude. Output tokens stream to `output.log` in real time as they arrive.
 
 ## Editing a task
 
@@ -116,20 +112,25 @@ Logs and run history in `~/.tide/tasks/<id>/` are deleted. The `.md` file remain
 
 ## Example: daily Claude prompt
 
-**Settings command:**
-```
-/opt/homebrew/bin/claude --permission-mode bypassPermissions -p
-```
-
 **Create `.tide/daily-summary.md`:**
 ```markdown
 ---
 name: Daily git summary
 schedule: 24h
 workingDirectory: ~/projects/myrepo
+agentAuth:
+  strategy: tsh-okta-bedrock
+  app: n26-dev-eu
+  awsRole: bedrock-developer-user
+  teleportProxy: teleport.access26.de:443
+  model: arn:aws:bedrock:eu-central-1:538639307912:application-inference-profile/xswegkx4emk1
 ---
 
 Summarize git log --since=24h.ago --all. List commits by author, highlight any TODOs added.
 ```
 
 After pressing `[s]`, Tide registers the task with launchd. It will fire approximately every 24 hours (plus jitter). Results are visible from the task list.
+
+::: tip Set agentAuth defaults in settings
+If all your tasks use the same auth config, add an `agentAuth` block to `~/.tide/settings.json`. Task frontmatter overrides it when present.
+:::

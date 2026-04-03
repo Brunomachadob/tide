@@ -13,12 +13,18 @@ _enabled: true
 name: Daily standup summary
 schedule: 1h
 workingDirectory: ~/projects/myrepo
+agentAuth:
+  strategy: tsh-okta-bedrock
+  app: n26-dev-eu
+  awsRole: bedrock-developer-user
+  teleportProxy: teleport.access26.de:443
+  model: arn:aws:bedrock:eu-central-1:538639307912:application-inference-profile/xswegkx4emk1
 ---
 
 Summarize git log from the last 24h in /path/to/repo and list any open PRs.
 ```
 
-The file **body** (below the `---`) is the prompt passed as the final argument to the run command.
+The file **body** (below the `---`) is the prompt sent to Claude.
 
 ## Frontmatter fields
 
@@ -28,15 +34,26 @@ The file **body** (below the `---`) is the prompt passed as the final argument t
 |-------|------|---------|-------------|
 | `name` | `string` | filename (no `.md`) | Human-readable label shown in the TUI. |
 | `schedule` | `string` | — | Interval shorthand (`15m`, `30m`, `1h`, `2h`, `6h`, `12h`, `24h`) or raw seconds. Use `manual` for no automatic schedule. |
-| `command` | `string` | settings default | Per-task command override. Falls back to `settings.json` command. |
-| `extraArgs` | `string[]` | `[]` | Arguments inserted between `command` and the prompt body. |
-| `workingDirectory` | `string` | settings default or `~` | Directory the command runs in. `~` is expanded. |
-| `maxRetries` | `number` | `0` | Extra retry attempts on non-zero exit. `0` = no retries. |
-| `env` | `object` | `{}` | Additional environment variables passed to the command. |
+| `workingDirectory` | `string` | settings default or `~` | Directory the task runs in. `~` is expanded. |
+| `env` | `object` | `{}` | Additional environment variables passed to the run. |
 | `resultRetentionDays` | `number` | `30` | Run history older than this is pruned after each run. |
-| `claudeStreamJson` | `boolean` | `false` | When `true`, stdout is treated as Claude's `--output-format=stream-json` NDJSON. Requires the command to include `--output-format=stream-json --include-partial-messages --verbose`. |
 | `timeoutSeconds` | `number` | none | Hard timeout passed to launchd. Includes jitter. |
 | `enabled` | `boolean` | `true` | Initial enabled state when first synced. After that, use `[t]` in the TUI. |
+| `agentAuth` | `object` | settings default | Auth configuration for the agent runner. See below. |
+
+### `agentAuth` fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `strategy` | `string` | Auth strategy to use. Currently only `tsh-okta-bedrock`. |
+| `app` | `string` | Teleport application name passed to `tsh aws --app`. |
+| `awsRole` | `string` | AWS role passed to `tsh aws --aws-role`. |
+| `teleportProxy` | `string` | Teleport proxy address passed to `tsh aws --proxy`. |
+| `model` | `string` | Bedrock inference profile ARN used as the Claude model. |
+
+::: tip Default agentAuth in settings
+Add an `agentAuth` block to `~/.tide/settings.json` to avoid repeating it in every task file. Task frontmatter overrides it entirely when present.
+:::
 
 ### Internal underscore-prefixed fields (managed by Tide — do not edit)
 
@@ -49,7 +66,7 @@ The file **body** (below the `---`) is the prompt passed as the final argument t
 
 ## Which fields require a sync step
 
-Only fields that the plist actually encodes need a plist rewrite to take effect. Other fields are read directly from the `.md` at runtime.
+Only fields encoded in the plist need a rewrite to take effect. Other fields are read from the `.md` at runtime.
 
 | Field changed | Requires sync (`[s]`)? |
 |---------------|----------------------|
@@ -58,7 +75,7 @@ Only fields that the plist actually encodes need a plist rewrite to take effect.
 | `env` | Yes |
 | `timeoutSeconds` | Yes |
 | `_enabled` | Yes (controls plist registration) |
-| `name`, `argument` (body), `command`, `maxRetries`, `claudeStreamJson`, `extraArgs`, `resultRetentionDays` | No — takes effect at next run |
+| `name`, `argument` (body), `agentAuth`, `resultRetentionDays` | No — takes effect at next run |
 
 ## Task state at display time
 
@@ -66,7 +83,7 @@ The TUI assembles what you see from two sources, polled in a background worker t
 
 | Displayed field | Source |
 |----------------|--------|
-| `name`, `schedule`, `command`, etc. | `.md` frontmatter |
+| `name`, `schedule`, `agentAuth`, etc. | `.md` frontmatter |
 | `status` (disabled / loaded / running / not loaded) | `launchctl print` via `getStatus()` |
 | `lastResult` (exit code, timestamps, output) | Latest run in `~/.tide/tasks/<id>/runs/` |
 
