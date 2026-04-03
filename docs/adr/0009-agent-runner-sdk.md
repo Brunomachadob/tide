@@ -26,6 +26,8 @@ exec tsh aws --proxy $PROXY --auth okta --app $APP --aws-role $ROLE \
 
 **Auth strategies**: a pluggable registry maps strategy names to functions that validate the environment and return SDK options. The only built-in strategy is `tsh-okta-bedrock`, which relies on environment variables injected by tsh (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `HTTPS_PROXY`). Future strategies (plain API key, other Bedrock configs) can be added without changing the runner.
 
+**Auth profiles**: auth configuration is stored in `~/.tide/settings.json` under `agentAuths` as a named map. Task frontmatter references a profile by key (`agentAuth: tsh-okta-bedrock`). `agent-runner.js` resolves the key to its config at runtime. This keeps credentials out of task files and allows multiple profiles to coexist.
+
 **Streaming**: the SDK's async generator yields `stream_event` messages with `content_block_delta` events. Text deltas are written to `output.log` in real time — no separate NDJSON parsing script needed.
 
 **No plist changes**: `agentRunner` is evaluated at runtime inside `tide.sh`. The plist `ProgramArguments` still points to `tide.sh`, so no changes to `create.js`, `taskfile.js`, or `launchd.js` are required.

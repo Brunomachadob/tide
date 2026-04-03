@@ -2,10 +2,6 @@
 
 Press `s` from the task list to open the Settings screen.
 
-## Default working directory
-
-The working directory tasks run in when no per-task `workingDirectory` is set. Defaults to your home directory (`~`).
-
 ## Date format
 
 Controls how timestamps are displayed throughout the TUI:
@@ -18,33 +14,46 @@ Controls how timestamps are displayed throughout the TUI:
 
 ## Settings file
 
-Settings are stored in `~/.tide/settings.json`:
+Settings are stored in `~/.tide/settings.json`. You can edit this file directly — changes take effect on the next poll cycle.
+
+::: warning Atomic writes
+Tide writes settings atomically (temp-then-rename). Avoid holding the file open while Tide is running.
+:::
+
+## Agent auth profiles {#agent-auth-profiles}
+
+Auth configuration lives in `settings.json` under `agentAuths` — a map of profile names to their config. Task frontmatter references a profile by name:
 
 ```json
 {
-  "defaultWorkingDirectory": "/Users/you",
-  "dateFormat": "YYYY-MM-DD",
-  "agentAuth": {
-    "strategy": "tsh-okta-bedrock",
-    "app": "n26-dev-eu",
-    "awsRole": "bedrock-developer-user",
-    "teleportProxy": "teleport.access26.de:443",
-    "model": "arn:aws:bedrock:eu-central-1:538639307912:application-inference-profile/xswegkx4emk1"
+  "agentAuths": {
+    "tsh-okta-bedrock": {
+      "strategy": "tsh-okta-bedrock",
+      "app": "n26-dev-eu",
+      "awsRole": "bedrock-developer-user",
+      "teleportProxy": "teleport.access26.de:443",
+      "model": "arn:aws:bedrock:eu-central-1:..."
+    }
   }
 }
 ```
 
-You can edit this file directly. Changes take effect the next time Tide reads it (on the next poll cycle).
+```yaml
+# in task frontmatter
+agentAuth: tsh-okta-bedrock
+```
 
-::: warning Atomic writes
-Tide writes settings atomically (temp-then-rename). If you edit `settings.json` while Tide is running, your changes will be preserved unless Tide writes settings at the same moment. Avoid holding the file open.
-:::
+You can define multiple profiles (e.g. for different AWS roles or Bedrock regions) and reference whichever is appropriate per task.
 
-## Default agentAuth
+### Auth profile fields
 
-Add an `agentAuth` block to `settings.json` to avoid repeating auth configuration in every task file. Any task that does not include its own `agentAuth` frontmatter block will use this default.
-
-Task-level `agentAuth` overrides the settings default entirely (no field-level merge).
+| Field | Description |
+|-------|-------------|
+| `strategy` | Auth strategy. Currently only `tsh-okta-bedrock`. |
+| `app` | Teleport application name passed to `tsh aws --app`. |
+| `awsRole` | AWS role passed to `tsh aws --aws-role`. |
+| `teleportProxy` | Teleport proxy address passed to `tsh aws --proxy`. |
+| `model` | Bedrock inference profile ARN used as the Claude model. |
 
 ## Terminal app
 

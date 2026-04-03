@@ -18,16 +18,13 @@ A minimal task file looks like this:
 ---
 name: Daily standup summary
 schedule: 1h
-agentAuth:
-  strategy: tsh-okta-bedrock
-  app: n26-dev-eu
-  awsRole: bedrock-developer-user
-  teleportProxy: teleport.access26.de:443
-  model: arn:aws:bedrock:eu-central-1:538639307912:application-inference-profile/xswegkx4emk1
+agentAuth: tsh-okta-bedrock
 ---
 
 Summarize the git log from the last 24 hours in this repo.
 ```
+
+`agentAuth` is the name of an auth profile defined in `~/.tide/settings.json`. See [Settings](/guide/settings#agent-auth-profiles).
 
 Save and close the editor. Tide detects the new file and shows it as **pending create** in the task list. Press `[s]` to register it with launchd.
 
@@ -62,7 +59,7 @@ Changes to `schedule`, `workingDirectory`, `env`, or `timeoutSeconds` require a 
 
 ## How a task runs
 
-When a task fires, `tide.sh` reads the `agentAuth` block and hands off to `agent-runner.js` inside a `tsh aws` credential context:
+When a task fires, `tide.sh` resolves the `agentAuth` key against `~/.tide/settings.json` and hands off to `agent-runner.js` inside a `tsh aws` credential context:
 
 ```
 tide.sh → tsh aws --exec → agent-runner.js → Claude Agent SDK → claude binary
@@ -118,12 +115,7 @@ Logs and run history in `~/.tide/tasks/<id>/` are deleted. The `.md` file remain
 name: Daily git summary
 schedule: 24h
 workingDirectory: ~/projects/myrepo
-agentAuth:
-  strategy: tsh-okta-bedrock
-  app: n26-dev-eu
-  awsRole: bedrock-developer-user
-  teleportProxy: teleport.access26.de:443
-  model: arn:aws:bedrock:eu-central-1:538639307912:application-inference-profile/xswegkx4emk1
+agentAuth: tsh-okta-bedrock
 ---
 
 Summarize git log --since=24h.ago --all. List commits by author, highlight any TODOs added.
@@ -131,6 +123,6 @@ Summarize git log --since=24h.ago --all. List commits by author, highlight any T
 
 After pressing `[s]`, Tide registers the task with launchd. It will fire approximately every 24 hours (plus jitter). Results are visible from the task list.
 
-::: tip Set agentAuth defaults in settings
-If all your tasks use the same auth config, add an `agentAuth` block to `~/.tide/settings.json`. Task frontmatter overrides it when present.
+::: tip Auth profiles
+Define auth profiles once in `~/.tide/settings.json` under `agentAuths` and reference them by name. See [Settings](/guide/settings#agent-auth-profiles).
 :::

@@ -13,12 +13,7 @@ _enabled: true
 name: Daily standup summary
 schedule: 1h
 workingDirectory: ~/projects/myrepo
-agentAuth:
-  strategy: tsh-okta-bedrock
-  app: n26-dev-eu
-  awsRole: bedrock-developer-user
-  teleportProxy: teleport.access26.de:443
-  model: arn:aws:bedrock:eu-central-1:538639307912:application-inference-profile/xswegkx4emk1
+agentAuth: tsh-okta-bedrock
 ---
 
 Summarize git log from the last 24h in /path/to/repo and list any open PRs.
@@ -39,20 +34,10 @@ The file **body** (below the `---`) is the prompt sent to Claude.
 | `resultRetentionDays` | `number` | `30` | Run history older than this is pruned after each run. |
 | `timeoutSeconds` | `number` | none | Hard timeout passed to launchd. Includes jitter. |
 | `enabled` | `boolean` | `true` | Initial enabled state when first synced. After that, use `[t]` in the TUI. |
-| `agentAuth` | `object` | settings default | Auth configuration for the agent runner. See below. |
+| `agentAuth` | `string` | — | Key referencing an auth profile in `~/.tide/settings.json` under `agentAuths`. |
 
-### `agentAuth` fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `strategy` | `string` | Auth strategy to use. Currently only `tsh-okta-bedrock`. |
-| `app` | `string` | Teleport application name passed to `tsh aws --app`. |
-| `awsRole` | `string` | AWS role passed to `tsh aws --aws-role`. |
-| `teleportProxy` | `string` | Teleport proxy address passed to `tsh aws --proxy`. |
-| `model` | `string` | Bedrock inference profile ARN used as the Claude model. |
-
-::: tip Default agentAuth in settings
-Add an `agentAuth` block to `~/.tide/settings.json` to avoid repeating it in every task file. Task frontmatter overrides it entirely when present.
+::: tip Auth profiles live in settings
+Auth configuration is stored once in `~/.tide/settings.json` under `agentAuths` and referenced by name in task frontmatter. See [Settings](/guide/settings#agent-auth-profiles).
 :::
 
 ### Internal underscore-prefixed fields (managed by Tide — do not edit)
