@@ -222,8 +222,8 @@ export default function TaskDetailScreen({ taskId, navigate, goBack, repoRoot, h
       React.createElement(Field, { label: 'ID',          value: task.id }),
       React.createElement(Field, { label: 'Schedule',    value: task.scheduleLabel }),
       React.createElement(Field, { label: 'Working dir', value: task.workingDirectory }),
-      task.agentAuth?.strategy
-        ? React.createElement(Field, { label: 'Auth strategy', value: task.agentAuth.strategy, valueColor: 'green' })
+      task.agentAuthKey
+        ? React.createElement(Field, { label: 'Auth', value: task.agentAuthKey, valueColor: 'green' })
         : null,
       task.agentAuth?.model
         ? React.createElement(Field, { label: 'Model', value: task.agentAuth.model })

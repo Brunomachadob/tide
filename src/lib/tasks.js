@@ -47,7 +47,8 @@ function parseMd(mdPath) {
       : os.homedir(),
     env: fm.env || {},
     resultRetentionDays: fm.resultRetentionDays ?? 30,
-    agentAuth: fm.agentAuth || settings.agentAuth || null,
+    agentAuthKey: typeof fm.agentAuth === 'string' ? fm.agentAuth : null,
+    agentAuth: (typeof fm.agentAuth === 'string' ? settings.agentAuths?.[fm.agentAuth] : null) ?? null,
     timeoutSeconds: fm.timeoutSeconds ?? null,
     sourcePath: mdPath,
   }

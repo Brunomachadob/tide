@@ -154,9 +154,10 @@ const maxRetries = fm.maxRetries ?? 0
 const resultRetentionDays = fm.resultRetentionDays ?? 30
 const parentRunId = process.env.TIDE_PARENT_RUN_ID || fm.parentRunId || undefined
 
-// Resolve agentAuth: frontmatter wins, settings fallback
-const agentAuth = fm.agentAuth || settings.agentAuth || {}
-const strategy = agentAuth.strategy || 'tsh-okta-bedrock'
+// Resolve agentAuth: frontmatter has the key, settings.agentAuths has the config
+const agentAuthKey = typeof fm.agentAuth === 'string' ? fm.agentAuth : null
+const agentAuth = (agentAuthKey && settings.agentAuths?.[agentAuthKey]) || {}
+const strategy = agentAuth.strategy || agentAuthKey || 'tsh-okta-bedrock'
 
 const tDir = taskDir(taskId)
 const pidFile = path.join(tDir, 'running.pid')

@@ -6,17 +6,12 @@ import { readSettings } from './settings.js'
 
 function buildTemplate(settings, repoRoot) {
   const workDir = repoRoot || process.cwd()
-  const auth = settings.agentAuth || {}
+  const defaultAuthKey = Object.keys(settings.agentAuths || {})[0] || 'tsh-okta-bedrock'
   return `---
 name: My task
 schedule: 1h
 workingDirectory: ${workDir}
-agentAuth:
-  strategy: ${auth.strategy || 'tsh-okta-bedrock'}
-  app: ${auth.app || 'n26-dev-eu'}
-  awsRole: ${auth.awsRole || 'bedrock-developer-user'}
-  teleportProxy: ${auth.teleportProxy || 'teleport.access26.de:443'}
-  model: ${auth.model || 'arn:aws:bedrock:eu-central-1:538639307912:application-inference-profile/xswegkx4emk1'}
+agentAuth: ${defaultAuthKey}
 ---
 
 Describe what this task should do.
