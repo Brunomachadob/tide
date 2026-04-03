@@ -69,13 +69,13 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-// log() writes to stderr and, once stderrLog is known, appends to stderr.log too.
+// log() writes to stdout and, once stderrLog is known, appends to stderr.log too.
 // Mimics the log() helper in tide.sh: [timestamp] [taskName] [runId] message
 let _stderrLog = null
 let _logPrefix = ''
 function log(msg) {
   const line = `[${now()}]${_logPrefix} ${msg}`
-  process.stderr.write(line + '\n')
+  process.stdout.write(line + '\n')
   if (_stderrLog) try { fs.appendFileSync(_stderrLog, line + '\n') } catch { /* ok */ }
 }
 
@@ -123,13 +123,13 @@ function sendNotification(title, message, terminalBundleId) {
 
 const taskId = process.argv[2]
 if (!taskId) {
-  process.stderr.write('Usage: agent-runner.js <taskId>\n')
+  process.stdout.write('Usage: agent-runner.js <taskId>\n')
   process.exit(1)
 }
 
 const taskFile = process.env.TIDE_TASK_FILE
 if (!taskFile || !fs.existsSync(taskFile)) {
-  process.stderr.write(`agent-runner: TIDE_TASK_FILE not set or not found: ${taskFile}\n`)
+  process.stdout.write(`agent-runner: TIDE_TASK_FILE not set or not found: ${taskFile}\n`)
   process.exit(1)
 }
 
