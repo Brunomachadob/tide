@@ -43,12 +43,12 @@ export default function NotificationsScreen({ navigate, goBack, height, breadcru
       setSelectedIdx(i => Math.max(0, Math.min(i, displayed.length - 2)))
       return
     }
-    if (key.ctrl && input === 'r' && displayed.length > 0) {
+    if (input === 'r' && !key.ctrl && displayed.length > 0) {
       markAllRead()
       setToast({ message: 'All notifications marked as read', type: 'success' })
       return
     }
-    if (input === 'r' && displayed.length > 0) {
+    if (key.ctrl && input === 'r' && displayed.length > 0) {
       clearRead()
       setSelectedIdx(0)
       setToast({ message: 'Read notifications cleared', type: 'success' })
@@ -131,8 +131,8 @@ export default function NotificationsScreen({ navigate, goBack, height, breadcru
         ['↑↓/jk', 'move'],
         ['↵', 'logs + mark read'],
         ['d', 'dismiss'],
-        ['Ctrl+R', 'mark all read'],
-        ['r', 'clear read'],
+        ['r', 'mark all read'],
+        ['Ctrl+R', 'clear read'],
         ['c', 'clear all'],
         ['Esc/q', 'back'],
       ],

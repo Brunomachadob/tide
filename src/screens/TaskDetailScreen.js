@@ -59,7 +59,11 @@ export default function TaskDetailScreen({ taskId, navigate, goBack, repoRoot, h
     if (key.escape || input === 'q') { goBack(); return }
     if (input === 'k' && task?.status === 'running') setConfirm({ action: 'kill', message: `Kill "${task.name}"? The running process will be terminated.` })
     if (input === 'r') setConfirm({ action: 'run', message: `Run "${task?.name}" now?` })
-    if (key.ctrl && input === 'e' && task?.sourcePath) {
+    if (key.ctrl && input === 'e') {
+      if (!task?.sourcePath) {
+        showToast('No source file for this task', 'error')
+        return
+      }
       const editor = process.env.EDITOR || process.env.VISUAL || 'vi'
       spawnSync(editor, [task.sourcePath], { stdio: 'inherit' })
       refresh()
@@ -273,8 +277,9 @@ export default function TaskDetailScreen({ taskId, navigate, goBack, repoRoot, h
         ['r', 'run'],
         ...(task.status === 'running' ? [['k', 'kill']] : []),
         ['e', 'en/disable'],
-        ...(task.sourcePath ? [['Ctrl+E', 'edit file'], ['Ctrl+S', 'sync']] : [['Ctrl+E', 'edit']]),
-        ['l', 'logs'],
+        ['Ctrl+E', 'edit file'],
+        ...(task.syncStatus ? [['Ctrl+S', 'sync']] : []),
+        ['l', 'latest run'],
         ['x', 'runs'],
         ['d', 'delete'],
       ],

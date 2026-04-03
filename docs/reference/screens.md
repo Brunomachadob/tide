@@ -20,8 +20,8 @@ When multiple repos are visible ("all repos" mode), tasks are grouped by repo wi
 | `c` | Create new task file in current scope's repo |
 | `r` | Run selected task now |
 | `e` | Toggle enable/disable |
-| `l` | Open latest run log for selected task |
-| `x` | Open Runs for selected task |
+| `l` | Open latest run for selected task |
+| `x` | Open Runs list for selected task |
 | `d` | Delete selected task (with confirmation) |
 | `Ctrl+S` | Sync selected task (if pending) |
 | `S` | Sync all pending tasks |
@@ -53,11 +53,14 @@ Full view of a single task's config and live status. Shows all frontmatter field
 | Key | Action |
 |-----|--------|
 | `r` | Run task now |
+| `k` | Kill the running process (shown only when status is `running`) |
 | `e` | Toggle enable/disable |
-| `Ctrl+E` | Open `.md` file in `$EDITOR` |
-| `Ctrl+S` | Sync task (if pending) |
-| `x` | Open Runs |
+| `Ctrl+E` | Open `.md` file in `$EDITOR` (shows error toast if no source file) |
+| `Ctrl+S` | Sync task (shown only when a sync is pending) |
+| `l` | Open latest run for this task |
+| `x` | Open Runs list |
 | `d` | Delete task |
+| `n` | Open Notifications |
 | `Esc` / `q` | Back |
 
 ## Runs
@@ -72,8 +75,11 @@ Shows all runs newest-first. Each row displays start time, exit code badge, dura
 |-----|--------|
 | `↑` / `↓` / `j` / `k` | Navigate runs |
 | `Enter` / `→` | Open run detail |
-| `+` / `-` | Show more / fewer runs |
+| `+` / `]` | Show more runs |
+| `-` / `[` | Show fewer runs |
 | `r` | Refresh |
+| `n` | Open Notifications |
+| `s` | Open Settings |
 | `Esc` / `q` | Back to task |
 
 ### Run detail
@@ -83,10 +89,14 @@ Shows metadata for the selected run (time, exit code, duration, attempts) and it
 | Key | Action |
 |-----|--------|
 | `Tab` | Switch between OUTPUT and STDERR tabs |
+| `Ctrl+F` | Toggle auto-refresh (follows live output while task is running) |
 | `f` | Start a follow-up run (completed runs only) |
 | `o` | Open log file in `$EDITOR` (read-only) |
-| `+` / `-` | Show more / fewer log lines |
+| `+` / `]` | Show more log lines |
+| `-` / `[` | Show fewer log lines |
 | `r` | Refresh |
+| `n` | Open Notifications |
+| `s` | Open Settings |
 | `←` / `Esc` / `q` | Back to runs list |
 
 Auto-refresh is enabled automatically when viewing the latest run of a currently-running task.
@@ -97,13 +107,24 @@ Review pending task-completion notifications. Each entry shows task name, run ti
 
 | Key | Action |
 |-----|--------|
-| `c` | Clear all pending notifications |
-| `Esc` | Back |
+| `↑` / `↓` / `j` / `k` | Navigate notifications |
+| `Enter` | Open run detail and mark notification as read |
+| `d` | Dismiss selected notification |
+| `r` | Mark all notifications as read |
+| `Ctrl+R` | Clear all read notifications |
+| `c` | Clear all notifications (with confirmation) |
+| `s` | Open Settings |
+| `Esc` / `q` | Back |
 
 Pressing `Esc` does **not** clear notifications — you must press `c` explicitly.
 
 ## Settings
 
-Configure the global run command, default working directory, and date format. Changes are written to `~/.tide/settings.json` immediately on save.
+Configure the global run command, default working directory, date format, terminal app, and auto-refresh interval. Changes are written to `~/.tide/settings.json` on `Enter`.
 
-Press `Esc` to go back without saving.
+| Key | Action |
+|-----|--------|
+| `Tab` | Move to next field |
+| `←` / `→` | Change value (for picker fields: date format, terminal, refresh interval) |
+| `Enter` | Save settings |
+| `Esc` / `q` | Back without saving |
