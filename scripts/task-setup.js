@@ -12,11 +12,6 @@ import matter from 'gray-matter'
 const TIDE_DIR = path.join(os.homedir(), '.tide')
 const [,, taskFile] = process.argv
 
-const SCHEDULE_SHORTHANDS = {
-  manual: null, '15m': 900, '30m': 1800, '1h': 3600,
-  '2h': 7200, '6h': 21600, '12h': 43200, '24h': 86400,
-}
-
 // Parse the .md file
 const raw = fs.readFileSync(taskFile, 'utf8')
 const { data: fm, content: body } = matter(raw)

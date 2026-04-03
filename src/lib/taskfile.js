@@ -11,19 +11,9 @@ import { writePlist } from './create.js'
 import { bootstrap, bootout, plistPath, label } from './launchd.js'
 import { readSettings } from './settings.js'
 import { taskDir, deleteTask } from './tasks.js'
+import { parseSchedule } from './constants.js'
 
 const LAUNCH_AGENTS_DIR = path.join(os.homedir(), 'Library', 'LaunchAgents')
-
-const SCHEDULE_SHORTHANDS = {
-  manual: null,
-  '15m':  15 * 60,
-  '30m':  30 * 60,
-  '1h':   60 * 60,
-  '2h':   2  * 60 * 60,
-  '6h':   6  * 60 * 60,
-  '12h':  12 * 60 * 60,
-  '24h':  24 * 60 * 60,
-}
 
 // Fields that require a plist rewrite when changed
 const PLIST_DIFFABLE_FIELDS = ['schedule', 'workingDirectory', 'env', 'timeoutSeconds']
@@ -44,18 +34,6 @@ export function discoverTaskFiles(repoRoot) {
   return fs.readdirSync(tideDir)
     .filter(f => f.endsWith('.md'))
     .map(f => path.join(tideDir, f))
-}
-
-/** Parse schedule shorthand string into { type, intervalSeconds } */
-function parseSchedule(value) {
-  if (!value || value === 'manual') return { type: 'manual' }
-  const seconds = SCHEDULE_SHORTHANDS[String(value)]
-  if (seconds == null) {
-    const n = parseInt(value)
-    if (!isNaN(n) && n > 0) return { type: 'interval', intervalSeconds: n }
-    return { type: 'manual' }
-  }
-  return { type: 'interval', intervalSeconds: seconds }
 }
 
 /**
