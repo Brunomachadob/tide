@@ -7,7 +7,6 @@ import { spawnSync } from 'child_process'
 import { fileURLToPath } from 'url'
 import { taskDir } from './tasks.js'
 import { bootstrap, plistPath, label } from './launchd.js'
-import { readSettings } from './settings.js'
 import { writeTideFields } from './taskfile.js'
 
 const PLUGIN_ROOT = path.resolve(fileURLToPath(import.meta.url), '../../..')
@@ -105,8 +104,8 @@ export function writePlist(taskId, config) {
 
 /**
  * Create a new task.
- * config: { name, argument, schedule, command, extraArgs, workingDirectory,
- *           maxRetries, env, claudeStreamJson, parentRunId?, id?, createdAt? }
+ * config: { name, argument, schedule, workingDirectory, env, agentAuth,
+ *           resultRetentionDays, timeoutSeconds, parentRunId?, id?, createdAt? }
  * Returns the created task object.
  */
 export function createTask(config) {
@@ -115,16 +114,13 @@ export function createTask(config) {
 
   const taskId = config.id || generateId()
   const createdAt = config.createdAt || new Date().toISOString().replace(/\.\d+Z$/, 'Z')
-  const command = config.command || readSettings().command
   const workingDirectory = config.workingDirectory || os.homedir()
-  const maxRetries = config.maxRetries ?? 0
   const schedule = config.schedule || { type: 'interval', intervalSeconds: 3600 }
   const isManual = schedule.type === 'manual'
   const intervalSeconds = isManual ? 0 : (schedule.intervalSeconds || 3600)
   const jitterSeconds = config.jitterSeconds ?? (isManual ? 0 : Math.floor(Math.random() * Math.min(intervalSeconds / 4, 300)))
   const timeoutSeconds = config.timeoutSeconds ?? null
   const resultRetentionDays = config.resultRetentionDays ?? 30
-  const claudeStreamJson = config.claudeStreamJson ?? false
 
   const tDir = taskDir(taskId)
   fs.mkdirSync(path.join(tDir, 'logs'), { recursive: true })
@@ -133,18 +129,15 @@ export function createTask(config) {
     id: taskId,
     name: config.name,
     argument: config.argument,
-    command,
-    extraArgs: config.extraArgs || [],
     schedule,
     jitterSeconds,
     createdAt,
     enabled: true,
-    maxRetries,
     workingDirectory,
     env: config.env || {},
+    ...(config.agentAuth ? { agentAuth: config.agentAuth } : {}),
     ...(timeoutSeconds !== null && { timeoutSeconds }),
     resultRetentionDays,
-    claudeStreamJson,
     sourcePath: config.sourcePath || null,
     ...(config.parentRunId ? { parentRunId: config.parentRunId } : {}),
   }
@@ -170,7 +163,6 @@ export function createTask(config) {
  * Preserves id, createdAt, jitterSeconds, enabled.
  */
 export function updateTask(existing, changes) {
-  const command = changes.command || existing.command || readSettings().command
   const schedule = changes.schedule || existing.schedule
   const workingDirectory = changes.workingDirectory || existing.workingDirectory
 
@@ -178,10 +170,8 @@ export function updateTask(existing, changes) {
     ...existing,
     name: changes.name ?? existing.name,
     argument: changes.argument ?? existing.argument,
-    command,
     schedule,
     workingDirectory,
-    claudeStreamJson: changes.claudeStreamJson ?? existing.claudeStreamJson ?? false,
   }
 
   if (task.sourcePath) {

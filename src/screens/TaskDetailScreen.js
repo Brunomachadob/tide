@@ -219,16 +219,14 @@ export default function TaskDetailScreen({ taskId, navigate, goBack, repoRoot, h
             )
           : null,
       ),
-      React.createElement(Field, { label: 'ID',         value: task.id }),
-      React.createElement(Field, { label: 'Schedule',   value: task.scheduleLabel }),
-      React.createElement(Field, { label: 'Command',    value: task.command }),
-      task.extraArgs?.length
-        ? React.createElement(Field, { label: 'Extra args', value: task.extraArgs.join(' ') })
-        : null,
+      React.createElement(Field, { label: 'ID',          value: task.id }),
+      React.createElement(Field, { label: 'Schedule',    value: task.scheduleLabel }),
       React.createElement(Field, { label: 'Working dir', value: task.workingDirectory }),
-      React.createElement(Field, { label: 'Max retries', value: task.maxRetries ?? 0 }),
-      task.claudeStreamJson
-        ? React.createElement(Field, { label: 'Claude stream-json', value: 'enabled', valueColor: 'green' })
+      task.agentAuth?.strategy
+        ? React.createElement(Field, { label: 'Auth strategy', value: task.agentAuth.strategy, valueColor: 'green' })
+        : null,
+      task.agentAuth?.model
+        ? React.createElement(Field, { label: 'Model', value: task.agentAuth.model })
         : null,
       task.env && Object.keys(task.env).length > 0
         ? React.createElement(Field, { label: 'Env', value: Object.entries(task.env).map(([k, v]) => `${k}=${v}`).join(', ') })

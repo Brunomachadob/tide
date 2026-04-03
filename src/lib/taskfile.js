@@ -70,16 +70,13 @@ export function parseTaskFile(filePath) {
     jitterSeconds: fm['_jitter'] ?? null,
     name: fm.name || path.basename(filePath, '.md'),
     argument: body.trim(),
-    command: fm.command || settings.command || '',
-    extraArgs: fm.extraArgs || [],
     schedule,
     workingDirectory: fm.workingDirectory
       ? fm.workingDirectory.replace(/^~/, os.homedir())
       : (settings.defaultWorkingDirectory || os.homedir()),
-    maxRetries: fm.maxRetries ?? 0,
     env: fm.env || {},
     resultRetentionDays: fm.resultRetentionDays ?? 30,
-    claudeStreamJson: fm.claudeStreamJson ?? false,
+    agentAuth: fm.agentAuth || settings.agentAuth || null,
     timeoutSeconds: fm.timeoutSeconds ?? null,
     enabled: fm['_enabled'] ?? true,
     sourcePath: filePath,

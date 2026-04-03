@@ -7,13 +7,17 @@ import { readSettings } from './settings.js'
 
 function buildTemplate(settings, repoRoot) {
   const workDir = repoRoot || settings.defaultWorkingDirectory || os.homedir()
+  const auth = settings.agentAuth || {}
   return `---
 name: My task
 schedule: 1h
 workingDirectory: ${workDir}
-# command: /opt/homebrew/bin/claude --permission-mode bypassPermissions -p
-# maxRetries: 0
-# claudeStreamJson: false
+agentAuth:
+  strategy: ${auth.strategy || 'tsh-okta-bedrock'}
+  app: ${auth.app || 'n26-dev-eu'}
+  awsRole: ${auth.awsRole || 'bedrock-developer-user'}
+  teleportProxy: ${auth.teleportProxy || 'teleport.access26.de:443'}
+  model: ${auth.model || 'arn:aws:bedrock:eu-central-1:538639307912:application-inference-profile/xswegkx4emk1'}
 ---
 
 Describe what this task should do.

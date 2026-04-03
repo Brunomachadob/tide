@@ -41,16 +41,13 @@ function parseMd(mdPath) {
     enabled: fm['_enabled'] ?? true,
     name: fm.name || path.basename(mdPath, '.md'),
     argument: body.trim(),
-    command: fm.command || settings.command || '',
-    extraArgs: fm.extraArgs || [],
     schedule: parseSchedule(fm.schedule),
     workingDirectory: fm.workingDirectory
       ? fm.workingDirectory.replace(/^~/, os.homedir())
       : (settings.defaultWorkingDirectory || os.homedir()),
-    maxRetries: fm.maxRetries ?? 0,
     env: fm.env || {},
     resultRetentionDays: fm.resultRetentionDays ?? 30,
-    claudeStreamJson: fm.claudeStreamJson ?? false,
+    agentAuth: fm.agentAuth || settings.agentAuth || null,
     timeoutSeconds: fm.timeoutSeconds ?? null,
     sourcePath: mdPath,
   }
