@@ -6,6 +6,7 @@ import { spawnSync } from 'child_process'
 import matter from 'gray-matter'
 import { readSettings } from './settings.js'
 import { bootstrap, bootout } from './launchd.js'
+import { parseSchedule } from './constants.js'
 
 const TIDE_DIR = path.join(os.homedir(), '.tide')
 export const TASKS_DIR = path.join(TIDE_DIR, 'tasks')
@@ -24,19 +25,6 @@ function readPlistJson(plistFile) {
   } catch {
     return null
   }
-}
-
-const SCHEDULE_SHORTHANDS = {
-  manual: null, '15m': 900, '30m': 1800, '1h': 3600, '2h': 7200, '6h': 21600, '12h': 43200, '24h': 86400,
-}
-
-function parseSchedule(value) {
-  if (!value || value === 'manual') return { type: 'manual' }
-  const seconds = SCHEDULE_SHORTHANDS[String(value)]
-  if (seconds != null) return { type: 'interval', intervalSeconds: seconds }
-  const n = parseInt(value)
-  if (!isNaN(n) && n > 0) return { type: 'interval', intervalSeconds: n }
-  return { type: 'manual' }
 }
 
 /** Parse a .md file into a task-shaped object (minimal, for readTask/readTasks). */
