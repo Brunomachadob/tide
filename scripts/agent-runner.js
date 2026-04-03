@@ -69,11 +69,18 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-// log() writes to stdout and, once stderrLog is known, appends to stderr.log too.
-// Mimics the log() helper in tide.sh: [timestamp] [taskName] [runId] message
+// log() writes to stdout (captured by launchd) and, once the run dir is known,
+// also appends to output.log so runner lifecycle lines appear in the Output tab.
+// stderr.log is reserved for errors: SDK internal stderr + explicit logError() calls.
+let _outputLog = null
 let _stderrLog = null
 let _logPrefix = ''
 function log(msg) {
+  const line = `[${now()}]${_logPrefix} ${msg}`
+  process.stdout.write(line + '\n')
+  if (_outputLog) try { fs.appendFileSync(_outputLog, line + '\n') } catch { /* ok */ }
+}
+function logError(msg) {
   const line = `[${now()}]${_logPrefix} ${msg}`
   process.stdout.write(line + '\n')
   if (_stderrLog) try { fs.appendFileSync(_stderrLog, line + '\n') } catch { /* ok */ }
@@ -141,7 +148,7 @@ const taskName = fm.name || path.basename(taskFile, '.md')
 const argument = process.env.TIDE_OVERRIDE_ARGUMENT ?? body.trim()
 const workingDirectory = fm.workingDirectory
   ? fm.workingDirectory.replace(/^~/, os.homedir())
-  : (settings.defaultWorkingDirectory || os.homedir())
+  : os.homedir()
 const jitterSeconds = fm['_jitter'] ?? 0
 const maxRetries = fm.maxRetries ?? 0
 const resultRetentionDays = fm.resultRetentionDays ?? 30
@@ -196,7 +203,8 @@ const runFile = path.join(runDir, 'run.json')
 const outputLog = path.join(runDir, 'output.log')
 const stderrLog = path.join(runDir, 'stderr.log')
 
-// Wire log() to also write to stderr.log from here on
+// Wire log() → output.log, logError() → stderr.log from here on
+_outputLog = outputLog
 _stderrLog = stderrLog
 _logPrefix = ` [${taskName}] [${runId}]`
 
@@ -210,7 +218,7 @@ log('starting')
 log(`auth: strategy=${strategy}`)
 const strategyFn = AUTH_STRATEGIES[strategy]
 if (!strategyFn) {
-  log(`error: unknown auth strategy "${strategy}". Known: ${Object.keys(AUTH_STRATEGIES).join(', ')}`)
+  logError(`error: unknown auth strategy "${strategy}". Known: ${Object.keys(AUTH_STRATEGIES).join(', ')}`)
   process.exit(1)
 }
 
@@ -219,7 +227,7 @@ try {
   sdkOptions = await strategyFn(agentAuth, process.env)
   log(`auth: ok`)
 } catch (e) {
-  log(`auth failed: ${e.message}`)
+  logError(`auth failed: ${e.message}`)
   process.exit(1)
 }
 
@@ -266,15 +274,14 @@ while (attempt <= maxRetries) {
       } else if (msg.type === 'result') {
         exitCode = msg.subtype === 'success' ? 0 : 1
         if (msg.subtype !== 'success') {
-          const errMsg = `\n[agent-runner] run failed: ${msg.subtype}${msg.errors ? ' — ' + msg.errors.join('; ') : ''}\n`
-          outputStream.write(errMsg)
+          logError(`run failed: ${msg.subtype}${msg.errors ? ' — ' + msg.errors.join('; ') : ''}`)
         }
       }
     }
     log(`command finished: exit=${exitCode}`)
     if (exitCode === 0) break
   } catch (e) {
-    log(`SDK error: ${e.message}`)
+    logError(`SDK error: ${e.message}`)
     exitCode = 1
   }
 

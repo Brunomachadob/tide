@@ -17,7 +17,7 @@ export default function App() {
   const [settings, setSettings] = useState(() => readSettings())
   const intervalMs = settings.refreshInterval * 1000
   const { tasks, loading, error, refresh } = useTasks(intervalMs, repoRoot)
-  const [stack, setStack] = useState([{ screen: settings.command ? 'list' : 'setup', props: {} }])
+  const [stack, setStack] = useState([{ screen: 'list', props: {} }])
   const [scopeIdx, setScopeIdx] = useState(0)
 
   const navigate = useCallback((screen, props = {}) => {
@@ -28,7 +28,7 @@ export default function App() {
     setStack(s => {
       if (s.length <= 1) return s
       const leaving = s[s.length - 1].screen
-      if (leaving === 'settings' || leaving === 'setup') setSettings(readSettings())
+      if (leaving === 'settings') setSettings(readSettings())
       return s.slice(0, -1)
     })
   }, [])
@@ -57,7 +57,7 @@ export default function App() {
         parts.push('Runs')
       } else if (entry.screen === 'notifications') {
         parts.push('Notifications')
-      } else if (entry.screen === 'settings' || entry.screen === 'setup') {
+      } else if (entry.screen === 'settings') {
         parts.push('Settings')
       }
     }
@@ -79,8 +79,6 @@ export default function App() {
       return React.createElement(NotificationsScreen, { ...screenProps, ...current.props })
     case 'settings':
       return React.createElement(SettingsScreen, { ...screenProps, ...current.props })
-    case 'setup':
-      return React.createElement(SettingsScreen, { ...screenProps, onSave: () => navigate('list'), ...current.props })
     default:
       return React.createElement(TaskListScreen, screenProps)
   }

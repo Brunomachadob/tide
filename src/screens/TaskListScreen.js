@@ -234,14 +234,22 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
     React.createElement(
       Box,
       { paddingX: 1 },
-      ...COLS.map(c =>
+      React.createElement(Box, { width: COLS[0].width },
+        React.createElement(Text, { bold: true, color: 'gray' }, COLS[0].label),
+      ),
+      showRepo
+        ? React.createElement(Box, { width: 14 },
+            React.createElement(Text, { bold: true, color: 'gray' }, 'Repo'),
+          )
+        : null,
+      ...COLS.slice(1).map(c =>
         React.createElement(Box, { key: c.label, width: c.width },
           React.createElement(Text, { bold: true, color: 'gray' }, c.label),
         ),
       ),
     ),
     React.createElement(Box, { paddingX: 1 },
-      React.createElement(Text, { color: 'gray' }, '─'.repeat(COLS.reduce((s, c) => s + c.width, 0))),
+      React.createElement(Text, { color: 'gray' }, '─'.repeat(COLS.reduce((s, c) => s + c.width, 0) + (showRepo ? 14 : 0))),
     ),
 
     // Rows

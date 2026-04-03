@@ -6,8 +6,6 @@ const SETTINGS_FILE = path.join(os.homedir(), '.tide', 'settings.json')
 
 const DEFAULTS = {
   dateFormat: 'YYYY-MM-DD',
-  command: '',
-  defaultWorkingDirectory: os.homedir(),
   terminalBundleId: 'com.apple.Terminal',
   refreshInterval: 5,
 }

@@ -73,7 +73,7 @@ export function parseTaskFile(filePath) {
     schedule,
     workingDirectory: fm.workingDirectory
       ? fm.workingDirectory.replace(/^~/, os.homedir())
-      : (settings.defaultWorkingDirectory || os.homedir()),
+      : os.homedir(),
     env: fm.env || {},
     resultRetentionDays: fm.resultRetentionDays ?? 30,
     agentAuth: fm.agentAuth || settings.agentAuth || null,

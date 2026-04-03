@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { Box, Text, useInput } from 'ink'
-import os from 'os'
 import Header from '../components/Header.js'
 import FieldBox from '../components/FieldBox.js'
 import TextInput from '../components/TextInput.js'
@@ -9,7 +8,7 @@ import KeyHints from '../components/KeyHints.js'
 import { readSettings, writeSettings } from '../lib/settings.js'
 import { DATE_FORMATS, TERMINALS } from '../lib/constants.js'
 
-const FIELDS = ['command', 'workingDir', 'dateFormat', 'terminal', 'terminalCustom', 'refreshInterval']
+const FIELDS = ['dateFormat', 'terminal', 'terminalCustom', 'refreshInterval']
 
 const REFRESH_INTERVALS = [2, 5, 10, 30, 60]
 
@@ -49,12 +48,9 @@ function initialTerminalIdx(bundleId) {
   return idx === -1 ? CUSTOM_IDX : idx
 }
 
-// onSave: optional callback after saving (used for first-run redirect to 'list')
-export default function SettingsScreen({ goBack, navigate, onSave, height, breadcrumb }) {
+export default function SettingsScreen({ goBack, navigate, height, breadcrumb }) {
   const saved = readSettings()
-  const [field, setField] = useState('command')
-  const [command, setCommand] = useState(saved.command || '')
-  const [workingDir, setWorkingDir] = useState(saved.defaultWorkingDirectory || os.homedir())
+  const [field, setField] = useState('dateFormat')
   const [dateFormatIdx, setDateFormatIdx] = useState(Math.max(0, DATE_FORMATS.indexOf(saved.dateFormat)))
   const [terminalIdx, setTerminalIdx] = useState(initialTerminalIdx(saved.terminalBundleId))
   const [customBundleId, setCustomBundleId] = useState(
@@ -96,14 +92,11 @@ export default function SettingsScreen({ goBack, navigate, onSave, height, bread
     }
     if (key.return) {
       writeSettings({
-        command: command.trim(),
-        defaultWorkingDirectory: workingDir.trim() || os.homedir(),
         dateFormat: DATE_FORMATS[dateFormatIdx],
         terminalBundleId: resolvedBundleId,
         refreshInterval: REFRESH_INTERVALS[refreshIntervalIdx],
       })
       setToast({ message: 'Settings saved', type: 'success' })
-      if (onSave) setTimeout(onSave, 1500)
     }
   })
 
@@ -112,12 +105,6 @@ export default function SettingsScreen({ goBack, navigate, onSave, height, bread
     React.createElement(Header, { breadcrumb }),
 
     React.createElement(Box, { flexDirection: 'column', paddingX: 1 },
-      React.createElement(FieldBox, { label: 'Run command (must end with prompt flag)', active: field === 'command' },
-        React.createElement(TextInput, { value: command, onChange: setCommand, active: field === 'command', placeholder: '/opt/homebrew/bin/claude --permission-mode bypassPermissions -p' }),
-      ),
-      React.createElement(FieldBox, { label: 'Default working directory', active: field === 'workingDir' },
-        React.createElement(TextInput, { value: workingDir, onChange: setWorkingDir, active: field === 'workingDir', placeholder: os.homedir() }),
-      ),
       React.createElement(FieldBox, { label: 'Date Format', active: field === 'dateFormat' },
         React.createElement(PickerOptions, { items: DATE_FORMATS, selectedIdx: dateFormatIdx, showExamples: true }),
         React.createElement(Text, { color: 'gray' }, 'Use ←→ to change'),

@@ -27,17 +27,14 @@ describe('readSettings', () => {
   test('returns defaults when file does not exist', () => {
     const s = readSettings()
     assert.equal(s.dateFormat, 'YYYY-MM-DD')
-    assert.equal(s.command, '')
-    assert.ok(s.defaultWorkingDirectory)
     assert.equal(s.refreshInterval, 5)
   })
 
   test('merges stored values with defaults', () => {
     fs.mkdirSync(TIDE_DIR, { recursive: true })
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ dateFormat: 'DD.MM.YYYY', command: 'my-cmd' }))
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ dateFormat: 'DD.MM.YYYY' }))
     const s = readSettings()
     assert.equal(s.dateFormat, 'DD.MM.YYYY')
-    assert.equal(s.command, 'my-cmd')
     assert.equal(s.refreshInterval, 5) // default applied when not in file
   })
 
@@ -56,16 +53,15 @@ describe('writeSettings', () => {
   })
 
   test('writes and reads back', () => {
-    writeSettings({ dateFormat: 'MM/DD/YYYY', command: 'node', defaultWorkingDirectory: '/tmp', refreshInterval: 10 })
+    writeSettings({ dateFormat: 'MM/DD/YYYY', refreshInterval: 10 })
     const s = readSettings()
     assert.equal(s.dateFormat, 'MM/DD/YYYY')
-    assert.equal(s.command, 'node')
     assert.equal(s.refreshInterval, 10)
   })
 
   test('is atomic (uses tmp rename)', () => {
-    writeSettings({ dateFormat: 'YYYY-MM-DD', command: '', defaultWorkingDirectory: '/tmp' })
-    writeSettings({ dateFormat: 'DD.MM.YYYY', command: 'x', defaultWorkingDirectory: '/tmp' })
+    writeSettings({ dateFormat: 'YYYY-MM-DD' })
+    writeSettings({ dateFormat: 'DD.MM.YYYY' })
     assert.equal(readSettings().dateFormat, 'DD.MM.YYYY')
   })
 })

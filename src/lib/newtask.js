@@ -1,12 +1,11 @@
 // Opens a new task .md file in the user's $EDITOR.
 import fs from 'fs'
 import path from 'path'
-import os from 'os'
 import { spawnSync } from 'child_process'
 import { readSettings } from './settings.js'
 
 function buildTemplate(settings, repoRoot) {
-  const workDir = repoRoot || settings.defaultWorkingDirectory || os.homedir()
+  const workDir = repoRoot || process.cwd()
   const auth = settings.agentAuth || {}
   return `---
 name: My task
