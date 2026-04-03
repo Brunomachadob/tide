@@ -69,6 +69,16 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
+// log() writes to stderr and, once stderrLog is known, appends to stderr.log too.
+// Mimics the log() helper in tide.sh: [timestamp] [taskName] [runId] message
+let _stderrLog = null
+let _logPrefix = ''
+function log(msg) {
+  const line = `[${now()}]${_logPrefix} ${msg}`
+  process.stderr.write(line + '\n')
+  if (_stderrLog) try { fs.appendFileSync(_stderrLog, line + '\n') } catch { /* ok */ }
+}
+
 // Rotate log file: if > MAX bytes, keep last KEEP bytes with a header.
 function rotateLog(logFile) {
   const MAX = 5 * 1024 * 1024
@@ -113,13 +123,13 @@ function sendNotification(title, message, terminalBundleId) {
 
 const taskId = process.argv[2]
 if (!taskId) {
-  console.error('Usage: agent-runner.js <taskId>')
+  process.stderr.write('Usage: agent-runner.js <taskId>\n')
   process.exit(1)
 }
 
 const taskFile = process.env.TIDE_TASK_FILE
 if (!taskFile || !fs.existsSync(taskFile)) {
-  console.error(`agent-runner: TIDE_TASK_FILE not set or not found: ${taskFile}`)
+  process.stderr.write(`agent-runner: TIDE_TASK_FILE not set or not found: ${taskFile}\n`)
   process.exit(1)
 }
 
@@ -145,12 +155,14 @@ const tDir = taskDir(taskId)
 const pidFile = path.join(tDir, 'running.pid')
 
 // ─── PID overlap detection ────────────────────────────────────────────────────
+// Set up prefix for pre-run log lines (no runId yet)
+_logPrefix = ` [${taskName}]`
 if (fs.existsSync(pidFile)) {
   const existing = fs.readFileSync(pidFile, 'utf8').trim()
   if (existing) {
     try {
       process.kill(parseInt(existing), 0)
-      console.error(`[${now()}] Skipping: task already running (PID ${existing})`)
+      log(`skipping: task already running (PID ${existing})`)
       process.exit(0)
     } catch { /* process gone */ }
   }
@@ -170,9 +182,9 @@ process.on('SIGINT', () => process.exit(1))
 
 // ─── Jitter ───────────────────────────────────────────────────────────────────
 if (jitterSeconds > 0 && process.env.TIDE_NO_JITTER !== '1') {
-  console.error(`[${now()}] jitter: sleeping ${jitterSeconds}s...`)
+  log(`jitter: sleeping ${jitterSeconds}s...`)
   await sleep(jitterSeconds * 1000)
-  console.error(`[${now()}] jitter: done`)
+  log('jitter: done, proceeding')
 }
 
 // ─── Initialize run ───────────────────────────────────────────────────────────
@@ -184,34 +196,38 @@ const runFile = path.join(runDir, 'run.json')
 const outputLog = path.join(runDir, 'output.log')
 const stderrLog = path.join(runDir, 'stderr.log')
 
+// Wire log() to also write to stderr.log from here on
+_stderrLog = stderrLog
+_logPrefix = ` [${taskName}] [${runId}]`
+
 const runRecord = { runId, taskId, taskName, startedAt, argument }
 if (parentRunId) runRecord.parentRunId = parentRunId
 fs.writeFileSync(runFile, JSON.stringify(runRecord, null, 2))
 
-console.error(`[${now()}] [${taskName}] [${runId}] starting`)
+log('starting')
 
 // ─── Resolve auth strategy ────────────────────────────────────────────────────
+log(`auth: strategy=${strategy}`)
 const strategyFn = AUTH_STRATEGIES[strategy]
 if (!strategyFn) {
-  const err = `agent-runner: unknown auth strategy: ${strategy}. Known: ${Object.keys(AUTH_STRATEGIES).join(', ')}`
-  fs.appendFileSync(stderrLog, err + '\n')
-  console.error(err)
+  log(`error: unknown auth strategy "${strategy}". Known: ${Object.keys(AUTH_STRATEGIES).join(', ')}`)
   process.exit(1)
 }
 
 let sdkOptions
 try {
   sdkOptions = await strategyFn(agentAuth, process.env)
+  log(`auth: ok`)
 } catch (e) {
-  const err = `agent-runner: auth strategy failed: ${e.message}`
-  fs.appendFileSync(stderrLog, err + '\n')
-  console.error(err)
+  log(`auth failed: ${e.message}`)
   process.exit(1)
 }
 
 // Detect claude binary — use CLAUDE_BIN env if set, else find it
 const claudeBin = process.env.CLAUDE_BIN ||
   (fs.existsSync('/opt/homebrew/bin/claude') ? '/opt/homebrew/bin/claude' : 'claude')
+log(`claude binary: ${claudeBin}`)
+log(`working directory: ${workingDirectory}`)
 
 // ─── SDK call with optional retries ───────────────────────────────────────────
 const outputStream = fs.createWriteStream(outputLog, { flags: 'a' })
@@ -219,10 +235,12 @@ const outputStream = fs.createWriteStream(outputLog, { flags: 'a' })
 let attempt = 0
 while (attempt <= maxRetries) {
   if (attempt > 0) {
-    const backoff = attempt * 30000
-    console.error(`[${now()}] [${taskName}] [${runId}] retry ${attempt}/${maxRetries} after ${attempt * 30}s...`)
-    await sleep(backoff)
+    const backoff = attempt * 30
+    log(`retry ${attempt}/${maxRetries} after ${backoff}s...`)
+    await sleep(backoff * 1000)
   }
+
+  log(`command starting (attempt ${attempt + 1}${maxRetries > 0 ? `/${maxRetries + 1}` : ''})`)
 
   try {
     for await (const msg of query({
@@ -253,11 +271,10 @@ while (attempt <= maxRetries) {
         }
       }
     }
+    log(`command finished: exit=${exitCode}`)
     if (exitCode === 0) break
   } catch (e) {
-    const errMsg = `[agent-runner] SDK error: ${e.message}\n`
-    fs.appendFileSync(stderrLog, errMsg)
-    console.error(errMsg.trim())
+    log(`SDK error: ${e.message}`)
     exitCode = 1
   }
 
@@ -268,7 +285,7 @@ outputStream.end()
 await new Promise(resolve => outputStream.once('finish', resolve))
 
 const completedAt = now()
-console.error(`[${now()}] [${taskName}] [${runId}] finished: exit=${exitCode} attempts=${attempt}`)
+log(`finished: exit=${exitCode} attempts=${attempt}`)
 
 // ─── Complete run.json ────────────────────────────────────────────────────────
 const completedRecord = { runId, taskId, taskName, startedAt, completedAt, exitCode, attempts: attempt, argument }
