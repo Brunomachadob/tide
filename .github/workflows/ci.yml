@@ -20,15 +20,7 @@ jobs:
       - run: npm ci
 
       - name: Run tests
-        env:
-          FORCE_COLOR: '3'
-        run: |
-          node --test \
-            --test-reporter=spec \
-            --test-reporter-destination=stdout \
-            --test-reporter=tap \
-            --test-reporter-destination=tap-output.txt \
-            test/*.test.js
+        run: npm run test:ci
 
       - name: Write test summary
         if: always()
