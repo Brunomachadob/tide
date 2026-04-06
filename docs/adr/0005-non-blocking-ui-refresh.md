@@ -1,4 +1,4 @@
-# ADR-0006: Non-blocking UI refresh via worker threads and shared task state
+# ADR-0005: Non-blocking UI refresh via worker threads and shared task state
 Date: 2026-04-01
 Status: Accepted
 

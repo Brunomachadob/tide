@@ -160,7 +160,6 @@ export function createTask(config) {
       '_id': taskId,
       '_createdAt': createdAt,
       '_jitter': jitterSeconds,
-      '_enabled': true,
     })
   }
 
@@ -186,11 +185,8 @@ export function updateTask(existing, changes) {
     workingDirectory,
   }
 
-  if (task.sourcePath) {
-    writeTideFields(task.sourcePath, { '_enabled': task.enabled })
-  }
-  writePlist(task.id, task)
-  if (task.enabled) bootstrap(task.id)
+  writePlist(task.id, { ...task, enabled: true })
+  bootstrap(task.id)
 
   return task
 }

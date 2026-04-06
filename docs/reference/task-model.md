@@ -9,7 +9,6 @@ Each task is authored as a markdown file at `<repo>/.tide/<taskname>.md`. The pl
 _id: 3f640f65
 _createdAt: 2026-03-29T10:00:00Z
 _jitter: 42
-_enabled: true
 name: Daily standup summary
 schedule: 1h
 workingDirectory: ~/projects/myrepo
@@ -33,7 +32,7 @@ The file **body** (below the `---`) is the prompt sent to Claude.
 | `env` | `object` | `{}` | Additional environment variables passed to the run. |
 | `resultRetentionDays` | `number` | `30` | Run history older than this is pruned after each run. |
 | `timeoutSeconds` | `number` | none | Hard timeout passed to launchd. Includes jitter. |
-| `enabled` | `boolean` | `true` | Initial enabled state when first synced. After that, use `[t]` in the TUI. |
+| `maxRetries` | `number` | `0` | Number of retries on non-zero exit, with exponential backoff (30s × attempt). |
 | `profile` | `string` | — | Key referencing a profile in `~/.tide/settings.json` under `profiles`. |
 
 ::: tip Profiles live in settings
@@ -47,7 +46,6 @@ Profile configuration is stored once in `~/.tide/settings.json` under `profiles`
 | `_id` | Random 8-char hex ID. Immutable after creation. |
 | `_createdAt` | ISO 8601 creation timestamp. Used for UI ordering. |
 | `_jitter` | Random delay (0–min(interval/4, 300)s) applied before each run. Assigned once at creation. |
-| `_enabled` | Current enabled state. Updated by `[t]` toggle in the TUI. |
 
 ## Which fields require a sync step
 
@@ -59,8 +57,7 @@ Only fields encoded in the plist need a rewrite to take effect. Other fields are
 | `workingDirectory` | Yes |
 | `env` | Yes |
 | `timeoutSeconds` | Yes |
-| `_enabled` | Yes (controls plist registration) |
-| `name`, `argument` (body), `profile`, `resultRetentionDays` | No — takes effect at next run |
+| `name`, body, `profile`, `resultRetentionDays`, `maxRetries` | No — takes effect at next run |
 
 ## Task state at display time
 

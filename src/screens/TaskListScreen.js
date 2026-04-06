@@ -99,7 +99,7 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
     } else if (input === 'e') {
       const t = visibleTasks[selectedIdx]
       if (t && t.id) {
-        const action = t.enabled ? 'disable' : 'enable'
+        const action = t.status !== 'disabled' ? 'disable' : 'enable'
         setConfirm({ action, taskId: t.id, message: `${action === 'enable' ? 'Enable' : 'Disable'} "${t.name}"?` })
       }
     } else if (input === 'd') {

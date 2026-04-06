@@ -1,4 +1,4 @@
-# ADR-0005: Markdown task files as source of truth
+# ADR-0004: Markdown task files as source of truth
 Date: 2026-04-01
 Status: Accepted — supersedes [ADR-0002](0002-task-json-as-source-of-truth.md)
 
@@ -55,7 +55,7 @@ The TUI shows a pending-update badge when a plist-encoded field changes in the `
 
 Because all registered tasks have plists in `~/Library/LaunchAgents/`, `readTasks()` scans `com.tide.*.plist` files globally. Orphan detection is trivially global: check `existsSync(TIDE_TASK_FILE)` for each plist.
 
-Multi-repo scope, pending-create discovery across all `.tide/` roots, and the UI scope selector are covered in [ADR-0007](0007-multi-repo-scope.md).
+Multi-repo scope, pending-create discovery across all `.tide/` roots, and the UI scope selector are covered in [ADR-0006](0006-multi-repo-scope.md).
 
 ## Consequences
 

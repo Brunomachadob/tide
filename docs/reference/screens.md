@@ -46,7 +46,7 @@ When multiple repos are visible ("all repos" mode), tasks are grouped by repo wi
 |-------|---------|
 | `running` | Task is currently executing |
 | `loaded` | Registered with launchd, not currently running |
-| `disabled` | `_enabled: false` in `.md` — not registered with launchd |
+| `disabled` | Plist has `Disabled: true` — registered but will not fire |
 | `not loaded` | Plist is missing or was never bootstrapped — re-enable to restore |
 
 **Sync badges:**

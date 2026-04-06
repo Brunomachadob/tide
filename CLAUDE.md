@@ -40,7 +40,7 @@ If launchd has no record of the task (plist missing or never bootstrapped), `get
 ```
 src/lib/
   io.js           — safeReadJSON, atomicWriteJSON (shared primitives)
-  tasks.js        — readTask/readTasks scan plists + .md files; setEnabled writes _enabled back
+  tasks.js        — readTask/readTasks scan plists + .md files; setEnabled rewrites plist
   results.js      — read result JSON files
   logs.js         — read stdout/stderr/output log files
   notifications.js — read/clear pending-notifications.json
@@ -51,7 +51,7 @@ src/lib/
   taskfile.js     — parseTaskFile, writeTideFields, computePending, applyPending
   load-tasks.js   — loadTasks(): merges .md + launchd + lastResult into display objects (run in worker)
   tasks-worker.js — worker thread entry point: calls loadTasks(), posts result to main thread
-  constants.js    — DATE_FORMATS, TIMEZONES
+  constants.js    — SCHEDULE_SHORTHANDS, parseSchedule, LAUNCH_AGENTS_DIR
 
 scripts/
   tide.sh         — executed by launchd; resolves agentAuth, execs into tsh aws --exec node agent-runner.js
@@ -67,9 +67,10 @@ src/hooks/
 ### Key invariants
 
 - The `.md` file in `<repo>/.tide/` is the source of truth for task config. The plist is derived from it.
-- Underscore-prefixed frontmatter keys (`_id`, `_createdAt`, `_jitter`, `_enabled`) are managed by Tide. User keys have no prefix.
+- Underscore-prefixed frontmatter keys (`_id`, `_createdAt`, `_jitter`) are managed by Tide. User keys have no prefix.
 - `task.json` is no longer written or read.
-- Only plist-encoded fields (`schedule`, `workingDirectory`, `env`, `timeoutSeconds`, `enabled`) require a sync step. Other field changes take effect at the next run.
+- Only plist-encoded fields (`schedule`, `workingDirectory`, `env`, `timeoutSeconds`) require a sync step. Other field changes take effect at the next run.
+- Enabled/disabled state is derived from the plist's `Disabled` key — it is not stored in the `.md` file.
 - `readTasks()` has no side effects — it does not create `pending-notifications.json`. That file is created by `agent-runner.js` (post-run).
 - The `attempts` field in run.json is the total number of runs (1 = ran once, 2 = ran + 1 retry).
 

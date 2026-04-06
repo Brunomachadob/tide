@@ -41,7 +41,7 @@ export function loadTasks(repoRoot) {
     let status
     if (launchd.pid || isRunningViaPidFile(task.id)) {
       status = 'running'
-    } else if (!task.enabled) {
+    } else if (task.disabled) {
       status = 'disabled'
     } else if (launchd.loaded && launchd.lastExitCode !== null && launchd.lastExitCode !== 0) {
       status = 'launchd-error'
@@ -76,12 +76,12 @@ export function loadTasks(repoRoot) {
       const ghostId = entry.task.id
       result.push({
         ...entry.task,
-        status: entry.task.enabled === false ? 'disabled' : 'not loaded',
+        status: entry.task.disabled === true ? 'disabled' : 'not loaded',
         launchdExitCode: null,
         lastResult: ghostId ? getLatestCompletedRun(ghostId) : null,
         recentResults: ghostId ? getRuns(ghostId, 5) : [],
         scheduleLabel: formatSchedule(entry.task.schedule),
-        syncStatus: entry.task.enabled === false ? null : 'create',
+        syncStatus: entry.task.disabled === true ? null : 'create',
         syncDiff: [],
       })
     } else if (entry.type === 'orphan') {

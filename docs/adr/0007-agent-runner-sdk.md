@@ -1,4 +1,4 @@
-# ADR-0008: Agent SDK Runner
+# ADR-0007: Agent SDK Runner
 Date: 2026-04-03
 Status: Accepted
 

@@ -8,7 +8,7 @@ export default defineConfig({
     }
   },
   title: 'Tide',
-  description: 'macOS task scheduler with a terminal UI — run Claude agents on a schedule using launchd',
+  description: 'Run AI agents on a schedule via macOS launchd — Claude Code, GitHub Copilot, and Gemini',
   base: '/tide/',
 
   head: [
@@ -56,12 +56,11 @@ export default defineConfig({
           { text: 'ADR-0001: Interval Scheduling', link: '/adr/0001-interval-only-scheduling' },
           { text: 'ADR-0002: task.json as Truth', link: '/adr/0002-task-json-as-source-of-truth' },
           { text: 'ADR-0003: eval for Shell Config', link: '/adr/0003-eval-for-shell-config' },
-          { text: 'ADR-0004: Claude stream-json Logs', link: '/adr/0004-claude-stream-json-for-real-time-logs' },
-          { text: 'ADR-0005: Custom Markdown Renderer', link: '/adr/0005-custom-markdown-renderer' },
-          { text: 'ADR-0006: Markdown Task Files', link: '/adr/0006-markdown-task-files' },
-          { text: 'ADR-0007: Non-blocking UI Refresh', link: '/adr/0007-non-blocking-ui-refresh' },
-          { text: 'ADR-0008: Multi-repo Scope', link: '/adr/0008-multi-repo-scope' },
-          { text: 'ADR-0009: Agent SDK Runner', link: '/adr/0009-agent-runner-sdk' },
+          { text: 'ADR-0004: Markdown Task Files', link: '/adr/0004-markdown-task-files' },
+          { text: 'ADR-0005: Non-blocking UI Refresh', link: '/adr/0005-non-blocking-ui-refresh' },
+          { text: 'ADR-0006: Multi-repo Scope', link: '/adr/0006-multi-repo-scope' },
+          { text: 'ADR-0007: Agent SDK Runner', link: '/adr/0007-agent-runner-sdk' },
+          { text: 'ADR-0008: Key Binding Conventions', link: '/adr/0008-key-binding-conventions' },
         ],
       },
     ],

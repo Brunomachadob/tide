@@ -1,6 +1,6 @@
 # ADR-0002: task.json as source of truth, plist as derived artifact
 Date: 2026-03-30
-Status: Superseded by [ADR-0005](0005-markdown-task-files.md)
+Status: Superseded by [ADR-0004](0004-markdown-task-files.md)
 
 ## Context
 

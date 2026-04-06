@@ -224,7 +224,6 @@ export function applyPending(entry) {
       '_id': parsed.id,
       '_createdAt': createdAt,
       '_jitter': jitterSeconds,
-      '_enabled': parsed.enabled,
     })
 
     const task = {
@@ -241,12 +240,8 @@ export function applyPending(entry) {
       fs.writeFileSync(path.join(tDir, 'source.txt'), sourcePath, 'utf8')
     }
 
-    writePlist(task.id, task)
-    if (task.enabled) {
-      bootstrap(task.id)
-    } else {
-      bootout(task.id)
-    }
+    writePlist(task.id, { ...task, enabled: true })
+    bootstrap(task.id)
     return task
   }
 

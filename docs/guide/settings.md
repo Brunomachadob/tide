@@ -14,7 +14,9 @@ Tide writes settings atomically (temp-then-rename). Avoid holding the file open 
 
 ## Profiles {#profiles}
 
-Profiles live in `settings.json` under `profiles` — a map of profile names to their config. Each profile declares which agent to use and, optionally, how to authenticate. Task frontmatter references a profile by name:
+Profiles live in `settings.json` under `profiles` — a map of profile names to their config. Each profile declares which agent to use and, optionally, how to authenticate. Task frontmatter references a profile by name.
+
+The onboarding screen sets up minimal profiles on first launch. To add, edit, or remove profiles later, edit `~/.tide/settings.json` directly — changes take effect on the next run.
 
 ```json
 {

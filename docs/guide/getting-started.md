@@ -45,7 +45,7 @@ Edit the file:
 Save and close the editor. Tide detects the new file and shows it as **pending create**. Press `[s]` to register it with launchd.
 
 ::: info What happens on sync
-1. Tide writes `_id`, `_createdAt`, `_jitter`, `_enabled` back to the `.md` file
+1. Tide writes `_id`, `_createdAt`, and `_jitter` back to the `.md` file
 2. `~/Library/LaunchAgents/com.tide.<id>.plist` is generated pointing to `tide.sh`
 3. `launchctl bootstrap` registers the plist — the task is now live
 :::
@@ -64,13 +64,13 @@ Press `Enter` on a task to open the **Task Detail** screen, which shows:
 
 | Key | Action |
 |-----|--------|
-| `n` | New task |
+| `c` | Create new task |
 | `Enter` | Open task detail |
-| `l` | View logs for selected task |
-| `r` | View results for selected task |
-| `e` | Edit selected task |
+| `l` | Open latest run |
+| `x` | Open runs list |
+| `e` | Toggle enable/disable |
+| `r` | Run task now |
 | `d` | Delete selected task (with confirmation) |
-| `t` | Toggle enable/disable |
-| `N` | View notifications |
+| `n` | View notifications |
 | `s` | Settings |
 | `q` / `Ctrl+C` | Quit |

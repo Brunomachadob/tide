@@ -3,7 +3,7 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 import { bootstrap, bootout, plistPath, readPlistJson, tideTaskFileFromPlist, scanTidePlists, LAUNCH_AGENTS_DIR } from './launchd.js'
-import { parseMdFile, writeTideFields } from './mdfields.js'
+import { parseMdFile } from './mdfields.js'
 import { writePlist } from './create.js'
 
 const TIDE_DIR = path.join(os.homedir(), '.tide')
@@ -41,6 +41,7 @@ export function readTasks() {
       try {
         const task = parseMdFile(tideTaskFile)
         task.id = task.id || id
+        task.disabled = plistJson.Disabled === true
         return task
       } catch {
         return null
@@ -53,8 +54,8 @@ export function readTasks() {
 }
 
 /**
- * Disable a task: bootout + delete plist + write _enabled=false to .md.
- * For enabling, use applyPending (which writes the plist and bootstraps).
+ * Disable a task: bootout + rewrite plist with Disabled:true.
+ * The plist preserves the source path so the task can be re-enabled later.
  */
 export function disable(id) {
   const plist = path.join(LAUNCH_AGENTS_DIR, `com.tide.${id}.plist`)
@@ -62,8 +63,6 @@ export function disable(id) {
   const mdPath = tideTaskFileFromPlist(plistJson)
   bootout(id)
   if (mdPath && fs.existsSync(mdPath)) {
-    writeTideFields(mdPath, { '_enabled': false })
-    // Rewrite the plist with Disabled:true so the source path is preserved
     const task = parseMdFile(mdPath)
     task.id = id
     writePlist(id, { ...task, enabled: false })
@@ -74,9 +73,7 @@ export function disable(id) {
 }
 
 /**
- * Disable a task or mark it as enabled in the .md.
- * For enable: only writes _enabled=true to the .md. The caller is responsible for
- * re-creating the plist via applyPending (taskfile.js) if needed.
+ * Enable a task: rewrite plist without Disabled flag and bootstrap.
  * sourcePath is optional — if the plist was already deleted, callers must supply it.
  */
 export function setEnabled(id, enabled, sourcePath) {
@@ -92,8 +89,10 @@ export function setEnabled(id, enabled, sourcePath) {
   }
   if (!mdPath || !fs.existsSync(mdPath)) throw new Error(`Task ${id}: source .md not found`)
 
-  writeTideFields(mdPath, { '_enabled': true })
-  // Caller must invoke applyPending to re-create the plist and bootstrap.
+  const task = parseMdFile(mdPath)
+  task.id = id
+  writePlist(id, { ...task, enabled: true })
+  bootstrap(id)
 }
 
 export function deleteTask(id) {

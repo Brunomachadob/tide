@@ -1,10 +1,10 @@
-# ADR-0007: Multi-repo scope and task discovery
+# ADR-0006: Multi-repo scope and task discovery
 Date: 2026-04-02
 Status: Accepted
 
 ## Context
 
-ADR-0005 established that task files live in `<repo>/.tide/` and are discovered globally via `com.tide.*.plist` files, each carrying a `TIDE_TASK_FILE` pointer back to its source `.md`. This works well for running tasks, but two problems emerged:
+ADR-0004 established that task files live in `<repo>/.tide/` and are discovered globally via `com.tide.*.plist` files, each carrying a `TIDE_TASK_FILE` pointer back to its source `.md`. This works well for running tasks, but two problems emerged:
 
 1. **Scope detection was cwd-only.** `findRepoRoot` only checked the exact `process.cwd()` directory — it didn't walk up to the git root. Running Tide from a subdirectory silently disabled sync detection for that repo.
 

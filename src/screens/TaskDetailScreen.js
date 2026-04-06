@@ -71,7 +71,7 @@ export default function TaskDetailScreen({ taskId, navigate, goBack, repoRoot, h
       return
     }
     if (!key.ctrl && input === 'e' && task) {
-      const action = task.enabled ? 'disable' : 'enable'
+      const action = task.status !== 'disabled' ? 'disable' : 'enable'
       setConfirm({ action, message: `${action === 'enable' ? 'Enable' : 'Disable'} "${task.name}"?` })
     }
     if (key.ctrl && input === 's' && task?.syncStatus) {

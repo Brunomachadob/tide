@@ -33,7 +33,7 @@ Save and close the editor. Tide detects the new file and shows it as **pending c
 1. Reads the `.md` frontmatter + body
 2. Generates a random 8-character hex `_id` (e.g. `3f640f65`) and writes it back to the frontmatter
 3. For interval tasks: assigns a random `_jitter` between 0 and `min(interval/4, 300)` seconds. Manual tasks get `_jitter: 0`.
-4. Writes `_createdAt` and `_enabled: true` back to the frontmatter
+4. Writes `_createdAt` back to the frontmatter
 5. Generates `~/Library/LaunchAgents/com.tide.<id>.plist` from the frontmatter
 6. Validates the plist with `plutil -lint` (hard error if invalid)
 7. Calls `launchctl bootstrap` to register the task
@@ -45,7 +45,6 @@ After first sync the file gains underscore-prefixed internal fields:
 _id: 3f640f65
 _createdAt: 2026-04-01T10:00:00Z
 _jitter: 42
-_enabled: true
 name: Daily standup summary
 schedule: 1h
 ---
@@ -59,13 +58,13 @@ Changes to `schedule`, `workingDirectory`, `env`, or `timeoutSeconds` require a 
 
 ## How a task runs
 
-When a task fires, `tide.sh` resolves the `profile` key against `~/.tide/settings.json` and hands off to `agent-runner.js`. For `claude-code` profiles with `tsh-okta-bedrock` auth, execution is wrapped in `tsh aws` to inject AWS credentials:
+When a task fires, `tide.sh` resolves the `profile` key against `~/.tide/settings.json` and hands off to `agent-runner.js`:
 
 ```
 tide.sh → agent-runner.js → agent plugin (claude-code / copilot / gemini)
 ```
 
-For `claude-code` with `tsh-okta-bedrock` auth:
+For `claude-code` profiles with `tsh` auth (AWS Bedrock via Teleport):
 ```
 tide.sh → tsh aws --exec → agent-runner.js → Claude Agent SDK → claude binary
 ```
@@ -85,10 +84,10 @@ If the task is currently running when you edit it, the running instance is not i
 
 ## Enabling and disabling
 
-Press `t` on the task list to toggle a task on/off. This writes `_enabled` back to the `.md` file.
+Press `e` on the task list to toggle a task on/off. Enabled/disabled state is stored in the plist, not the `.md` file.
 
-- **Disable:** `launchctl bootout` removes the task from launchd. The task will not fire.
-- **Enable:** The plist is regenerated and `launchctl bootstrap` re-registers it.
+- **Disable:** rewrites the plist with `Disabled: true` and calls `launchctl bootout`. The task will not fire.
+- **Enable:** rewrites the plist without `Disabled` and calls `launchctl bootstrap`.
 
 ## Moving tasks between repos
 

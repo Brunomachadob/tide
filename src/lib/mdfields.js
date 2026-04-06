@@ -19,7 +19,7 @@ export function parseMdFile(filePath, { includeExplicitFields = false } = {}) {
   const raw = fs.readFileSync(filePath, 'utf8')
   const { data: fm, content: body } = matter(raw)
 
-  const INTERNAL_KEYS = new Set(['_id', '_createdAt', '_jitter', '_enabled'])
+  const INTERNAL_KEYS = new Set(['_id', '_createdAt', '_jitter'])
 
   const result = {
     id: fm['_id'] != null ? String(fm['_id']) : null,
@@ -27,7 +27,6 @@ export function parseMdFile(filePath, { includeExplicitFields = false } = {}) {
       ? (fm['_createdAt'] instanceof Date ? fm['_createdAt'].toISOString() : String(fm['_createdAt']))
       : null,
     jitterSeconds: fm['_jitter'] ?? null,
-    enabled: fm['_enabled'] ?? true,
     name: fm.name || path.basename(filePath, '.md'),
     argument: body.trim(),
     schedule: parseSchedule(fm.schedule),
@@ -55,7 +54,7 @@ export function parseMdFile(filePath, { includeExplicitFields = false } = {}) {
 
 /**
  * Write (or update) underscore-prefixed internal fields in a .md file's frontmatter.
- * Only the 4 internal keys (_id, _createdAt, _jitter, _enabled) are touched; user keys are left unchanged.
+ * Only the 3 internal keys (_id, _createdAt, _jitter) are touched; user keys are left unchanged.
  */
 export function writeTideFields(filePath, fields) {
   const raw = fs.readFileSync(filePath, 'utf8')

@@ -3,8 +3,8 @@ layout: home
 
 hero:
   name: "≋ Tide"
-  text: macOS task scheduler with a terminal UI
-  tagline: Run Claude Code agents on a schedule using launchd.
+  text: Run AI agents on a schedule
+  tagline: Schedule Claude Code, GitHub Copilot, and Gemini tasks via macOS launchd — no active session required.
   actions:
     - theme: brand
       text: Get Started
@@ -20,7 +20,7 @@ features:
     details: Tasks run on schedule via <a href="https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html" target="_blank">macOS launchd</a> — no active session required. Close your terminal and tasks keep running.
   - icon: 🖥️
     title: Terminal UI
-    details: A live TUI shows task status, last result, logs, and notifications. Navigate with keyboard shortcuts, no config files to edit.
+    details: A live TUI shows task status, last result, logs, and notifications. Navigate with keyboard shortcuts.
   - icon: 🔔
     title: Never miss a result
     details: Every run is tracked and fires a native macOS notification. Results are never silently discarded.

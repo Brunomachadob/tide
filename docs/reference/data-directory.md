@@ -29,13 +29,15 @@ Task configuration lives in the repository, not in `~/.tide/`:
 
 ### `~/.tide/settings.json`
 
-Global settings — date format, refresh interval, and agent profiles.
+Global settings — refresh interval and agent profiles.
 
 ```json
 {
-  "command": "/opt/homebrew/bin/claude --permission-mode bypassPermissions -p",
-  "workingDirectory": "/Users/you",
-  "dateFormat": "YYYY-MM-DD"
+  "refreshInterval": 5,
+  "profiles": {
+    "claude-code": { "agent": "claude-code" },
+    "gemini": { "agent": "gemini", "model": "gemini-2.5-pro" }
+  }
 }
 ```
 

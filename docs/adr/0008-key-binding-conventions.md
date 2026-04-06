@@ -1,4 +1,4 @@
-# ADR-0009: Key Binding Conventions
+# ADR-0008: Key Binding Conventions
 Date: 2026-04-03
 Status: Accepted
 

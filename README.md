@@ -1,6 +1,6 @@
 # Tide
 
-Tide is a macOS task scheduler with a terminal UI. Define a command and a schedule, and Tide runs it in the background using launchd.
+Tide is a macOS task scheduler with a terminal UI. Schedule AI agent tasks (Claude Code, GitHub Copilot, Gemini) and have them run in the background via launchd — no active session required.
 
 **[Full documentation →](https://brunomachadob.github.io/tide/)**
 
@@ -22,7 +22,7 @@ On first launch, an onboarding screen lets you pick which agents to set up (Clau
 
 ## Why this exists
 
-Claude Code's built-in scheduler (`CronCreate`/`CronDelete`) only fires during an active session. Tide delegates to **macOS launchd** so tasks run on schedule regardless of whether any app is open.
+AI coding assistants (Claude Code, Copilot, Gemini) don't have a persistent scheduler — any built-in scheduling only fires while the app is open. Tide delegates to **macOS launchd** so agent tasks run on schedule regardless of whether any app is open.
 
 ## TODO / Future Improvements
 
