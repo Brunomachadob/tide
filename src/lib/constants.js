@@ -3,7 +3,6 @@ import path from 'path'
 
 export const LAUNCH_AGENTS_DIR = path.join(os.homedir(), 'Library', 'LaunchAgents')
 
-export const DATE_FORMATS = ['YYYY-MM-DD', 'DD.MM.YYYY', 'MM/DD/YYYY']
 
 export const SCHEDULE_SHORTHANDS = {
   manual: null,
@@ -26,11 +25,3 @@ export function parseSchedule(value) {
   return { type: 'manual' }
 }
 
-export const TERMINALS = [
-  { label: 'Terminal',  bundleId: 'com.apple.Terminal' },
-  { label: 'iTerm2',    bundleId: 'com.googlecode.iterm2' },
-  { label: 'Warp',      bundleId: 'dev.warp.Warp-Stable' },
-  { label: 'Ghostty',   bundleId: 'com.mitchellh.ghostty' },
-  { label: 'Alacritty', bundleId: 'org.alacritty' },
-  { label: 'Kitty',     bundleId: 'net.kovidgoyal.kitty' },
-]

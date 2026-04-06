@@ -17,44 +17,20 @@ This fetches the latest version and launches the TUI.
 
 ## First launch
 
-On first launch you land on the task list — empty for now.
+If `~/.tide/settings.json` doesn't exist yet, Tide opens an **onboarding screen** instead of the task list.
 
-::: tip Configure a profile before creating tasks
-Add a profile to `~/.tide/settings.json` under `profiles` before creating tasks. The new-task template will pick it up automatically. See [Settings](/guide/settings#profiles).
-:::
+Select the agents you want to use with `↑`/`↓` and `Space`, then press `c` to confirm. Tide writes a minimal profile for each selected agent to `~/.tide/settings.json` and drops you into the task list.
 
-:::tabs key:agent
-== Claude Code
-```json
-{
-  "profiles": {
-    "my-claude": {
-      "agent": "claude-code"
-    }
-  }
-}
-```
-== Copilot
-```json
-{
-  "profiles": {
-    "my-copilot": {
-      "agent": "copilot"
-    }
-  }
-}
-```
-== Gemini
-```json
-{
-  "profiles": {
-    "my-gemini": {
-      "agent": "gemini",
-      "model": "gemini-2.5-pro"
-    }
-  }
-}
-```
+| Agent | Pre-auth required |
+|-------|------------------|
+| Claude Code | `claude /login` or `ANTHROPIC_API_KEY` |
+| GitHub Copilot | `gh auth login` |
+| Gemini CLI | `npx @google/gemini-cli` |
+
+You can skip onboarding with `Esc`/`q` and configure profiles manually later — see [Settings](/guide/settings#profiles).
+
+::: tip Profiles use the agent name as key
+The generated profiles are named after the agent (`claude-code`, `copilot`, `gemini`). Reference them in task frontmatter with `profile: claude-code` etc.
 :::
 
 ## Create your first task

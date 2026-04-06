@@ -87,7 +87,7 @@ export default function NotificationsScreen({ navigate, goBack, height, breadcru
                 Box,
                 { gap: 2 },
                 React.createElement(Text, { bold: true }, n.taskName),
-                React.createElement(Text, { color: 'gray' }, formatDate(n.completedAt, settings)),
+                React.createElement(Text, { color: 'gray' }, formatDate(n.completedAt)),
                 n.exitCode === 0
                   ? React.createElement(Text, { color: 'green' }, '✓ ok')
                   : React.createElement(Text, { color: 'red' }, `✗ exit ${n.exitCode}`),

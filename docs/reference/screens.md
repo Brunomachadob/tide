@@ -1,5 +1,16 @@
 # Screens
 
+## Onboarding
+
+Shown on first launch when `~/.tide/settings.json` does not exist. Lets you pick which agents to configure. Generates a minimal no-auth profile for each selected agent and writes it to `~/.tide/settings.json`.
+
+| Key | Action |
+|-----|--------|
+| `↑` / `↓` / `j` / `k` | Move cursor |
+| `Space` / `Enter` | Toggle selected agent |
+| `c` | Confirm — write profiles and proceed to task list |
+| `Esc` / `q` | Skip — proceed without selecting any agents |
+
 ## Task List (default)
 
 The main screen. Shows all tasks with status, schedule, last result, and pending sync state.
@@ -120,11 +131,11 @@ Pressing `Esc` does **not** clear notifications — you must press `c` explicitl
 
 ## Settings
 
-Configure the global run command, default working directory, date format, terminal app, and auto-refresh interval. Changes are written to `~/.tide/settings.json` on `Enter`.
+Configure auto-refresh interval. Profiles (agent auth config) are displayed read-only — edit `~/.tide/settings.json` directly to manage them. Changes are written to `~/.tide/settings.json` on `Enter`.
 
 | Key | Action |
 |-----|--------|
-| `Tab` | Move to next field |
-| `←` / `→` | Change value (for picker fields: date format, terminal, refresh interval) |
+| `←` / `→` | Change value |
 | `Enter` | Save settings |
 | `Esc` / `q` | Back without saving |
+| `j` / `k` | Scroll |

@@ -25,9 +25,7 @@ These appear in Notification Center. You can configure them in System Settings �
 
 ### Clicking a notification
 
-If [`terminal-notifier`](https://github.com/julienXX/terminal-notifier) is installed (`brew install terminal-notifier`), clicking a notification opens the terminal app configured in Settings. Without it, Tide falls back to `osascript`, which opens Script Editor on click.
-
-Set your terminal in **Settings → Terminal app** (Terminal, iTerm2, Warp, Ghostty, Alacritty, Kitty).
+If [`terminal-notifier`](https://github.com/julienXX/terminal-notifier) is installed (`brew install terminal-notifier`), clicking a notification dismisses it. Without it, Tide falls back to `osascript`.
 
 ::: tip Notification permissions
 On first run, macOS may prompt you to allow notifications. If you installed `terminal-notifier`, allow notifications for it specifically — that's what sends them when it's available.

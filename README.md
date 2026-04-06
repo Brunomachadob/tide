@@ -12,7 +12,7 @@ npx github:Brunomachadob/tide
 
 Requires macOS and Node.js 18+.
 
-On first launch, configure your **run command** in Settings (e.g. `/opt/homebrew/bin/claude --permission-mode bypassPermissions -p`), then press `n` to create a task.
+On first launch, an onboarding screen lets you pick which agents to set up (Claude Code, Copilot, Gemini). Select one or more, press `c` to confirm, then press `n` to create your first task.
 
 ## Features
 

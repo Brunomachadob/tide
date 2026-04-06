@@ -1,5 +1,8 @@
 import React, { useState, useCallback } from 'react'
 import { Box, useInput, useApp, useStdout } from 'ink'
+import fs from 'fs'
+import os from 'os'
+import path from 'path'
 import { readSettings } from './lib/settings.js'
 import { findRepoRoot } from './lib/taskfile.js'
 import { useTasks } from './hooks/useTasks.js'
@@ -8,6 +11,9 @@ import TaskDetailScreen from './screens/TaskDetailScreen.js'
 import RunsScreen from './screens/RunsScreen.js'
 import NotificationsScreen from './screens/NotificationsScreen.js'
 import SettingsScreen from './screens/SettingsScreen.js'
+import OnboardingScreen from './screens/OnboardingScreen.js'
+
+const SETTINGS_FILE = path.join(os.homedir(), '.tide', 'settings.json')
 
 // Navigation stack: each entry is { screen, props }
 export default function App() {
@@ -17,7 +23,10 @@ export default function App() {
   const [settings, setSettings] = useState(() => readSettings())
   const intervalMs = settings.refreshInterval * 1000
   const { tasks, loading, error, refresh } = useTasks(intervalMs, repoRoot)
-  const [stack, setStack] = useState([{ screen: 'list', props: {} }])
+  const [stack, setStack] = useState(() => {
+    const isFirstLaunch = !fs.existsSync(SETTINGS_FILE)
+    return [{ screen: isFirstLaunch ? 'onboarding' : 'list', props: {} }]
+  })
   const [scopeIdx, setScopeIdx] = useState(0)
 
   const navigate = useCallback((screen, props = {}) => {
@@ -33,6 +42,11 @@ export default function App() {
     })
   }, [])
 
+  const replaceWith = useCallback((screen, props = {}) => {
+    setSettings(readSettings())
+    setStack([{ screen, props }])
+  }, [])
+
   useInput((input, key) => {
     if (key.ctrl && input === 'c') exit()
     if ((input === 'q' || input === 'Q') && stack.length === 1) exit()
@@ -45,6 +59,8 @@ export default function App() {
     for (const entry of stack) {
       if (entry.screen === 'list') {
         // no breadcrumb segment for the root list
+      } else if (entry.screen === 'onboarding') {
+        parts.push('Welcome')
       } else if (entry.screen === 'detail') {
         const task = tasks?.find(t => t.id === entry.props.taskId)
         parts.push(`${task?.name || entry.props.taskId} (${entry.props.taskId})`)
@@ -66,7 +82,7 @@ export default function App() {
     return parts.length ? parts.join(' › ') : null
   })()
 
-  const screenProps = { navigate, goBack, repoRoot, height: stdout?.rows ? stdout.rows - 1 : undefined, tasks, loading, error, refresh, intervalMs, settings, breadcrumb, scopeIdx, setScopeIdx }
+  const screenProps = { navigate, goBack, replaceWith, repoRoot, height: stdout?.rows ? stdout.rows - 1 : undefined, tasks, loading, error, refresh, intervalMs, settings, breadcrumb, scopeIdx, setScopeIdx }
 
   switch (current.screen) {
     case 'list':
@@ -79,6 +95,8 @@ export default function App() {
       return React.createElement(NotificationsScreen, { ...screenProps, ...current.props })
     case 'settings':
       return React.createElement(SettingsScreen, { ...screenProps, ...current.props })
+    case 'onboarding':
+      return React.createElement(OnboardingScreen, { ...screenProps, ...current.props })
     default:
       return React.createElement(TaskListScreen, screenProps)
   }

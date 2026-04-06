@@ -152,7 +152,7 @@ function RunDetail({ taskId, taskStatus, run, isLatest, navigate, onBack, height
     ? `(showing last ${lines} of ${total} lines)`
     : null
 
-  const startedAt = formatDate(run.startedAt, settings)
+  const startedAt = formatDate(run.startedAt)
   const dur = duration(run)
   const inProgress = !run.completedAt
 
@@ -352,7 +352,7 @@ export default function RunsScreen({ taskId, taskStatus, initialRunId, navigate,
             { key: run.runId, paddingX: 1, backgroundColor: isSelected ? 'blue' : undefined },
             React.createElement(Box, { width: 22 },
               React.createElement(Text, { color: isSelected ? 'white' : 'gray' },
-                formatDate(run.startedAt, settings),
+                formatDate(run.startedAt),
               ),
             ),
             React.createElement(Box, { width: 10 },

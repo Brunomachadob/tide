@@ -2,15 +2,7 @@
 
 Press `s` from the task list to open the Settings screen.
 
-## Date format
-
-Controls how timestamps are displayed throughout the TUI:
-
-| Format | Example |
-|--------|---------|
-| `MM/DD/YYYY` | `03/30/2026` |
-| `DD/MM/YYYY` | `30/03/2026` |
-| `YYYY-MM-DD` | `2026-03-30` |
+Dates are displayed using your system locale and timezone — no configuration needed.
 
 ## Settings file
 
@@ -28,15 +20,7 @@ Profiles live in `settings.json` under `profiles` — a map of profile names to 
 {
   "profiles": {
     "my-claude": {
-      "agent": "claude-code",
-      "model": "arn:aws:bedrock:eu-central-1:...",
-      "auth": {
-        "type": "tsh",
-        "auth": "okta",
-        "app": "my-tsh-app",
-        "awsRole": "bedrock-developer-user",
-        "teleportProxy": "teleport.example.com:443"
-      }
+      "agent": "claude-code"
     },
     "my-copilot": {
       "agent": "copilot"
@@ -63,12 +47,24 @@ profile: my-claude
 :::tabs key:agent
 == Claude Code
 
-Runs Claude Code via the `@anthropic-ai/claude-agent-sdk`. Supports the [`tsh`](#tsh) auth type to inject AWS credentials via Teleport before launching the agent.
+Runs Claude Code via the `@anthropic-ai/claude-agent-sdk`. No `auth` block is needed for local use — authenticate once with `claude /login` or set `ANTHROPIC_API_KEY`, and Tide picks up those credentials automatically.
 
 ```json
 {
   "profiles": {
     "my-claude": {
+      "agent": "claude-code"
+    }
+  }
+}
+```
+
+An `auth` block is only required when credentials must be injected at run time (e.g. AWS Bedrock via Teleport — see [`tsh`](#tsh) below).
+
+```json
+{
+  "profiles": {
+    "my-claude-bedrock": {
       "agent": "claude-code",
       "model": "arn:aws:bedrock:eu-central-1:...",
       "auth": {
@@ -170,8 +166,3 @@ Wraps agent execution in [`tsh aws`](https://goteleport.com/docs/application-acc
 `tsh` injects `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `HTTPS_PROXY` into the agent process environment. The agent-runner validates these are present before starting the run.
 
 
-## Terminal app
-
-The terminal app to open when you click a task completion notification. Requires [`terminal-notifier`](https://github.com/julienXX/terminal-notifier) (`brew install terminal-notifier`) — without it, notifications are sent via `osascript` and clicking opens Script Editor instead.
-
-Options: Terminal, iTerm2, Warp, Ghostty, Alacritty, Kitty.

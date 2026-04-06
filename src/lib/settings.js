@@ -5,8 +5,6 @@ import { safeReadJSON, atomicWriteJSON } from './io.js'
 const SETTINGS_FILE = path.join(os.homedir(), '.tide', 'settings.json')
 
 const DEFAULTS = {
-  dateFormat: 'YYYY-MM-DD',
-  terminalBundleId: 'com.apple.Terminal',
   refreshInterval: 5,
 }
 

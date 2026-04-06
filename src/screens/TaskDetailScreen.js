@@ -149,7 +149,7 @@ export default function TaskDetailScreen({ taskId, navigate, goBack, repoRoot, h
   }
 
   const lastRun = formatRelativeTime(task.lastResult?.completedAt)
-  const createdAt = formatDate(task.createdAt, settings)
+  const createdAt = formatDate(task.createdAt)
   const sourceBasename = task.sourcePath ? path.basename(task.sourcePath) : null
 
   // Sync status banner

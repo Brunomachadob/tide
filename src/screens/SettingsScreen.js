@@ -2,98 +2,54 @@ import React, { useState } from 'react'
 import { Box, Text, useInput } from 'ink'
 import Header from '../components/Header.js'
 import FieldBox from '../components/FieldBox.js'
-import TextInput from '../components/TextInput.js'
 import Toast from '../components/Toast.js'
 import KeyHints from '../components/KeyHints.js'
 import { readSettings, writeSettings } from '../lib/settings.js'
-import { DATE_FORMATS, TERMINALS } from '../lib/constants.js'
 
-const FIELDS = ['dateFormat', 'terminal', 'terminalCustom', 'refreshInterval']
+const FIELDS = ['refreshInterval']
 
 const REFRESH_INTERVALS = [2, 5, 10, 30, 60]
 
-function formatDateExample(fmt) {
-  const d = new Date()
-  const pad = n => String(n).padStart(2, '0')
-  const year = d.getFullYear()
-  const month = pad(d.getMonth() + 1)
-  const day = pad(d.getDate())
-  if (fmt === 'DD.MM.YYYY') return `${day}.${month}.${year}`
-  if (fmt === 'MM/DD/YYYY') return `${month}/${day}/${year}`
-  return `${year}-${month}-${day}`
-}
-
-function PickerOptions({ items, selectedIdx, showExamples }) {
+function PickerOptions({ items, selectedIdx }) {
   return React.createElement(
     Box, { gap: 2 },
     items.map((item, i) =>
-      React.createElement(Box, { key: item, gap: 1 },
-        React.createElement(Text,
-          { color: i === selectedIdx ? 'cyan' : 'gray', bold: i === selectedIdx },
-          i === selectedIdx ? `[${item}]` : ` ${item} `,
-        ),
-        showExamples
-          ? React.createElement(Text, { color: 'gray' }, `→ ${formatDateExample(item)}`)
-          : null,
+      React.createElement(Text,
+        { key: item, color: i === selectedIdx ? 'cyan' : 'gray', bold: i === selectedIdx },
+        i === selectedIdx ? `[${item}]` : ` ${item} `,
       ),
     ),
   )
 }
 
-const CUSTOM_IDX = TERMINALS.length // index of the synthetic "Custom" option
-const TERMINAL_LABELS = [...TERMINALS.map(t => t.label), 'Custom']
-
-function initialTerminalIdx(bundleId) {
-  const idx = TERMINALS.findIndex(t => t.bundleId === bundleId)
-  return idx === -1 ? CUSTOM_IDX : idx
-}
-
 export default function SettingsScreen({ goBack, navigate, height, breadcrumb }) {
+  const contentWidth = (process.stdout.columns ?? 80) - 4 // 2 outer paddingX + 2 border
   const saved = readSettings()
-  const [field, setField] = useState('dateFormat')
-  const [dateFormatIdx, setDateFormatIdx] = useState(Math.max(0, DATE_FORMATS.indexOf(saved.dateFormat)))
-  const [terminalIdx, setTerminalIdx] = useState(initialTerminalIdx(saved.terminalBundleId))
-  const [customBundleId, setCustomBundleId] = useState(
-    initialTerminalIdx(saved.terminalBundleId) === CUSTOM_IDX ? (saved.terminalBundleId || '') : ''
-  )
+  const [field, setField] = useState('refreshInterval')
   const [refreshIntervalIdx, setRefreshIntervalIdx] = useState(
     Math.max(0, REFRESH_INTERVALS.indexOf(saved.refreshInterval ?? 5))
   )
   const [toast, setToast] = useState(null)
+  const [scrollOffset, setScrollOffset] = useState(0)
 
-  const isCustomTerminal = terminalIdx === CUSTOM_IDX
-  const resolvedBundleId = isCustomTerminal ? customBundleId.trim() : TERMINALS[terminalIdx].bundleId
+  // header ~2 rows + keyhints ~1 row + borders/padding
+  const HEADER_ROWS = 2
+  const KEYHINTS_ROWS = 1
+  const scrollAreaHeight = (height ?? process.stdout.rows ?? 24) - HEADER_ROWS - KEYHINTS_ROWS
 
   useInput((input, key) => {
     if (toast) return
     if (key.escape || input === 'q') { goBack(); return }
 
-    if (key.tab) {
-      const next = FIELDS[(FIELDS.indexOf(field) + 1) % FIELDS.length]
-      // skip terminalCustom unless Custom is selected
-      if (next === 'terminalCustom' && !isCustomTerminal) {
-        setField(FIELDS[(FIELDS.indexOf('terminalCustom') + 1) % FIELDS.length])
-      } else {
-        setField(next)
-      }
-      return
-    }
-    if (field === 'dateFormat') {
-      if (key.leftArrow || input === 'h') setDateFormatIdx(i => Math.max(0, i - 1))
-      else if (key.rightArrow || input === 'l') setDateFormatIdx(i => Math.min(DATE_FORMATS.length - 1, i + 1))
-    }
-    if (field === 'terminal') {
-      if (key.leftArrow || input === 'h') setTerminalIdx(i => Math.max(0, i - 1))
-      else if (key.rightArrow || input === 'l') setTerminalIdx(i => Math.min(CUSTOM_IDX, i + 1))
-    }
+    if (input === 'j' || key.downArrow) { setScrollOffset(o => o + 1); return }
+    if (input === 'k' || key.upArrow) { setScrollOffset(o => Math.max(0, o - 1)); return }
+
     if (field === 'refreshInterval') {
       if (key.leftArrow || input === 'h') setRefreshIntervalIdx(i => Math.max(0, i - 1))
       else if (key.rightArrow || input === 'l') setRefreshIntervalIdx(i => Math.min(REFRESH_INTERVALS.length - 1, i + 1))
     }
     if (key.return) {
       writeSettings({
-        dateFormat: DATE_FORMATS[dateFormatIdx],
-        terminalBundleId: resolvedBundleId,
         refreshInterval: REFRESH_INTERVALS[refreshIntervalIdx],
       })
       setToast({ message: 'Settings saved', type: 'success' })
@@ -104,23 +60,26 @@ export default function SettingsScreen({ goBack, navigate, height, breadcrumb })
     Box, { flexDirection: 'column', height },
     React.createElement(Header, { breadcrumb }),
 
-    React.createElement(Box, { flexDirection: 'column', paddingX: 1 },
-      React.createElement(FieldBox, { label: 'Date Format', active: field === 'dateFormat' },
-        React.createElement(PickerOptions, { items: DATE_FORMATS, selectedIdx: dateFormatIdx, showExamples: true }),
-        React.createElement(Text, { color: 'gray' }, 'Use ←→ to change'),
-      ),
-      React.createElement(FieldBox, { label: 'Terminal app (for notification click)', active: field === 'terminal' },
-        React.createElement(PickerOptions, { items: TERMINAL_LABELS, selectedIdx: terminalIdx, showExamples: false }),
-        React.createElement(Text, { color: 'gray' }, 'Use ←→ to change'),
-      ),
-      isCustomTerminal
-        ? React.createElement(FieldBox, { label: 'Custom bundle ID', active: field === 'terminalCustom' },
-            React.createElement(TextInput, { value: customBundleId, onChange: setCustomBundleId, active: field === 'terminalCustom', placeholder: 'com.example.MyTerminal' }),
-          )
-        : null,
-      React.createElement(FieldBox, { label: 'Auto-refresh interval', active: field === 'refreshInterval' },
-        React.createElement(PickerOptions, { items: REFRESH_INTERVALS.map(s => `${s}s`), selectedIdx: refreshIntervalIdx, showExamples: false }),
-        React.createElement(Text, { color: 'gray' }, 'Use ←→ to change'),
+    React.createElement(Box, { height: scrollAreaHeight, overflowY: 'hidden' },
+      React.createElement(Box, { flexDirection: 'column', paddingX: 1, marginTop: -scrollOffset },
+        React.createElement(FieldBox, { label: 'Auto-refresh interval', active: field === 'refreshInterval' },
+          React.createElement(PickerOptions, { items: REFRESH_INTERVALS.map(s => `${s}s`), selectedIdx: refreshIntervalIdx }),
+          React.createElement(Text, { color: 'gray' }, 'Use ←→ to change'),
+        ),
+        React.createElement(Box, { flexDirection: 'column', borderStyle: 'single', borderColor: 'gray', paddingX: 1, marginBottom: 1, width: contentWidth },
+          React.createElement(Text, { color: 'gray' }, 'Profiles'),
+          React.createElement(Box, { flexDirection: 'row', flexWrap: 'wrap' },
+            ...Object.entries(saved.profiles ?? {}).map(([name, profile]) =>
+              React.createElement(Box, { key: name, flexDirection: 'column', borderStyle: 'single', borderColor: 'gray', paddingX: 1, marginBottom: 1, marginRight: 1 },
+                React.createElement(Text, { color: 'cyan', bold: true }, name),
+                React.createElement(Box, {},
+                  React.createElement(Text, { color: 'gray', wrap: 'wrap' }, JSON.stringify(profile, null, 2)),
+                ),
+              )
+            ),
+          ),
+          React.createElement(Text, { color: 'gray', dimColor: true }, 'read-only — edit ~/.tide/settings.json to change'),
+        ),
       ),
     ),
 
@@ -132,7 +91,7 @@ export default function SettingsScreen({ goBack, navigate, height, breadcrumb })
 
     React.createElement(Box, { flexGrow: 1 }),
     React.createElement(KeyHints, {
-      hints: [['Esc/q', 'back'], ['Tab', 'switch field'], ['←→', 'change value'], ['↵', 'save']],
+      hints: [['Esc/q', 'back'], ['←→', 'change value'], ['↵', 'save'], ['j/k', 'scroll']],
     }),
   )
 }

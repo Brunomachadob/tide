@@ -212,9 +212,8 @@ pruneOldRuns(TIDE_DIR, taskId, resultRetentionDays)
 if (process.env.TIDE_NO_NOTIFY !== '1') {
   const title = exitCode === 0 ? `Tide: ${taskName} ✓` : `Tide: ${taskName} ✗`
   const message = exitCode === 0 ? 'Task completed successfully.' : `Task failed (exit ${exitCode}).`
-  const activate = settings.terminalBundleId || 'com.apple.Terminal'
   if (spawnSync('which', ['terminal-notifier'], { encoding: 'utf8' }).status === 0) {
-    spawnSync('terminal-notifier', ['-title', title, '-message', message, '-activate', activate])
+    spawnSync('terminal-notifier', ['-title', title, '-message', message])
   } else {
     spawnSync('osascript', ['-e', `display notification "${message}" with title "${title}"`])
   }

@@ -29,7 +29,7 @@ Task configuration lives in the repository, not in `~/.tide/`:
 
 ### `~/.tide/settings.json`
 
-Global settings — run command, default working directory, date format.
+Global settings — date format, refresh interval, and agent profiles.
 
 ```json
 {
