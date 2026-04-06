@@ -20,6 +20,8 @@ jobs:
       - run: npm ci
 
       - name: Run tests
+        env:
+          FORCE_COLOR: '3'
         run: |
           node --test \
             --test-reporter=spec \
