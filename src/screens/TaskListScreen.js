@@ -28,15 +28,15 @@ function SyncBadge({ syncStatus }) {
   return React.createElement(Text, { color }, label)
 }
 
-export default function TaskListScreen({ navigate, repoRoot, height, tasks, loading, error, refresh, intervalMs, settings, scopeIdx = 0, setScopeIdx }) {
+export default function TaskListScreen({ navigate, repoRoot, height, tasks, loading, error, refresh, intervalMs, settings, workspaceIdx = 0, setWorkspaceIdx }) {
   const { unreadCount } = useNotifications(intervalMs)
   const [selectedIdx, setSelectedIdx] = useState(0)
   const [confirm, setConfirm] = useState(null)
   const [toast, setToast] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
 
-  // Build scope list from task sourcePaths: unique repo roots, repoRoot first, then null = all
-  const knownRepos = React.useMemo(() => {
+  // Build workspace list from task sourcePaths: unique repo roots, repoRoot first, then null = all
+  const knownWorkspaces = React.useMemo(() => {
     const roots = new Set()
     for (const t of tasks) {
       if (t.sourcePath) roots.add(path.dirname(path.dirname(t.sourcePath)))
@@ -44,9 +44,9 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
     if (repoRoot) roots.delete(repoRoot)
     return repoRoot ? [repoRoot, ...roots] : [...roots]
   }, [tasks, repoRoot])
-  // scopes: each known repo root + null (= all)
-  const scopes = [...knownRepos, null]
-  const currentScope = scopes[scopeIdx % scopes.length] ?? null
+  // workspaces: each known repo root + null (= all)
+  const workspaces = [...knownWorkspaces, null]
+  const currentWorkspace = workspaces[workspaceIdx % workspaces.length] ?? null
 
   const showToast = useCallback((message, type = 'info') => {
     setToast({ message, type })
@@ -65,9 +65,9 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
     }
   }, [refresh, showToast])
 
-  // Filter tasks by current scope (null = all)
-  const visibleTasks = currentScope
-    ? tasks.filter(t => t.sourcePath?.startsWith(currentScope))
+  // Filter tasks by current workspace (null = all)
+  const visibleTasks = currentWorkspace
+    ? tasks.filter(t => t.sourcePath?.startsWith(currentWorkspace))
     : tasks
 
   // Pending tasks for [S] sync-all
@@ -124,10 +124,10 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
         setConfirm({ action: 'sync-all', message: `Apply all ${pendingTasks.length} pending change(s)?` })
       }
     } else if (key.tab) {
-      setScopeIdx(i => (i + 1) % scopes.length)
+      setWorkspaceIdx(i => (i + 1) % workspaces.length)
       setSelectedIdx(0)
     } else if (input === 'c') {
-      const targetRepo = currentScope || repoRoot
+      const targetRepo = currentWorkspace || repoRoot
       if (targetRepo) {
         openNewTaskFile(targetRepo)
         refresh()
@@ -185,7 +185,7 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
     )
   }
 
-  const showRepo = currentScope === null
+  const showRepo = currentWorkspace === null
   const COLS = [
     { label: 'NAME',         width: 28 },
     { label: 'SCHEDULE',     width: 12 },
@@ -211,13 +211,13 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
     return s.length > w ? s.slice(0, w - 1) + '…' : s.padEnd(w)
   }
 
-  const scopeLabel = currentScope ? path.basename(currentScope) : 'all repos'
+  const workspaceLabel = currentWorkspace ? path.basename(currentWorkspace) : 'all workspaces'
 
   return React.createElement(
     Box,
     { flexDirection: 'column', height },
     React.createElement(Header, {
-      scopeToggle: scopes.length > 1 ? { label: scopeLabel } : null,
+      workspaceToggle: workspaces.length > 1 ? { label: workspaceLabel } : null,
       notificationCount: unreadCount,
     }),
 
@@ -251,7 +251,7 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
     visibleTasks.length === 0
       ? React.createElement(Box, { paddingX: 1, paddingY: 1 },
           React.createElement(Text, { color: 'gray' },
-            (currentScope || repoRoot)
+            (currentWorkspace || repoRoot)
               ? 'No tasks found. Press [c] to create a new task file.'
               : 'No scheduled tasks. Open tide from a git repository to create tasks.',
           ),

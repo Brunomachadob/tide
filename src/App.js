@@ -27,7 +27,7 @@ export default function App() {
     const isFirstLaunch = !fs.existsSync(SETTINGS_FILE)
     return [{ screen: isFirstLaunch ? 'onboarding' : 'list', props: {} }]
   })
-  const [scopeIdx, setScopeIdx] = useState(0)
+  const [workspaceIdx, setWorkspaceIdx] = useState(0)
 
   const navigate = useCallback((screen, props = {}) => {
     setStack(s => [...s, { screen, props }])
@@ -82,7 +82,7 @@ export default function App() {
     return parts.length ? parts.join(' › ') : null
   })()
 
-  const screenProps = { navigate, goBack, replaceWith, repoRoot, height: stdout?.rows ? stdout.rows - 1 : undefined, tasks, loading, error, refresh, intervalMs, settings, breadcrumb, scopeIdx, setScopeIdx }
+  const screenProps = { navigate, goBack, replaceWith, repoRoot, height: stdout?.rows ? stdout.rows - 1 : undefined, tasks, loading, error, refresh, intervalMs, settings, breadcrumb, workspaceIdx, setWorkspaceIdx }
 
   switch (current.screen) {
     case 'list':
