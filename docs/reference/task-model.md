@@ -1,6 +1,6 @@
 # Task Model
 
-Each task is authored as a markdown file at `<repo>/.tide/<taskname>.md`. The plist at `~/Library/LaunchAgents/com.tide.<id>.plist` is the only derived artifact.
+Each task is authored as a markdown file at `<workspace>/.tide/<taskname>.md`. The plist at `~/Library/LaunchAgents/com.tide.<id>.plist` is the only derived artifact.
 
 ## Markdown file structure
 

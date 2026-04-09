@@ -15,11 +15,11 @@ Shown on first launch when `~/.tide/settings.json` does not exist. Lets you pick
 
 The main screen. Shows all tasks with status, schedule, last result, and pending sync state.
 
-### Scope selector
+### Workspace selector
 
-The header subtitle shows the current scope (`▾ <repo-name>` or `▾ all repos`). Press `Tab` to cycle through all known repos and "all repos". The selector is hidden when only one repo has tasks.
+The header subtitle shows the current workspace (`▾ <workspace-name>` or `▾ all workspaces`). Press `Tab` to cycle through all known workspaces and "all workspaces". The selector is hidden when only one workspace has tasks.
 
-When multiple repos are visible ("all repos" mode), tasks are grouped by repo with a section header between groups.
+When multiple workspaces are visible ("all workspaces" mode), tasks are grouped by workspace with a section header between groups.
 
 **Keyboard shortcuts:**
 
@@ -27,8 +27,8 @@ When multiple repos are visible ("all repos" mode), tasks are grouped by repo wi
 |-----|--------|
 | `↑` / `↓` / `j` / `k` | Navigate tasks |
 | `Enter` | Open Task Detail |
-| `Tab` | Cycle scope (current repo → other repos → all repos) |
-| `c` | Create new task file in current scope's repo |
+| `Tab` | Cycle workspace (current → others → all workspaces) |
+| `c` | Create new task file in the current workspace (falls back to launch directory when "all workspaces" is selected) |
 | `r` | Run selected task now |
 | `e` | Toggle enable/disable |
 | `l` | Open latest run for selected task |

@@ -33,6 +33,12 @@ You can skip onboarding with `Esc`/`q` and configure profiles manually later —
 The generated profiles are named after the agent (`claude-code`, `copilot`, `gemini`). Reference them in task frontmatter with `profile: claude-code` etc.
 :::
 
+## Workspaces
+
+A **workspace** is any directory (or git repo) that contains a `.tide/` folder with task files. Tide detects the active workspace from where it is launched — it walks up to the nearest `.git` boundary looking for `.tide/`.
+
+All tasks from all known workspaces are always visible in the TUI. Press `Tab` on the task list to filter by workspace. The workspace selector is hidden when you only have one.
+
 ## Create your first task
 
 Press `c` on the task list to open a new task `.md` file in `$EDITOR`. The template is pre-filled with your first profile from settings.

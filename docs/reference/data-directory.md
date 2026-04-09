@@ -19,10 +19,10 @@ All Tide runtime data lives in `~/.tide/`.
                 └── stderr.log
 ```
 
-Task configuration lives in the repository, not in `~/.tide/`:
+Task configuration lives in the workspace, not in `~/.tide/`:
 
 ```
-<repo>/.tide/
+<workspace>/.tide/
 └── <taskname>.md    — source of truth for task config + prompt
 ```
 
