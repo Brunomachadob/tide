@@ -40,13 +40,12 @@ describe('writeTideFields', () => {
 
   test('inserts multiple new keys without duplicating ---', () => {
     const p = write('multi.md', '---\nname: bar\n---\nbody\n')
-    writeTideFields(p, { _id: 'x1', _jitter: 30, _enabled: true })
+    writeTideFields(p, { _id: 'x1', _jitter: 30 })
     const raw = fs.readFileSync(p, 'utf8')
     assert.ok(raw.startsWith('---\n'))
     const { data } = matter(raw)
     assert.equal(data._id, 'x1')
     assert.equal(data._jitter, 30)
-    assert.equal(data._enabled, true)
     assert.equal(data.name, 'bar')
     // Should only have exactly two --- lines
     const dashes = raw.split('\n').filter(l => l === '---')

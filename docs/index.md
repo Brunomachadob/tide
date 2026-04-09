@@ -26,5 +26,5 @@ features:
     details: Every run is tracked and fires a native macOS notification. Results are never silently discarded.
   - icon: 🔁
     title: Retry support
-    details: Configure per-task max retries with exponential backoff.
+    details: Configure per-task max retries with linear backoff (30s × attempt).
 ---

@@ -84,7 +84,7 @@ const argument = process.env.TIDE_OVERRIDE_ARGUMENT ?? body.trim()
 const workingDirectory = fm.workingDirectory
   ? fm.workingDirectory.replace(/^~/, os.homedir())
   : os.homedir()
-const jitterSeconds = fm['_jitter'] ?? 0
+const jitterSeconds = parseInt(process.env.TIDE_JITTER ?? '0') || 0
 const maxRetries = fm.maxRetries ?? 0
 const resultRetentionDays = fm.resultRetentionDays ?? 30
 const parentRunId = process.env.TIDE_PARENT_RUN_ID || fm.parentRunId || undefined

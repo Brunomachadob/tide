@@ -23,17 +23,11 @@ function writeMd(id, fields = {}) {
   const {
     name = 'My task',
     schedule = '1h',
-    createdAt = '2024-01-01T09:00:00Z',
-    enabled = true,
-    jitter = 0,
     argument = 'Do something',
     ...rest
   } = fields
   const frontmatter = [
     `_id: ${id}`,
-    `_createdAt: '${createdAt}'`,
-    `_jitter: ${jitter}`,
-    `_enabled: ${enabled}`,
     `name: ${name}`,
     `schedule: ${schedule}`,
     ...Object.entries(rest).map(([k, v]) => `${k}: ${JSON.stringify(v)}`),
@@ -43,7 +37,7 @@ function writeMd(id, fields = {}) {
   return mdPath
 }
 
-function writePlistFor(id, mdPath) {
+function writePlistFor(id, mdPath, { createdAt = '2024-01-01T09:00:00Z', jitter = 0 } = {}) {
   const plistContent = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -56,6 +50,10 @@ function writePlistFor(id, mdPath) {
     <string>${id}</string>
     <key>TIDE_TASK_FILE</key>
     <string>${mdPath}</string>
+    <key>TIDE_CREATED_AT</key>
+    <string>${createdAt}</string>
+    <key>TIDE_JITTER</key>
+    <string>${jitter}</string>
     <key>HOME</key>
     <string>${TMP}</string>
     <key>PATH</key>
@@ -87,9 +85,9 @@ describe('taskDir', () => {
 
 // Set up fixtures at module level so all describe blocks share them
 const _md1 = writeMd('aabbccdd', { name: 'My task' })
-writePlistFor('aabbccdd', _md1)
-const _md2 = writeMd('11223344', { name: 'Earlier Task', createdAt: '2023-06-01T00:00:00Z' })
-writePlistFor('11223344', _md2)
+writePlistFor('aabbccdd', _md1, { createdAt: '2024-01-01T09:00:00Z' })
+const _md2 = writeMd('11223344', { name: 'Earlier Task' })
+writePlistFor('11223344', _md2, { createdAt: '2023-06-01T00:00:00Z' })
 
 describe('readTask', () => {
 
@@ -157,7 +155,7 @@ describe('readTasks', () => {
 // ── setEnabled ─────────────────────────────────────────────────────────────
 
 describe('setEnabled', () => {
-  test('disable: rewrites plist with Disabled:true and writes _enabled=false to .md', () => {
+  test('disable: rewrites plist with Disabled:true', () => {
     const plist = path.join(LAUNCH_AGENTS_DIR, 'com.tide.aabbccdd.plist')
     // Ensure plist exists (re-create if a prior test removed it)
     writePlistFor('aabbccdd', _md1)
@@ -166,17 +164,15 @@ describe('setEnabled', () => {
     assert.ok(fs.existsSync(plist), 'plist should still exist after disable')
     const plistRaw = fs.readFileSync(plist, 'utf8')
     assert.ok(plistRaw.includes('<key>Disabled</key>'), 'plist should have Disabled key')
-    const raw = fs.readFileSync(_md1, 'utf8')
-    assert.ok(raw.includes('_enabled: false'), 'md should have _enabled: false')
   })
 
-  test('enable: writes _enabled=true to .md (bootstrap is a no-op in tests)', () => {
+  test('enable: rewrites plist without Disabled key (bootstrap is a no-op in tests)', () => {
     // Re-create plist pointing to md so setEnabled(true) can find the .md path
     writePlistFor('aabbccdd', _md1)
     // bootstrap will call launchctl — it may fail with a fake plist, that's acceptable
     try { setEnabled('aabbccdd', true) } catch { /* launchctl not available in test env */ }
-    const raw = fs.readFileSync(_md1, 'utf8')
-    assert.ok(raw.includes('_enabled: true'), 'md should have _enabled: true')
+    const plistRaw = fs.readFileSync(path.join(LAUNCH_AGENTS_DIR, 'com.tide.aabbccdd.plist'), 'utf8')
+    assert.ok(!plistRaw.includes('<key>Disabled</key>'), 'plist should not have Disabled key')
   })
 
   test('throws for unknown id (no plist)', () => {

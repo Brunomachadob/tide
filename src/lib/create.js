@@ -61,6 +61,14 @@ function generatePlist(taskId, config) {
   const agent = config.profile?.agent || 'claude-code'
   const tideAgentXml = `    <key>TIDE_AGENT</key>\n    <string>${xmlEscape(agent)}</string>\n`
 
+  const jitter = config.jitterSeconds ?? 0
+  const tideJitterXml = `    <key>TIDE_JITTER</key>\n    <string>${xmlEscape(String(jitter))}</string>\n`
+
+  const createdAt = config.createdAt || ''
+  const tideCreatedAtXml = createdAt
+    ? `    <key>TIDE_CREATED_AT</key>\n    <string>${xmlEscape(createdAt)}</string>\n`
+    : ''
+
   const disabledXml = config.enabled === false
     ? '  <key>Disabled</key>\n  <true/>\n'
     : ''
@@ -80,7 +88,7 @@ function generatePlist(taskId, config) {
   <dict>
     <key>TIDE_TASK_ID</key>
     <string>${xmlEscape(taskId)}</string>
-${tideTaskFileXml}${tideAgentXml}    <key>HOME</key>
+${tideTaskFileXml}${tideAgentXml}${tideJitterXml}${tideCreatedAtXml}    <key>HOME</key>
     <string>${xmlEscape(os.homedir())}</string>
     <key>PATH</key>
     <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
@@ -154,13 +162,9 @@ export function createTask(config) {
     ...(config.parentRunId ? { parentRunId: config.parentRunId } : {}),
   }
 
-  // Write internal fields back to the source .md file
+  // Write _id back to the source .md file
   if (config.sourcePath) {
-    writeTideFields(config.sourcePath, {
-      '_id': taskId,
-      '_createdAt': createdAt,
-      '_jitter': jitterSeconds,
-    })
+    writeTideFields(config.sourcePath, { '_id': taskId })
   }
 
   const plist = writePlist(taskId, task)

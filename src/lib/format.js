@@ -31,6 +31,7 @@ export function formatSchedule(schedule) {
   const secs = schedule.intervalSeconds || schedule.seconds || 3600
   if (secs < 60) return `every ${secs}s`
   if (secs < 3600) return `every ${Math.floor(secs / 60)}m`
+  if (secs >= 86400 && secs % 86400 === 0) return `every ${Math.floor(secs / 86400)}d`
   const h = Math.floor(secs / 3600)
   const m = Math.floor((secs % 3600) / 60)
   return `every ${h}h` + (m ? ` ${m}m` : '')

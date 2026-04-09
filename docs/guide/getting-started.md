@@ -45,7 +45,7 @@ Edit the file:
 Save and close the editor. Tide detects the new file and shows it as **pending create**. Press `[s]` to register it with launchd.
 
 ::: info What happens on sync
-1. Tide writes `_id`, `_createdAt`, and `_jitter` back to the `.md` file
+1. Tide writes `_id` back to the `.md` file as a stable identifier
 2. `~/Library/LaunchAgents/com.tide.<id>.plist` is generated pointing to `tide.sh`
 3. `launchctl bootstrap` registers the plist — the task is now live
 :::

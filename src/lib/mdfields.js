@@ -19,14 +19,10 @@ export function parseMdFile(filePath, { includeExplicitFields = false } = {}) {
   const raw = fs.readFileSync(filePath, 'utf8')
   const { data: fm, content: body } = matter(raw)
 
-  const INTERNAL_KEYS = new Set(['_id', '_createdAt', '_jitter'])
+  const INTERNAL_KEYS = new Set(['_id'])
 
   const result = {
     id: fm['_id'] != null ? String(fm['_id']) : null,
-    createdAt: fm['_createdAt']
-      ? (fm['_createdAt'] instanceof Date ? fm['_createdAt'].toISOString() : String(fm['_createdAt']))
-      : null,
-    jitterSeconds: fm['_jitter'] ?? null,
     name: fm.name || path.basename(filePath, '.md'),
     argument: body.trim(),
     schedule: parseSchedule(fm.schedule),
@@ -34,6 +30,7 @@ export function parseMdFile(filePath, { includeExplicitFields = false } = {}) {
       ? fm.workingDirectory.replace(/^~/, os.homedir())
       : os.homedir(),
     env: fm.env || {},
+    maxRetries: fm.maxRetries ?? 0,
     resultRetentionDays: fm.resultRetentionDays ?? 30,
     profileKey: typeof fm.profile === 'string' ? fm.profile : null,
     profile: (typeof fm.profile === 'string' ? settings.profiles?.[fm.profile] : null) ?? null,
@@ -54,7 +51,7 @@ export function parseMdFile(filePath, { includeExplicitFields = false } = {}) {
 
 /**
  * Write (or update) underscore-prefixed internal fields in a .md file's frontmatter.
- * Only the 3 internal keys (_id, _createdAt, _jitter) are touched; user keys are left unchanged.
+ * Only internal keys (_id) are touched; user keys are left unchanged.
  */
 export function writeTideFields(filePath, fields) {
   const raw = fs.readFileSync(filePath, 'utf8')

@@ -61,9 +61,13 @@ A run directory without a `completedAt` field indicates an in-progress or interr
   "startedAt": "2026-03-30T10:00:00Z",
   "completedAt": "2026-03-30T10:00:45Z",
   "exitCode": 0,
-  "attempts": 1
+  "attempts": 1,
+  "argument": "the prompt used for this run",
+  "parentRunId": "de45f012"
 }
 ```
+
+`parentRunId` is only present for follow-up runs triggered via `[f]`.
 
 ### `~/.tide/tasks/<id>/runs/<runId>/output.log`
 

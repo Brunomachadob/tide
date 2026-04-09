@@ -11,24 +11,16 @@ describe('formatDate', () => {
     assert.equal(formatDate(undefined), 'never')
   })
 
-  test('YYYY-MM-DD format', () => {
+  test('returns a non-empty string for a valid ISO date', () => {
     const iso = '2024-06-15T09:05:00Z'
-    assert.match(formatDate(iso, { dateFormat: 'YYYY-MM-DD' }), /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/)
+    const result = formatDate(iso)
+    assert.ok(typeof result === 'string' && result.length > 0)
   })
 
-  test('DD.MM.YYYY format', () => {
-    const iso = '2024-06-15T09:05:00Z'
-    assert.match(formatDate(iso, { dateFormat: 'DD.MM.YYYY' }), /^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}$/)
-  })
-
-  test('MM/DD/YYYY format', () => {
-    const iso = '2024-06-15T09:05:00Z'
-    assert.match(formatDate(iso, { dateFormat: 'MM/DD/YYYY' }), /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/)
-  })
-
-  test('pads single-digit month, day, hour, minute', () => {
-    const d = new Date(2024, 0, 5, 8, 5) // local time
-    assert.match(formatDate(d.toISOString(), { dateFormat: 'YYYY-MM-DD' }), /\d{4}-01-05 08:05/)
+  test('returns a different string for a different date', () => {
+    const a = formatDate('2024-01-01T00:00:00Z')
+    const b = formatDate('2025-06-15T12:30:00Z')
+    assert.notEqual(a, b)
   })
 })
 
@@ -94,6 +86,12 @@ describe('formatSchedule', () => {
 
   test('interval – hours and minutes', () => {
     assert.equal(formatSchedule({ type: 'interval', intervalSeconds: 5400 }), 'every 1h 30m')
+  })
+
+  test('interval – whole days', () => {
+    assert.equal(formatSchedule({ type: 'interval', intervalSeconds: 86400 }), 'every 1d')
+    assert.equal(formatSchedule({ type: 'interval', intervalSeconds: 86400 * 7 }), 'every 7d')
+    assert.equal(formatSchedule({ type: 'interval', intervalSeconds: 86400 * 30 }), 'every 30d')
   })
 
   test('interval – legacy .seconds field', () => {

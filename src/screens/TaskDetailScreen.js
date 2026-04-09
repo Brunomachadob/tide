@@ -235,6 +235,8 @@ export default function TaskDetailScreen({ taskId, navigate, goBack, repoRoot, h
       task.env && Object.keys(task.env).length > 0
         ? React.createElement(Field, { label: 'Env', value: Object.entries(task.env).map(([k, v]) => `${k}=${v}`).join(', ') })
         : null,
+      React.createElement(Field, { label: 'Max retries', value: task.maxRetries ?? 0 }),
+      React.createElement(Field, { label: 'Retention', value: `${task.resultRetentionDays ?? 30}d` }),
       sourceBasename
         ? React.createElement(Field, { label: 'Source', value: sourceBasename })
         : null,

@@ -7,7 +7,7 @@ import os from 'os'
 import crypto from 'crypto'
 import matter from 'gray-matter'
 import { writePlist } from './create.js'
-import { bootstrap, bootout, plistPath, tideTaskFileFromPlist, scanTidePlists } from './launchd.js'
+import { bootstrap, bootout, plistPath, readPlistJson, tideTaskFileFromPlist, scanTidePlists } from './launchd.js'
 import { taskDir, deleteTask } from './tasks.js'
 import { parseMdFile, writeTideFields } from './mdfields.js'
 
@@ -15,7 +15,7 @@ import { parseMdFile, writeTideFields } from './mdfields.js'
 const PLIST_DIFFABLE_FIELDS = ['schedule', 'workingDirectory', 'env', 'timeoutSeconds']
 
 // System env keys injected by Tide — excluded when extracting user env from plist
-const SYSTEM_ENV_KEYS = new Set(['TIDE_TASK_ID', 'TIDE_TASK_FILE', 'TIDE_AGENT', 'HOME', 'PATH'])
+const SYSTEM_ENV_KEYS = new Set(['TIDE_TASK_ID', 'TIDE_TASK_FILE', 'TIDE_AGENT', 'TIDE_JITTER', 'TIDE_CREATED_AT', 'HOME', 'PATH'])
 
 /** Walk up from startDir looking for a .tide/ directory. Stops at .git roots. Returns the dir containing .tide/ or null. */
 export function findRepoRoot(startDir) {
@@ -75,7 +75,7 @@ function valuesEqual(a, b) {
  * Extract a task-shaped object from a plist JSON for diffing purposes.
  * Only covers PLIST_DIFFABLE_FIELDS.
  */
-function plistToTaskShape(plistJson, jitterSeconds) {
+function plistToTaskShape(plistJson) {
   const startInterval = plistJson.StartInterval
   const schedule = startInterval
     ? { type: 'interval', intervalSeconds: startInterval }
@@ -88,10 +88,11 @@ function plistToTaskShape(plistJson, jitterSeconds) {
     Object.entries(envVars).filter(([k]) => !SYSTEM_ENV_KEYS.has(k))
   )
 
+  const jitterSeconds = parseInt(envVars.TIDE_JITTER ?? '0') || 0
   const timeOut = plistJson.TimeOut ?? null
-  const timeoutSeconds = timeOut !== null ? timeOut - (jitterSeconds ?? 0) : null
+  const timeoutSeconds = timeOut !== null ? timeOut - jitterSeconds : null
 
-  return { schedule, workingDirectory, env, enabled: true, timeoutSeconds }
+  return { schedule, workingDirectory, env, enabled: true, timeoutSeconds, jitterSeconds }
 }
 
 /**
@@ -170,7 +171,7 @@ export function computePending(repoRoot) {
         if (!plistEntry) {
           pending.push({ type: 'create', task: parsed, diff: [] })
         } else {
-          const plistShape = plistEntry.plistJson ? plistToTaskShape(plistEntry.plistJson, parsed.jitterSeconds) : null
+          const plistShape = plistEntry.plistJson ? plistToTaskShape(plistEntry.plistJson) : null
           const diff = plistShape ? diffPlistFields(parsed, plistShape) : []
           if (diff.length > 0) {
             pending.push({ type: 'update', task: parsed, existing: plistShape, diff })
@@ -214,17 +215,21 @@ export function applyPending(entry) {
     const parsed = sourcePath ? parseTaskFile(sourcePath) : entry.task
     parsed.id = entry.task.id
 
-    // Preserve jitter and createdAt across updates
-    const existingJitter = parsed.jitterSeconds
-    const jitterSeconds = existingJitter ?? computeJitter(parsed.schedule)
-    const createdAt = parsed.createdAt || now
+    // For updates: preserve existing jitter and createdAt from the current plist env vars.
+    // For creates: compute fresh jitter and use now as createdAt.
+    let jitterSeconds, createdAt
+    if (entry.type === 'update') {
+      const existingPlistJson = (() => { try { return readPlistJson(plistPath(parsed.id)) } catch { return null } })()
+      const existingEnv = existingPlistJson?.EnvironmentVariables || {}
+      jitterSeconds = parseInt(existingEnv.TIDE_JITTER ?? '') || computeJitter(parsed.schedule)
+      createdAt = existingEnv.TIDE_CREATED_AT || now
+    } else {
+      jitterSeconds = computeJitter(parsed.schedule)
+      createdAt = now
+    }
 
-    // Write internal fields back to .md
-    writeTideFields(sourcePath, {
-      '_id': parsed.id,
-      '_createdAt': createdAt,
-      '_jitter': jitterSeconds,
-    })
+    // Write _id back to .md (only internal field that stays in the file)
+    writeTideFields(sourcePath, { '_id': parsed.id })
 
     const task = {
       ...parsed,

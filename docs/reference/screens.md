@@ -95,7 +95,7 @@ Shows all runs newest-first. Each row displays start time, exit code badge, dura
 
 ### Run detail
 
-Shows metadata for the selected run (time, exit code, duration, attempts) and its log output — scoped to that run only. Tide log lines are dimmed; markdown in Claude output is rendered.
+Shows metadata for the selected run (time, exit code, duration, attempts, and parent run ID for follow-ups) and its log output — scoped to that run only. Tide log lines are dimmed; markdown in Claude output is rendered.
 
 | Key | Action |
 |-----|--------|

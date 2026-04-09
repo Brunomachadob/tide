@@ -7,8 +7,6 @@ Each task is authored as a markdown file at `<repo>/.tide/<taskname>.md`. The pl
 ```markdown
 ---
 _id: 3f640f65
-_createdAt: 2026-03-29T10:00:00Z
-_jitter: 42
 name: Daily standup summary
 schedule: 1h
 workingDirectory: ~/projects/myrepo
@@ -27,12 +25,12 @@ The file **body** (below the `---`) is the prompt sent to Claude.
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `name` | `string` | filename (no `.md`) | Human-readable label shown in the TUI. |
-| `schedule` | `string` | — | Interval shorthand (`15m`, `30m`, `1h`, `2h`, `6h`, `12h`, `24h`) or raw seconds. Use `manual` for no automatic schedule. |
+| `schedule` | `string` | — | `Nm` (minutes), `Nh` (hours), `Nd` (days), or a plain integer (seconds). E.g. `30m`, `6h`, `7d`, `90`. Use `manual` for no automatic schedule. |
 | `workingDirectory` | `string` | settings default or `~` | Directory the task runs in. `~` is expanded. |
 | `env` | `object` | `{}` | Additional environment variables passed to the run. |
 | `resultRetentionDays` | `number` | `30` | Run history older than this is pruned after each run. |
 | `timeoutSeconds` | `number` | none | Hard timeout passed to launchd. Includes jitter. |
-| `maxRetries` | `number` | `0` | Number of retries on non-zero exit, with exponential backoff (30s × attempt). |
+| `maxRetries` | `number` | `0` | Number of retries on non-zero exit, with linear backoff (30s × attempt). |
 | `profile` | `string` | — | Key referencing a profile in `~/.tide/settings.json` under `profiles`. |
 
 ::: tip Profiles live in settings
@@ -43,9 +41,9 @@ Profile configuration is stored once in `~/.tide/settings.json` under `profiles`
 
 | Field | Description |
 |-------|-------------|
-| `_id` | Random 8-char hex ID. Immutable after creation. |
-| `_createdAt` | ISO 8601 creation timestamp. Used for UI ordering. |
-| `_jitter` | Random delay (0–min(interval/4, 300)s) applied before each run. Assigned once at creation. |
+| `_id` | Random 8-char hex ID. Immutable after creation. Links the `.md` file to its plist and run history. |
+
+Jitter and creation time are stored as `TIDE_JITTER` and `TIDE_CREATED_AT` env vars in the plist, not in the `.md` file.
 
 ## Which fields require a sync step
 

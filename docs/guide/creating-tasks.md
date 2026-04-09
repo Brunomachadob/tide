@@ -10,7 +10,7 @@ Task files live at `<repo>/.tide/<taskname>.md`. Tide discovers which repo to us
 
 ## Create a task file
 
-Press `c` on the task list to open a new `.md` file in `$EDITOR`. The file is created at `<repo>/.tide/<name>.md` for the currently scoped repo.
+Press `c` on the task list to open a new `.md` file in `$EDITOR`. After you save and close, the file is named from the `name` field you set (e.g. `name: Daily standup` → `daily-standup.md`) and placed in `<repo>/.tide/`.
 
 A minimal task file looks like this:
 
@@ -32,19 +32,15 @@ Save and close the editor. Tide detects the new file and shows it as **pending c
 
 1. Reads the `.md` frontmatter + body
 2. Generates a random 8-character hex `_id` (e.g. `3f640f65`) and writes it back to the frontmatter
-3. For interval tasks: assigns a random `_jitter` between 0 and `min(interval/4, 300)` seconds. Manual tasks get `_jitter: 0`.
-4. Writes `_createdAt` back to the frontmatter
-5. Generates `~/Library/LaunchAgents/com.tide.<id>.plist` from the frontmatter
-6. Validates the plist with `plutil -lint` (hard error if invalid)
-7. Calls `launchctl bootstrap` to register the task
+3. Generates `~/Library/LaunchAgents/com.tide.<id>.plist` from the frontmatter, storing jitter and creation time as plist env vars
+4. Validates the plist with `plutil -lint` (hard error if invalid)
+5. Calls `launchctl bootstrap` to register the task
 
-After first sync the file gains underscore-prefixed internal fields:
+After first sync the file gains one internal field:
 
 ```markdown
 ---
 _id: 3f640f65
-_createdAt: 2026-04-01T10:00:00Z
-_jitter: 42
 name: Daily standup summary
 schedule: 1h
 ---

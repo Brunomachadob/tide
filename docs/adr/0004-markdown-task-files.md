@@ -33,9 +33,6 @@ Summarize the git log from the last 24 hours.
 ```markdown
 ---
 _id: 3f640f65
-_createdAt: 2026-04-01T10:00:00Z
-_jitter: 42
-_enabled: true
 name: Daily standup summary
 schedule: 1h
 ---
@@ -45,9 +42,9 @@ The `_` prefix reserves internal fields that Tide manages. These are valid YAML 
 
 ### How sync works
 
-The plist contains a `TIDE_TASK_FILE` environment variable pointing back to the source `.md` file. At runtime, `tide.sh` reads `TIDE_TASK_FILE` and passes the `.md` path to `task-setup.js` and `task-postprocess.js`, which parse it directly.
+The plist contains a `TIDE_TASK_FILE` environment variable pointing back to the source `.md` file. At runtime, `tide.sh` reads `TIDE_TASK_FILE` and passes the `.md` path to `agent-runner.js`, which parses it directly.
 
-Only fields that the plist actually encodes need a sync step to take effect: `schedule`, `workingDirectory`, `env`, `_enabled`, `timeoutSeconds`. All other field changes (name, argument, command, maxRetries, etc.) take effect at the next run automatically — no sync required.
+Only fields that the plist actually encodes need a sync step to take effect: `schedule`, `workingDirectory`, `env`, `timeoutSeconds`. All other field changes (name, argument, command, maxRetries, etc.) take effect at the next run automatically — no sync required.
 
 The TUI shows a pending-update badge when a plist-encoded field changes in the `.md` file. Pressing `[s]` applies the change (rewrites the plist and re-registers with launchd).
 

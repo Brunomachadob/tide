@@ -51,7 +51,7 @@ src/lib/
   taskfile.js     — parseTaskFile, writeTideFields, computePending, applyPending
   load-tasks.js   — loadTasks(): merges .md + launchd + lastResult into display objects (run in worker)
   tasks-worker.js — worker thread entry point: calls loadTasks(), posts result to main thread
-  constants.js    — SCHEDULE_SHORTHANDS, parseSchedule, LAUNCH_AGENTS_DIR
+  constants.js    — parseSchedule, LAUNCH_AGENTS_DIR
 
 scripts/
   tide.sh         — executed by launchd; resolves agentAuth, execs into tsh aws --exec node agent-runner.js

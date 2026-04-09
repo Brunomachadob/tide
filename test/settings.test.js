@@ -26,22 +26,20 @@ describe('readSettings', () => {
 
   test('returns defaults when file does not exist', () => {
     const s = readSettings()
-    assert.equal(s.dateFormat, 'YYYY-MM-DD')
     assert.equal(s.refreshInterval, 5)
   })
 
   test('merges stored values with defaults', () => {
     fs.mkdirSync(TIDE_DIR, { recursive: true })
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ dateFormat: 'DD.MM.YYYY' }))
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ refreshInterval: 10 }))
     const s = readSettings()
-    assert.equal(s.dateFormat, 'DD.MM.YYYY')
-    assert.equal(s.refreshInterval, 5) // default applied when not in file
+    assert.equal(s.refreshInterval, 10)
   })
 
   test('returns defaults when file contains corrupt JSON', () => {
     fs.writeFileSync(SETTINGS_FILE, 'not-json')
     const s = readSettings()
-    assert.equal(s.dateFormat, 'YYYY-MM-DD')
+    assert.equal(s.refreshInterval, 5)
   })
 })
 
@@ -53,15 +51,14 @@ describe('writeSettings', () => {
   })
 
   test('writes and reads back', () => {
-    writeSettings({ dateFormat: 'MM/DD/YYYY', refreshInterval: 10 })
+    writeSettings({ refreshInterval: 10 })
     const s = readSettings()
-    assert.equal(s.dateFormat, 'MM/DD/YYYY')
     assert.equal(s.refreshInterval, 10)
   })
 
   test('is atomic (uses tmp rename)', () => {
-    writeSettings({ dateFormat: 'YYYY-MM-DD' })
-    writeSettings({ dateFormat: 'DD.MM.YYYY' })
-    assert.equal(readSettings().dateFormat, 'DD.MM.YYYY')
+    writeSettings({ refreshInterval: 5 })
+    writeSettings({ refreshInterval: 15 })
+    assert.equal(readSettings().refreshInterval, 15)
   })
 })

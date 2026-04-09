@@ -27,6 +27,8 @@ export function readTask(id) {
   try {
     const task = parseMdFile(mdPath)
     task.id = task.id || id
+    task.createdAt = plistJson.EnvironmentVariables?.TIDE_CREATED_AT || null
+    task.jitterSeconds = parseInt(plistJson.EnvironmentVariables?.TIDE_JITTER ?? '') || 0
     return task
   } catch {
     return null
@@ -42,6 +44,8 @@ export function readTasks() {
         const task = parseMdFile(tideTaskFile)
         task.id = task.id || id
         task.disabled = plistJson.Disabled === true
+        task.createdAt = plistJson.EnvironmentVariables?.TIDE_CREATED_AT || null
+        task.jitterSeconds = parseInt(plistJson.EnvironmentVariables?.TIDE_JITTER ?? '') || 0
         return task
       } catch {
         return null
@@ -63,8 +67,11 @@ export function disable(id) {
   const mdPath = tideTaskFileFromPlist(plistJson)
   bootout(id)
   if (mdPath && fs.existsSync(mdPath)) {
+    const existingEnv = plistJson?.EnvironmentVariables || {}
     const task = parseMdFile(mdPath)
     task.id = id
+    task.createdAt = existingEnv.TIDE_CREATED_AT || null
+    task.jitterSeconds = parseInt(existingEnv.TIDE_JITTER ?? '') || 0
     writePlist(id, { ...task, enabled: false })
   } else if (fs.existsSync(plist)) {
     // No .md to rewrite from — fall back to deleting the plist
@@ -89,8 +96,14 @@ export function setEnabled(id, enabled, sourcePath) {
   }
   if (!mdPath || !fs.existsSync(mdPath)) throw new Error(`Task ${id}: source .md not found`)
 
+  const plistFile = path.join(LAUNCH_AGENTS_DIR, `com.tide.${id}.plist`)
+  const existingPlistJson = fs.existsSync(plistFile) ? readPlistJson(plistFile) : null
+  const existingEnv = existingPlistJson?.EnvironmentVariables || {}
+
   const task = parseMdFile(mdPath)
   task.id = id
+  task.createdAt = existingEnv.TIDE_CREATED_AT || null
+  task.jitterSeconds = parseInt(existingEnv.TIDE_JITTER ?? '') || 0
   writePlist(id, { ...task, enabled: true })
   bootstrap(id)
 }
