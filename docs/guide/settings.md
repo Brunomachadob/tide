@@ -43,6 +43,20 @@ profile: my-claude
 | `agent` | Which agent plugin to use. See [Agents](#agents) below. |
 | `model` | Optional model override. Format depends on the agent (e.g. Bedrock ARN for `claude-code`, model name for `gemini`). |
 | `auth` | Optional auth config. Shape depends on `auth.type`. See [Auth types](#auth-types) below. |
+| `env` | Optional environment variables injected at runtime into every task that uses this profile. Task-level `env` takes precedence. Changes take effect on the next run — no sync required. |
+
+```json
+{
+  "profiles": {
+    "my-claude": {
+      "agent": "claude-code",
+      "env": {
+        "CLAUDE_BIN": "claude"
+      }
+    }
+  }
+}
+```
 
 ### Agents
 

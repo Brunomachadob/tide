@@ -97,6 +97,13 @@ const model = profile.model || null
 const auth = profile.auth || {}
 const authType = auth.type
 
+// Apply profile env vars — task-level env (already in process.env via plist) takes precedence
+if (profile.env) {
+  for (const [k, v] of Object.entries(profile.env)) {
+    if (!(k in process.env)) process.env[k] = v
+  }
+}
+
 // ─── PID overlap detection ────────────────────────────────────────────────────
 
 const tDir = path.join(TIDE_DIR, 'tasks', taskId)

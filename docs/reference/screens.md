@@ -100,17 +100,15 @@ Shows metadata for the selected run (time, exit code, duration, attempts, and pa
 | Key | Action |
 |-----|--------|
 | `Tab` | Switch between OUTPUT and STDERR tabs |
-| `Ctrl+F` | Toggle auto-refresh (follows live output while task is running) |
 | `f` | Start a follow-up run (completed runs only) |
 | `o` | Open log file in `$EDITOR` (read-only) |
 | `+` / `]` | Show more log lines |
 | `-` / `[` | Show fewer log lines |
-| `r` | Refresh |
 | `n` | Open Notifications |
 | `s` | Open Settings |
 | `←` / `Esc` / `q` | Back to runs list |
 
-Auto-refresh is enabled automatically when viewing the latest run of a currently-running task.
+Log output is refreshed live (via `fs.watch`) while the task is running, indicated by `● live`. For completed runs the output is loaded once.
 
 ## Notifications
 

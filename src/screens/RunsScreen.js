@@ -97,13 +97,13 @@ function FollowUpDialog({ taskId, run, onSubmit, onCancel }) {
 function RunDetail({ taskId, taskStatus, run, isLatest, navigate, onBack, height, breadcrumb, settings }) {
   const [tab, setTab] = useState('output')
   const [lineIdx, setLineIdx] = useState(0)
-  const [autoRefresh, setAutoRefresh] = useState(isLatest && taskStatus === 'running')
   const [followUp, setFollowUp] = useState(false)
   const [toast, setToast] = useState(null)
   const lines = LINE_OPTIONS[lineIdx]
+  const inProgress = !run.completedAt
 
-  const { output, stderr, outputTotal, stderrTotal, loading, refresh } =
-    useRunLogs(taskId, run.runId, lines, autoRefresh)
+  const { output, stderr, outputTotal, stderrTotal, loading } =
+    useRunLogs(taskId, run.runId, lines, inProgress)
   const { unreadCount } = useNotifications(10000)
 
   useEffect(() => {
@@ -116,8 +116,6 @@ function RunDetail({ taskId, taskStatus, run, isLatest, navigate, onBack, height
     if (followUp) return
     if (key.escape || input === 'q' || key.leftArrow) { onBack(); return }
     if (key.tab || input === '\t') setTab(t => t === 'output' ? 'stderr' : 'output')
-    if (key.ctrl && input === 'f') { setAutoRefresh(a => !a); return }
-    if (input === 'r') refresh()
     if (input === 'n') navigate('notifications')
     if (input === 's') navigate('settings')
     if (input === '+' || input === ']') setLineIdx(i => Math.min(LINE_OPTIONS.length - 1, i + 1))
@@ -154,7 +152,6 @@ function RunDetail({ taskId, taskStatus, run, isLatest, navigate, onBack, height
 
   const startedAt = formatDate(run.startedAt)
   const dur = duration(run)
-  const inProgress = !run.completedAt
 
   return React.createElement(
     Box,
@@ -204,10 +201,9 @@ function RunDetail({ taskId, taskStatus, run, isLatest, navigate, onBack, height
         { color: tab === 'stderr' ? 'cyan' : 'gray', underline: tab === 'stderr' },
         'STDERR',
       ),
-      React.createElement(Text, { color: 'gray' }, '│'),
-      React.createElement(Text, { color: autoRefresh ? 'green' : 'gray' },
-        autoRefresh ? '● auto-refresh on' : '○ auto-refresh off',
-      ),
+      inProgress
+        ? React.createElement(Text, { color: 'green' }, '● live')
+        : null,
     ),
 
     loading
@@ -247,9 +243,7 @@ function RunDetail({ taskId, taskStatus, run, isLatest, navigate, onBack, height
       hints: [
         ['←/Esc/q', 'back'],
         ['Tab', 'switch tab'],
-        ['Ctrl+F', 'toggle follow'],
         ['+]/−[', 'line count'],
-        ['r', 'refresh'],
         ['o', 'open in editor'],
         ...(!inProgress ? [['f', 'follow-up']] : []),
       ],
