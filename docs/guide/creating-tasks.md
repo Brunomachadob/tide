@@ -2,15 +2,15 @@
 
 ## Task file location
 
-Task files live at `<repo>/.tide/<taskname>.md`. Tide discovers which repo to use based on where it is launched:
+Task files live at `<workspace>/.tide/<taskname>.md`. Tide discovers which workspace to use based on where it is launched:
 
-- If the current directory (or any parent, up to a `.git` boundary) contains a `.tide/` folder, that is the active repo.
+- If the current directory (or any parent, up to a `.git` boundary) contains a `.tide/` folder, that is the active workspace.
 - A bare `.tide/` directory with no `.git` ancestor is also valid (e.g. `~/tasks/.tide/`).
-- Tasks from **all** repos are always visible globally via their plists — the repo only affects which tasks are shown when filtering by workspace and where `[c]` creates new files.
+- Tasks from **all** workspaces are always visible globally via their plists — the active workspace only affects which tasks are shown when filtering by workspace and where `[c]` creates new files.
 
 ## Create a task file
 
-Press `c` on the task list to open a new `.md` file in `$EDITOR`. After you save and close, the file is named from the `name` field you set (e.g. `name: Daily standup` → `daily-standup.md`) and placed in `<repo>/.tide/`.
+Press `c` on the task list to open a new `.md` file in `$EDITOR`. After you save and close, the file is named from the `name` field you set (e.g. `name: Daily standup` → `daily-standup.md`) and placed in `<workspace>/.tide/`.
 
 A minimal task file looks like this:
 
@@ -21,7 +21,7 @@ schedule: 1h
 profile: my-claude
 ---
 
-Summarize the git log from the last 24 hours in this repo.
+Summarize the git log from the last 24 hours in this workspace.
 ```
 
 `profile` is the name of a profile defined in `~/.tide/settings.json`. See [Settings](/guide/settings#profiles).
@@ -45,7 +45,7 @@ name: Daily standup summary
 schedule: 1h
 ---
 
-Summarize the git log from the last 24 hours in this repo.
+Summarize the git log from the last 24 hours in this workspace.
 ```
 
 ## When changes need a sync vs take effect automatically
@@ -85,13 +85,13 @@ Press `e` on the task list to toggle a task on/off. Enabled/disabled state is st
 - **Disable:** rewrites the plist with `Disabled: true` and calls `launchctl bootout`. The task will not fire.
 - **Enable:** rewrites the plist without `Disabled` and calls `launchctl bootstrap`.
 
-## Moving tasks between repos
+## Moving tasks between workspaces
 
-To move a task to a different repo:
+To move a task to a different workspace:
 
-1. Move the `.md` file to the target repo's `.tide/` directory.
+1. Move the `.md` file to the target workspace's `.tide/` directory.
 2. In Tide, the task will appear as **orphaned** (stale plist pointing to the old path). Sync it away with `Ctrl+S`.
-3. Open Tide from the target repo (or ensure the target `.tide/` is discovered). The moved `.md` appears as **pending create**. Sync it to register with launchd.
+3. Open Tide from the target workspace (or ensure the target `.tide/` is discovered). The moved `.md` appears as **pending create**. Sync it to register with launchd.
 
 The task's run history is preserved — it lives in `~/.tide/tasks/<id>/` and is keyed by `_id`, not by file path.
 
@@ -101,10 +101,10 @@ Press `d` and confirm. Tide:
 1. Boots out the launchd registration (if loaded)
 2. Removes the plist from `~/Library/LaunchAgents/`
 3. Deletes `~/.tide/tasks/<id>/` and all its contents (run history, logs)
-4. Does **not** delete the `.md` file — that is yours to remove from the repo
+4. Does **not** delete the `.md` file — that is yours to remove from the workspace
 
 ::: danger Deletion removes run history
-Logs and run history in `~/.tide/tasks/<id>/` are deleted. The `.md` file remains in your repo.
+Logs and run history in `~/.tide/tasks/<id>/` are deleted. The `.md` file remains in your workspace.
 :::
 
 ## Example: daily Claude prompt
