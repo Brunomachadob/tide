@@ -1,6 +1,15 @@
 # Tide — Claude Code Notes
 
-User-facing docs live in `docs/` and are published to GitHub Pages via VitePress. The README links to them. After any code change, check whether the affected area is documented in `docs/guide/` or `docs/reference/` and update those pages if they are now inaccurate.
+User-facing docs live in `docs/` and are published to https://brunomb.com/tide/ via VitePress. The README links to them. After any code change, check whether the affected area is documented in `docs/guide/` or `docs/reference/` and update those pages if they are now inaccurate.
+
+## Git workflow
+
+**Main is protected — all changes must go through a branch and PR.**
+
+1. Create a branch: `git checkout -b <short-description>`
+2. Make changes, commit
+3. Push and open a PR: `gh pr create`
+4. The `test` CI check must pass before merging
 
 ## Architecture
 

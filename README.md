@@ -1,8 +1,8 @@
 # Tide
 
-Tide is a macOS task scheduler with a terminal UI. Schedule AI agent tasks (Claude Code, GitHub Copilot, Gemini) and have them run in the background via launchd — no active session required.
+Tide is a macOS scheduler for AI agents — run Claude Code, GitHub Copilot, and Gemini tasks on a recurring interval via launchd, with a terminal UI to manage them.
 
-**[Full documentation →](https://brunomachadob.github.io/tide/)**
+**[Full documentation →](https://brunomb.com/tide/)**
 
 ## Quick start
 
@@ -17,7 +17,7 @@ On first launch, an onboarding screen lets you pick which agents to set up (Clau
 ## Features
 
 - **Scheduled tasks** — define a prompt and an interval schedule; launchd runs it even when no app is open
-- **Follow-up runs** — from any run's detail view, press `f` to chain a new run pre-seeded with the previous run's argument and output ([docs](https://brunomachadob.github.io/tide/guide/logs-and-results#follow-up-runs))
+- **Follow-up runs** — from any run's detail view, press `f` to chain a new run pre-seeded with the previous run's argument and output ([docs](https://brunomb.com/tide/guide/logs-and-results#follow-up-runs))
 - **Run history** — browse logs, exit codes, and retry counts per run
 
 ## Why this exists

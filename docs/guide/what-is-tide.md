@@ -1,6 +1,6 @@
 # What is Tide?
 
-Tide is a macOS task scheduler with a terminal UI. Schedule AI agent tasks (Claude Code, GitHub Copilot, Gemini) and have them run in the background via [launchd](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html) — no active session required. Think of it as a personal cron for AI agents, with a TUI to monitor runs, logs, and notifications.
+Tide is a macOS scheduler for AI agents — run Claude Code, GitHub Copilot, and Gemini tasks on a recurring interval via [launchd](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html), with a terminal UI to manage runs, logs, and notifications.
 
 ## Why this exists
 
