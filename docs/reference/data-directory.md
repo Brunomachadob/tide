@@ -7,6 +7,7 @@ All Tide runtime data lives in `~/.tide/`.
 ```
 ~/.tide/
 ├── settings.json
+├── workspaces.json
 ├── notifications.json
 └── tasks/
     └── <id>/
@@ -40,6 +41,19 @@ Global settings — refresh interval and agent profiles.
   }
 }
 ```
+
+### `~/.tide/workspaces.json`
+
+Registry of known workspace directories (repos containing `.tide/*.md` files). Used to rediscover task files when rescanning for pending changes.
+
+```json
+[
+  { "path": "/Users/you/git/myproject" },
+  { "path": "/Users/you/git/other" }
+]
+```
+
+This file is maintained automatically — you do not need to edit it manually.
 
 ### `~/.tide/notifications.json`
 

@@ -12,7 +12,7 @@ Retries are handled by `agent-runner.js`. Set `maxRetries` in the task frontmatt
 
 ## Backoff
 
-Retries use **fixed delay backoff**:
+Retries use **linear backoff**:
 
 | Attempt | Delay before attempt |
 |---------|---------------------|

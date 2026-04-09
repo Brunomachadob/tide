@@ -6,7 +6,7 @@ Task files live at `<repo>/.tide/<taskname>.md`. Tide discovers which repo to us
 
 - If the current directory (or any parent, up to a `.git` boundary) contains a `.tide/` folder, that is the active repo.
 - A bare `.tide/` directory with no `.git` ancestor is also valid (e.g. `~/tasks/.tide/`).
-- Tasks from **all** repos are always visible globally via their plists — the repo only affects which tasks are shown in scoped view and where `[c]` creates new files.
+- Tasks from **all** repos are always visible globally via their plists — the repo only affects which tasks are shown when filtering by workspace and where `[c]` creates new files.
 
 ## Create a task file
 
@@ -69,7 +69,7 @@ The prompt body (below the `---`) is passed as the prompt to the agent. Output s
 
 ## Editing a task
 
-Press `e` on any task to open its `.md` file in `$EDITOR`.
+From the **task detail** screen, press `e` to open the task's `.md` file in `$EDITOR`.
 
 - Changes to the prompt body or non-plist fields: take effect at the next scheduled run — no action needed.
 - Changes to `schedule`, `workingDirectory`, `env`, or `timeoutSeconds`: a sync badge appears. Press `[s]` to apply.

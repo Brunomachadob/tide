@@ -29,7 +29,7 @@ The file **body** (below the `---`) is the prompt sent to Claude.
 | `workingDirectory` | `string` | settings default or `~` | Directory the task runs in. `~` is expanded. |
 | `env` | `object` | `{}` | Additional environment variables passed to the run. |
 | `resultRetentionDays` | `number` | `30` | Run history older than this is pruned after each run. |
-| `timeoutSeconds` | `number` | none | Hard timeout passed to launchd. Includes jitter. |
+| `timeoutSeconds` | `number` | none | Per-attempt timeout enforced by the agent runner. When elapsed, the process is sent SIGTERM and exits with code 124. |
 | `maxRetries` | `number` | `0` | Number of retries on non-zero exit, with linear backoff (30s × attempt). |
 | `profile` | `string` | — | Key referencing a profile in `~/.tide/settings.json` under `profiles`. |
 

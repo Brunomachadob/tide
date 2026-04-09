@@ -99,8 +99,10 @@ Each run's logs are rotated after the run completes if they exceed **5 MB**. Rot
 
 Run directories older than `resultRetentionDays` are deleted after each run. The default is 30 days.
 
-To change retention per task, edit `task.json` directly:
+To change retention per task, add or edit `resultRetentionDays` in the task's `.md` frontmatter:
 
-```json
-"resultRetentionDays": 7
+```markdown
+---
+resultRetentionDays: 7
+---
 ```

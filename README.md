@@ -16,7 +16,7 @@ On first launch, an onboarding screen lets you pick which agents to set up (Clau
 
 ## Features
 
-- **Scheduled tasks** — define a command and a cron-style schedule; launchd runs it even when no app is open
+- **Scheduled tasks** — define a prompt and an interval schedule; launchd runs it even when no app is open
 - **Follow-up runs** — from any run's detail view, press `f` to chain a new run pre-seeded with the previous run's argument and output ([docs](https://brunomachadob.github.io/tide/guide/logs-and-results#follow-up-runs))
 - **Run history** — browse logs, exit codes, and retry counts per run
 

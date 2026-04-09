@@ -52,7 +52,7 @@ This jitter is applied before each run. Its purpose is to spread tasks out after
 The maximum jitter is capped at **5 minutes** (300 seconds) regardless of interval length, so a 24-hour task still fires close to its intended time.
 
 ::: info Jitter is fixed at creation
-`jitterSeconds` is assigned once when the task is created and stored in `task.json`. It does not change between runs. To get a new jitter value, delete and recreate the task.
+`jitterSeconds` is assigned once when the task is created and stored in the plist as a `TIDE_JITTER` environment variable. It does not change between runs. To get a new jitter value, delete and recreate the task.
 :::
 
 ## Sleep/wake behavior
@@ -77,10 +77,6 @@ launchd is the scheduler — Tide doesn't implement any timer logic itself. The 
 <integer>3600</integer>
 ```
 
-The jitter is applied in `tide.sh` before the command runs:
+The jitter is applied in `agent-runner.js` before the agent is invoked, using the `TIDE_JITTER` env var written into the plist at creation time.
 
-```sh
-sleep $JITTER_SECONDS
-```
-
-So the actual sequence is: launchd fires `tide.sh` → shell sleeps for jitter seconds → command runs.
+So the actual sequence is: launchd fires `tide.sh` → `agent-runner.js` starts → sleeps for jitter seconds → agent runs.
