@@ -148,7 +148,10 @@ process.on('SIGINT', () => process.exit(1))
 
 // Will be replaced with a proper handler after initRun() when runFile is available.
 // This early handler covers the window between pid file write and initRun.
-let sigTermHandler = () => process.exit(1)
+let sigTermHandler = () => {
+  logError('terminated: killed before run initialized')
+  process.exit(1)
+}
 process.on('SIGTERM', () => sigTermHandler())
 
 // ─── Jitter ───────────────────────────────────────────────────────────────────
