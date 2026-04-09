@@ -1,28 +1,12 @@
 // Pure function: reads all tasks + status + run history. No side effects.
 // Used by useTasks (via worker) and directly in tests.
-import fs from 'fs'
 import path from 'path'
 import { readTasks, taskDir } from './tasks.js'
 import { formatSchedule } from './format.js'
 import { getStatus } from './launchd.js'
 import { getLatestCompletedRun, getRuns } from './runs.js'
 import { computePending } from './taskfile.js'
-import { safeReadJSON } from './io.js'
-
-function isRunningViaPidFile(taskId) {
-  try {
-    const pidFile = path.join(taskDir(taskId), 'running.pid')
-    const [runId, pidStr] = fs.readFileSync(pidFile, 'utf8').trim().split(':')
-    if (!runId || !pidStr) return false
-    process.kill(parseInt(pidStr), 0)
-    // PID is alive — verify the run is still in progress
-    const runFile = path.join(taskDir(taskId), 'runs', runId, 'run.json')
-    const run = safeReadJSON(runFile)
-    return run !== null && !run.completedAt
-  } catch {
-    return false
-  }
-}
+import { isLocked } from './lock.js'
 
 export function loadTasks(repoRoot) {
   let pendingMap = {}
@@ -43,7 +27,7 @@ export function loadTasks(repoRoot) {
   const result = tasks.map(task => {
     const launchd = getStatus(task.id)
     let status
-    if (launchd.pid || isRunningViaPidFile(task.id)) {
+    if (launchd.pid || isLocked(taskDir(task.id))) {
       status = 'running'
     } else if (task.disabled) {
       status = 'disabled'

@@ -16,6 +16,7 @@ import { runOnce as runGeminiAgent } from './lib/plugins/gemini-agent.js'
 import { configureLogger, log, logError, rotateLog, sleep, now } from './lib/agent-logger.js'
 import { initRun, completeRun, spoolNotification, pruneOldRuns } from './lib/agent-runs.js'
 import { readSettings } from '../src/lib/settings.js'
+import { acquireLock, releaseLock } from '../src/lib/lock.js'
 
 const AGENT_PLUGINS = {
   'claude-code': runClaudeAgent,
@@ -121,31 +122,20 @@ if (profile.env) {
 // ─── PID overlap detection ────────────────────────────────────────────────────
 
 const tDir = path.join(TIDE_DIR, 'tasks', taskId)
-const pidFile = path.join(tDir, 'running.pid')
 
 configureLogger({ prefix: ` [${taskName}]` })
 
 const runId = crypto.randomBytes(4).toString('hex')
 
-if (fs.existsSync(pidFile)) {
-  const [, existingPid] = fs.readFileSync(pidFile, 'utf8').trim().split(':')
-  if (existingPid) {
-    try {
-      process.kill(parseInt(existingPid), 0)
-      log(`skipping: task already running (PID ${existingPid})`)
-      process.exit(0)
-    } catch { /* process gone */ }
-  }
-  fs.rmSync(pidFile, { force: true })
+const { acquired, existingPid } = acquireLock(tDir, runId)
+if (!acquired) {
+  log(`skipping: task already running (PID ${existingPid})`)
+  process.exit(0)
 }
-fs.mkdirSync(tDir, { recursive: true })
-fs.writeFileSync(pidFile, `${runId}:${process.pid}`)
 
 let exitCode = 1
 
-process.on('exit', () => {
-  try { fs.rmSync(pidFile, { force: true }) } catch { /* ok */ }
-})
+process.on('exit', () => { releaseLock(tDir) })
 process.on('SIGINT', () => process.exit(1))
 
 // Will be replaced with a proper handler after initRun() when runFile is available.
