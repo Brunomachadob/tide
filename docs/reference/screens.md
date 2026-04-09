@@ -28,7 +28,7 @@ When multiple workspaces are visible ("all workspaces" mode), tasks are grouped 
 | `↑` / `↓` / `j` / `k` | Navigate tasks |
 | `Enter` | Open Task Detail |
 | `Tab` | Cycle workspace (current → others → all workspaces) |
-| `c` | Create new task file in the current workspace |
+| `c` | Create new task file in the current workspace (falls back to launch directory when "all workspaces" is selected) |
 | `r` | Run selected task now |
 | `e` | Toggle enable/disable |
 | `l` | Open latest run for selected task |
