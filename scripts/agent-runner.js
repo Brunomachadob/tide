@@ -144,8 +144,12 @@ let exitCode = 1
 process.on('exit', () => {
   try { fs.rmSync(pidFile, { force: true }) } catch { /* ok */ }
 })
-process.on('SIGTERM', () => process.exit(1))
 process.on('SIGINT', () => process.exit(1))
+
+// Will be replaced with a proper handler after initRun() when runFile is available.
+// This early handler covers the window between pid file write and initRun.
+let sigTermHandler = () => process.exit(1)
+process.on('SIGTERM', () => sigTermHandler())
 
 // ─── Jitter ───────────────────────────────────────────────────────────────────
 
@@ -165,6 +169,13 @@ const { runDir, runFile, outputLog, stderrLog } =
 configureLogger({ outputLog, stderrLog, prefix: ` [${taskName}] [${runId}]` })
 log('starting')
 log(`agent: ${agent}${model ? `  model: ${model}` : ''}${authType ? `  auth: ${authType}` : ''}`)
+
+// Upgrade SIGTERM handler now that runFile is available — write a proper completion record.
+sigTermHandler = () => {
+  logError('terminated: killed by external signal')
+  completeRun(runFile, { runId, taskId, taskName, startedAt, completedAt: now(), exitCode: 1, attempts: 1, argument, parentRunId })
+  process.exit(1)
+}
 
 // ─── Unhandled rejection safety net ──────────────────────────────────────────
 // Catches errors that escape plugin try/catch (e.g. SDK internal async throws).

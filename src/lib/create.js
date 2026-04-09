@@ -46,12 +46,7 @@ function generatePlist(taskId, config) {
   const workDir = config.workingDirectory || os.homedir()
   const extraEnv = buildEnvXml(config.env)
 
-  const effectiveTimeout = config.timeoutSeconds
-    ? config.timeoutSeconds + (config.jitterSeconds ?? 0)
-    : null
-  const timeoutXml = effectiveTimeout
-    ? `  <key>TimeOut</key>\n  <integer>${effectiveTimeout}</integer>`
-    : ''
+  const timeoutXml = ''
 
   const tideTaskFileXml = config.sourcePath
     ? `    <key>TIDE_TASK_FILE</key>\n    <string>${xmlEscape(config.sourcePath)}</string>\n`
