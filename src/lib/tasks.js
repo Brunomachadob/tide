@@ -6,6 +6,7 @@ import { parseMdFile } from './mdfields.js'
 import { writePlist } from './create.js'
 import { TASKS_DIR, taskDir } from './paths.js'
 export { TASKS_DIR, taskDir }
+import { removeWorkspace } from './workspaces.js'
 
 
 /**
@@ -120,4 +121,10 @@ export function performDeleteTask(id, sourcePath) {
   const plist = plistPath(id)
   if (fs.existsSync(plist)) fs.unlinkSync(plist)
   deleteTask(id)
+  if (sourcePath) {
+    const repoRoot = path.dirname(path.dirname(sourcePath))
+    const { tasks } = readTasks()
+    const stillUsed = tasks.some(t => t.sourcePath?.startsWith(repoRoot + path.sep))
+    if (!stillUsed) removeWorkspace(repoRoot)
+  }
 }

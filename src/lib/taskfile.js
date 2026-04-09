@@ -10,6 +10,7 @@ import { writePlist } from './create.js'
 import { bootstrap, bootout, plistPath, readPlistJson, tideTaskFileFromPlist, scanTidePlists } from './launchd.js'
 import { taskDir, deleteTask } from './tasks.js'
 import { parseMdFile, writeTideFields } from './mdfields.js'
+import { readWorkspaces, addWorkspace, migrateSourceTxt } from './workspaces.js'
 
 // Fields that require a plist rewrite when changed
 const PLIST_DIFFABLE_FIELDS = ['schedule', 'workingDirectory', 'env', 'timeoutSeconds']
@@ -144,18 +145,10 @@ export function computePending(repoRoot) {
       tideRoots.add(path.dirname(path.dirname(entry.tideTaskFile)))
     }
   }
-  try {
-    const tasksDir = path.join(os.homedir(), '.tide', 'tasks')
-    if (fs.existsSync(tasksDir)) {
-      for (const id of fs.readdirSync(tasksDir)) {
-        const sourceTxt = path.join(tasksDir, id, 'source.txt')
-        try {
-          const sourcePath = fs.readFileSync(sourceTxt, 'utf8').trim()
-          if (sourcePath) tideRoots.add(path.dirname(path.dirname(sourcePath)))
-        } catch { /* no source.txt or unreadable — skip */ }
-      }
-    }
-  } catch { /* non-fatal */ }
+  migrateSourceTxt()
+  for (const ws of readWorkspaces()) {
+    if (ws.path) tideRoots.add(ws.path)
+  }
 
   for (const root of tideRoots) {
     const mdFiles = discoverTaskFiles(root)
@@ -242,7 +235,7 @@ export function applyPending(entry) {
     fs.mkdirSync(path.join(tDir, 'logs'), { recursive: true })
     fs.mkdirSync(path.join(tDir, 'runs'), { recursive: true })
     if (sourcePath) {
-      fs.writeFileSync(path.join(tDir, 'source.txt'), sourcePath, 'utf8')
+      addWorkspace(path.dirname(path.dirname(sourcePath)))
     }
 
     writePlist(task.id, { ...task, enabled: true })

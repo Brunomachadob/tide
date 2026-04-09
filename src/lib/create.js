@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url'
 import { bootstrap, plistPath, label } from './launchd.js'
 import { taskDir } from './paths.js'
 import { writeTideFields } from './mdfields.js'
+import { addWorkspace } from './workspaces.js'
 
 const PLUGIN_ROOT = path.resolve(fileURLToPath(import.meta.url), '../../..')
 
@@ -140,7 +141,7 @@ export function createTask(config) {
   const tDir = taskDir(taskId)
   fs.mkdirSync(path.join(tDir, 'logs'), { recursive: true })
   if (config.sourcePath) {
-    fs.writeFileSync(path.join(tDir, 'source.txt'), config.sourcePath, 'utf8')
+    addWorkspace(path.dirname(path.dirname(config.sourcePath)))
   }
 
   const task = {
