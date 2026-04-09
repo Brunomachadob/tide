@@ -29,7 +29,7 @@ const AGENT_PLUGINS = {
  * Returns { exitCode, attempts }.
  */
 async function withRetries(runOnce, opts) {
-  const { maxRetries = 0, log, logError, sleep, ...pluginOpts } = opts
+  const { maxRetries = 0, timeoutSeconds = null, log, logError, sleep, ...pluginOpts } = opts
   let exitCode = 1
   let attempt = 0
 
@@ -42,13 +42,26 @@ async function withRetries(runOnce, opts) {
 
     log(`command starting (attempt ${attempt + 1}${maxRetries > 0 ? `/${maxRetries + 1}` : ''})`)
 
+    let timeoutHandle = null
     try {
+      if (timeoutSeconds) {
+        log(`timeout: will kill after ${timeoutSeconds}s`)
+        timeoutHandle = setTimeout(() => {
+          logError(`timeout: ${timeoutSeconds}s elapsed — killing process group`)
+          try { process.kill(-process.pid, 'SIGTERM') } catch { /* already gone */ }
+          process.exit(124)
+        }, timeoutSeconds * 1000)
+        timeoutHandle.unref()
+      }
+
       ;({ exitCode } = await runOnce({ ...pluginOpts, log, logError }))
       log(`command finished: exit=${exitCode}`)
       if (exitCode === 0) return { exitCode, attempts: attempt + 1 }
     } catch (e) {
       logError(`agent error: ${e.message}`)
       exitCode = 1
+    } finally {
+      if (timeoutHandle) clearTimeout(timeoutHandle)
     }
 
     attempt++
@@ -86,6 +99,7 @@ const workingDirectory = fm.workingDirectory
   : os.homedir()
 const jitterSeconds = parseInt(process.env.TIDE_JITTER ?? '0') || 0
 const maxRetries = fm.maxRetries ?? 0
+const timeoutSeconds = fm.timeoutSeconds ?? null
 const resultRetentionDays = fm.resultRetentionDays ?? 30
 const parentRunId = process.env.TIDE_PARENT_RUN_ID || fm.parentRunId || undefined
 
@@ -193,7 +207,7 @@ const outputStream = fs.createWriteStream(outputLog, { flags: 'a' })
 
 const result = await withRetries(runAgent, {
   argument, workingDirectory, outputStream, stderrLog, sdkOptions,
-  maxRetries, log, logError, sleep,
+  maxRetries, timeoutSeconds, log, logError, sleep,
 })
 exitCode = result.exitCode
 const attempt = result.attempts
