@@ -1,17 +1,12 @@
 // Task storage — Phase 2: reads from launchd plists + .md files, no task.json
 import fs from 'fs'
-import os from 'os'
 import path from 'path'
 import { bootstrap, bootout, plistPath, readPlistJson, tideTaskFileFromPlist, scanTidePlists, LAUNCH_AGENTS_DIR } from './launchd.js'
 import { parseMdFile } from './mdfields.js'
 import { writePlist } from './create.js'
+import { TASKS_DIR, taskDir } from './paths.js'
+export { TASKS_DIR, taskDir }
 
-const TIDE_DIR = path.join(os.homedir(), '.tide')
-export const TASKS_DIR = path.join(TIDE_DIR, 'tasks')
-
-export function taskDir(id) {
-  return path.join(TASKS_DIR, id)
-}
 
 /**
  * Read a single task by ID. Parses the plist to get TIDE_TASK_FILE, then reads the .md.

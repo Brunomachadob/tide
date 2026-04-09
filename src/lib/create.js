@@ -6,10 +6,7 @@ import crypto from 'crypto'
 import { spawnSync } from 'child_process'
 import { fileURLToPath } from 'url'
 import { bootstrap, plistPath, label } from './launchd.js'
-
-function taskDir(id) {
-  return path.join(os.homedir(), '.tide', 'tasks', id)
-}
+import { taskDir } from './paths.js'
 import { writeTideFields } from './mdfields.js'
 
 const PLUGIN_ROOT = path.resolve(fileURLToPath(import.meta.url), '../../..')
@@ -20,6 +17,7 @@ function generateId() {
 
 function xmlEscape(s) {
   return String(s)
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
