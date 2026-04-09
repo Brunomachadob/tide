@@ -52,25 +52,28 @@ export function parseMdFile(filePath, { includeExplicitFields = false } = {}) {
 /**
  * Write (or update) underscore-prefixed internal fields in a .md file's frontmatter.
  * Only internal keys (_id) are touched; user keys are left unchanged.
+ * Uses gray-matter to parse and re-serialize so multi-line YAML values are handled correctly.
+ *
+ * Duplicate keys (malformed YAML) are removed before parsing to avoid YAMLException.
  */
 export function writeTideFields(filePath, fields) {
-  const raw = fs.readFileSync(filePath, 'utf8')
-  // Split into frontmatter block and everything after the closing ---
-  // Format: ---\n<yaml>\n---\n<body>
-  const fmEnd = raw.indexOf('\n---', raw.indexOf('---') + 3)
-  const fmBlock = fmEnd !== -1 ? raw.slice(0, fmEnd + 4) : raw
-  const bodyPart = fmEnd !== -1 ? raw.slice(fmEnd + 4) : ''
+  let raw = fs.readFileSync(filePath, 'utf8')
 
-  let fm = fmBlock
+  // Strip any duplicate occurrences of the keys we're about to write,
+  // keeping only the last one. gray-matter/js-yaml throws on duplicate keys.
+  for (const k of Object.keys(fields)) {
+    const keyPattern = new RegExp(`^(${k}|'${k}'):[^\\n]*\\n`, 'mg')
+    const matches = [...raw.matchAll(keyPattern)]
+    // Remove all but the last occurrence
+    let removeCount = matches.length - 1
+    raw = raw.replace(keyPattern, m => removeCount-- > 0 ? '' : m)
+  }
+
+  const parsed = matter(raw)
   for (const [k, v] of Object.entries(fields)) {
-    const yamlValue = typeof v === 'boolean' ? String(v) : JSON.stringify(v)
-    const quotedKey = `'${k}'`
-    const keyRe = new RegExp(`^(${quotedKey}|${k}):\\s*.+$\n?`, 'mg')
-    const stripped = fm.replace(keyRe, '')
-    // Insert before closing ---
-    fm = stripped.replace(/\n---$/, `\n${k}: ${yamlValue}\n---`)
+    parsed.data[k] = v
   }
   const tmp = filePath + '.tmp'
-  fs.writeFileSync(tmp, fm + bodyPart)
+  fs.writeFileSync(tmp, matter.stringify(parsed.content, parsed.data))
   fs.renameSync(tmp, filePath)
 }
