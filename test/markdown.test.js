@@ -1,10 +1,12 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
-import { renderMarkdown } from '../src/lib/markdown.js'
 
 // marked-terminal uses chalk for ANSI codes. In a non-TTY environment chalk
-// disables colors by default; FORCE_COLOR=3 (set in package.json test script)
-// ensures the escape sequences are present so these assertions hold.
+// disables colors by default; set FORCE_COLOR before importing the module
+// so the escape sequences are present when these assertions run.
+process.env.FORCE_COLOR = '3'
+
+const { renderMarkdown } = await import('../src/lib/markdown.js')
 
 const BOLD      = '\x1b[1m'
 const ITALIC    = '\x1b[3m'

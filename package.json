@@ -8,8 +8,8 @@
   },
   "scripts": {
     "start": "node index.js",
-    "test": "FORCE_COLOR=3 node --test test/*.test.js",
-    "test:ci": "FORCE_COLOR=3 node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=tap --test-reporter-destination=tap-output.txt test/*.test.js",
+    "test": "node --test test/*.test.js",
+    "test:ci": "node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=tap --test-reporter-destination=tap-output.txt test/*.test.js",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs"
