@@ -126,18 +126,17 @@ const pidFile = path.join(tDir, 'running.pid')
 configureLogger({ prefix: ` [${taskName}]` })
 
 if (fs.existsSync(pidFile)) {
-  const existing = fs.readFileSync(pidFile, 'utf8').trim()
-  if (existing) {
+  const [, existingPid] = fs.readFileSync(pidFile, 'utf8').trim().split(':')
+  if (existingPid) {
     try {
-      process.kill(parseInt(existing), 0)
-      log(`skipping: task already running (PID ${existing})`)
+      process.kill(parseInt(existingPid), 0)
+      log(`skipping: task already running (PID ${existingPid})`)
       process.exit(0)
     } catch { /* process gone */ }
   }
   fs.rmSync(pidFile, { force: true })
 }
 fs.mkdirSync(tDir, { recursive: true })
-fs.writeFileSync(pidFile, String(process.pid))
 
 let exitCode = 1
 
@@ -168,6 +167,8 @@ const runId = crypto.randomBytes(4).toString('hex')
 const startedAt = now()
 const { runDir, runFile, outputLog, stderrLog } =
   initRun(TIDE_DIR, taskId, taskName, runId, startedAt, argument, parentRunId)
+
+fs.writeFileSync(pidFile, `${runId}:${process.pid}`)
 
 configureLogger({ outputLog, stderrLog, prefix: ` [${taskName}] [${runId}]` })
 log('starting')

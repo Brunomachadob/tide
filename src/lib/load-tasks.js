@@ -7,14 +7,18 @@ import { formatSchedule } from './format.js'
 import { getStatus } from './launchd.js'
 import { getLatestCompletedRun, getRuns } from './runs.js'
 import { computePending } from './taskfile.js'
+import { safeReadJSON } from './io.js'
 
 function isRunningViaPidFile(taskId) {
   try {
     const pidFile = path.join(taskDir(taskId), 'running.pid')
-    const pid = parseInt(fs.readFileSync(pidFile, 'utf8').trim())
-    if (!pid) return false
-    process.kill(pid, 0)
-    return true
+    const [runId, pidStr] = fs.readFileSync(pidFile, 'utf8').trim().split(':')
+    if (!runId || !pidStr) return false
+    process.kill(parseInt(pidStr), 0)
+    // PID is alive — verify the run is still in progress
+    const runFile = path.join(taskDir(taskId), 'runs', runId, 'run.json')
+    const run = safeReadJSON(runFile)
+    return run !== null && !run.completedAt
   } catch {
     return false
   }
