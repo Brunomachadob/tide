@@ -125,6 +125,8 @@ const pidFile = path.join(tDir, 'running.pid')
 
 configureLogger({ prefix: ` [${taskName}]` })
 
+const runId = crypto.randomBytes(4).toString('hex')
+
 if (fs.existsSync(pidFile)) {
   const [, existingPid] = fs.readFileSync(pidFile, 'utf8').trim().split(':')
   if (existingPid) {
@@ -137,6 +139,7 @@ if (fs.existsSync(pidFile)) {
   fs.rmSync(pidFile, { force: true })
 }
 fs.mkdirSync(tDir, { recursive: true })
+fs.writeFileSync(pidFile, `${runId}:${process.pid}`)
 
 let exitCode = 1
 
@@ -163,12 +166,9 @@ if (jitterSeconds > 0 && process.env.TIDE_NO_JITTER !== '1') {
 
 // ─── Initialize run ───────────────────────────────────────────────────────────
 
-const runId = crypto.randomBytes(4).toString('hex')
 const startedAt = now()
 const { runDir, runFile, outputLog, stderrLog } =
   initRun(TIDE_DIR, taskId, taskName, runId, startedAt, argument, parentRunId)
-
-fs.writeFileSync(pidFile, `${runId}:${process.pid}`)
 
 configureLogger({ outputLog, stderrLog, prefix: ` [${taskName}] [${runId}]` })
 log('starting')
