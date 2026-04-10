@@ -2,13 +2,15 @@ import React from 'react'
 import { Box, Text } from 'ink'
 import useTheme from '../hooks/useTheme.js'
 
-// workspaceToggle: { label: string } — renders a workspace indicator in the subtitle line
-export default function Header({ breadcrumb, workspaceToggle, notificationCount = 0 }) {
+// workspaceToggle: { label: string, color?: string } — renders a workspace indicator in the subtitle line
+// workspaceColor: color applied to the border and subtitle elements (defaults to accent)
+export default function Header({ breadcrumb, workspaceToggle, workspaceColor, notificationCount = 0 }) {
   const { accent } = useTheme()
+  const chrome = workspaceColor ?? accent
   const subtitle = workspaceToggle
     ? React.createElement(Box, { gap: 1 },
-        React.createElement(Text, { color: 'gray' }, '[Tab]'),
-        React.createElement(Text, { color: accent }, '▾ ' + workspaceToggle.label),
+        React.createElement(Text, { color: chrome }, '[Tab]'),
+        React.createElement(Text, { color: chrome }, '▾ ' + workspaceToggle.label),
       )
     : breadcrumb
     ? (() => {
@@ -24,7 +26,7 @@ export default function Header({ breadcrumb, workspaceToggle, notificationCount 
 
   return React.createElement(
     Box,
-    { flexDirection: 'column', borderStyle: 'single', borderColor: accent, paddingX: 1, marginBottom: 1 },
+    { flexDirection: 'column', borderStyle: 'single', borderColor: chrome, paddingX: 1, marginBottom: 1 },
     React.createElement(
       Box,
       { justifyContent: 'space-between' },

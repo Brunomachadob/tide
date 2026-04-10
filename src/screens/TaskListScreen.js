@@ -29,6 +29,15 @@ function SyncBadge({ syncStatus }) {
   return React.createElement(Text, { color }, label)
 }
 
+const WORKSPACE_COLORS = ['cyan', 'magenta', 'blue', 'yellow', 'green']
+
+function workspaceColorFor(workspacePath) {
+  if (!workspacePath) return WORKSPACE_COLORS[0]
+  let h = 5381
+  for (let i = 0; i < workspacePath.length; i++) h = (h * 33) ^ workspacePath.charCodeAt(i)
+  return WORKSPACE_COLORS[Math.abs(h) % WORKSPACE_COLORS.length]
+}
+
 export default function TaskListScreen({ navigate, repoRoot, height, tasks, loading, error, refresh, intervalMs, settings, workspaceIdx = 0, setWorkspaceIdx }) {
   const { accent } = useTheme()
   const { unreadCount } = useNotifications(intervalMs)
@@ -214,12 +223,14 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
   }
 
   const workspaceLabel = currentWorkspace ? path.basename(currentWorkspace) : 'all workspaces'
+  const workspaceColor = workspaceColorFor(currentWorkspace)
 
   return React.createElement(
     Box,
     { flexDirection: 'column', height },
     React.createElement(Header, {
       workspaceToggle: workspaces.length > 1 ? { label: workspaceLabel } : null,
+      workspaceColor,
       notificationCount: unreadCount,
     }),
 
