@@ -1,12 +1,14 @@
 import React from 'react'
 import { Box, Text } from 'ink'
+import useTheme from '../hooks/useTheme.js'
 
 // workspaceToggle: { label: string } — renders a workspace indicator in the subtitle line
 export default function Header({ breadcrumb, workspaceToggle, notificationCount = 0 }) {
+  const { accent } = useTheme()
   const subtitle = workspaceToggle
     ? React.createElement(Box, { gap: 1 },
         React.createElement(Text, { color: 'gray' }, '[Tab]'),
-        React.createElement(Text, { color: 'cyan' }, '▾ ' + workspaceToggle.label),
+        React.createElement(Text, { color: accent }, '▾ ' + workspaceToggle.label),
       )
     : breadcrumb
     ? (() => {
@@ -22,11 +24,11 @@ export default function Header({ breadcrumb, workspaceToggle, notificationCount 
 
   return React.createElement(
     Box,
-    { flexDirection: 'column', borderStyle: 'single', borderColor: 'cyan', paddingX: 1, marginBottom: 1 },
+    { flexDirection: 'column', borderStyle: 'single', borderColor: accent, paddingX: 1, marginBottom: 1 },
     React.createElement(
       Box,
       { justifyContent: 'space-between' },
-      React.createElement(Text, { bold: true, color: 'cyan' }, '≋ Tide'),
+      React.createElement(Text, { bold: true, color: accent }, '≋ Tide'),
       React.createElement(
         Box,
         { gap: 2 },

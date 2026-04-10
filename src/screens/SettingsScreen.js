@@ -4,6 +4,7 @@ import Header from '../components/Header.js'
 import FieldBox from '../components/FieldBox.js'
 import Toast from '../components/Toast.js'
 import KeyHints from '../components/KeyHints.js'
+import useTheme from '../hooks/useTheme.js'
 import { readSettings, writeSettings } from '../lib/settings.js'
 
 const FIELDS = ['refreshInterval']
@@ -11,11 +12,12 @@ const FIELDS = ['refreshInterval']
 const REFRESH_INTERVALS = [2, 5, 10, 30, 60]
 
 function PickerOptions({ items, selectedIdx }) {
+  const { accent } = useTheme()
   return React.createElement(
     Box, { gap: 2 },
     items.map((item, i) =>
       React.createElement(Text,
-        { key: item, color: i === selectedIdx ? 'cyan' : 'gray', bold: i === selectedIdx },
+        { key: item, color: i === selectedIdx ? accent : 'gray', bold: i === selectedIdx },
         i === selectedIdx ? `[${item}]` : ` ${item} `,
       ),
     ),
@@ -23,6 +25,7 @@ function PickerOptions({ items, selectedIdx }) {
 }
 
 export default function SettingsScreen({ goBack, navigate, height, breadcrumb }) {
+  const { accent } = useTheme()
   const contentWidth = (process.stdout.columns ?? 80) - 4 // 2 outer paddingX + 2 border
   const saved = readSettings()
   const [field, setField] = useState('refreshInterval')
@@ -71,7 +74,7 @@ export default function SettingsScreen({ goBack, navigate, height, breadcrumb })
           React.createElement(Box, { flexDirection: 'row', flexWrap: 'wrap' },
             ...Object.entries(saved.profiles ?? {}).map(([name, profile]) =>
               React.createElement(Box, { key: name, flexDirection: 'column', borderStyle: 'single', borderColor: 'gray', paddingX: 1, marginBottom: 1, marginRight: 1 },
-                React.createElement(Text, { color: 'cyan', bold: true }, name),
+                React.createElement(Text, { color: accent, bold: true }, name),
                 React.createElement(Box, {},
                   React.createElement(Text, { color: 'gray', wrap: 'wrap' }, JSON.stringify(profile, null, 2)),
                 ),

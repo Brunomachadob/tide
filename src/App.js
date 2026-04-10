@@ -6,12 +6,15 @@ import path from 'path'
 import { readSettings } from './lib/settings.js'
 import { findRepoRoot } from './lib/taskfile.js'
 import { useTasks } from './hooks/useTasks.js'
+import { ThemeContext } from './hooks/useTheme.js'
 import TaskListScreen from './screens/TaskListScreen.js'
 import TaskDetailScreen from './screens/TaskDetailScreen.js'
 import RunsScreen from './screens/RunsScreen.js'
 import NotificationsScreen from './screens/NotificationsScreen.js'
 import SettingsScreen from './screens/SettingsScreen.js'
 import OnboardingScreen from './screens/OnboardingScreen.js'
+
+const theme = { accent: 'cyan' }
 
 const SETTINGS_FILE = path.join(os.homedir(), '.tide', 'settings.json')
 
@@ -84,20 +87,23 @@ export default function App() {
 
   const screenProps = { navigate, goBack, replaceWith, repoRoot, height: stdout?.rows ? stdout.rows - 1 : undefined, tasks, loading, error, refresh, intervalMs, settings, breadcrumb, workspaceIdx, setWorkspaceIdx }
 
+  let screen
   switch (current.screen) {
     case 'list':
-      return React.createElement(TaskListScreen, { ...screenProps, ...current.props })
+      screen = React.createElement(TaskListScreen, { ...screenProps, ...current.props }); break
     case 'detail':
-      return React.createElement(TaskDetailScreen, { ...screenProps, ...current.props })
+      screen = React.createElement(TaskDetailScreen, { ...screenProps, ...current.props }); break
     case 'runs':
-      return React.createElement(RunsScreen, { ...screenProps, ...current.props })
+      screen = React.createElement(RunsScreen, { ...screenProps, ...current.props }); break
     case 'notifications':
-      return React.createElement(NotificationsScreen, { ...screenProps, ...current.props })
+      screen = React.createElement(NotificationsScreen, { ...screenProps, ...current.props }); break
     case 'settings':
-      return React.createElement(SettingsScreen, { ...screenProps, ...current.props })
+      screen = React.createElement(SettingsScreen, { ...screenProps, ...current.props }); break
     case 'onboarding':
-      return React.createElement(OnboardingScreen, { ...screenProps, ...current.props })
+      screen = React.createElement(OnboardingScreen, { ...screenProps, ...current.props }); break
     default:
-      return React.createElement(TaskListScreen, screenProps)
+      screen = React.createElement(TaskListScreen, screenProps)
   }
+
+  return React.createElement(ThemeContext.Provider, { value: theme }, screen)
 }
