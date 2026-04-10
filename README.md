@@ -7,7 +7,7 @@ Tide is a macOS scheduler for AI agents — run Claude Code, GitHub Copilot, and
 ## Quick start
 
 ```sh
-npx github:Brunomachadob/tide#v1.0.0  # x-release-please-version
+npx github:Brunomachadob/tide
 ```
 
 Requires macOS and Node.js 18+.
