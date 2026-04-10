@@ -29,26 +29,14 @@ function SyncBadge({ syncStatus }) {
   return React.createElement(Text, { color }, label)
 }
 
-export default function TaskListScreen({ navigate, repoRoot, height, tasks, loading, error, refresh, intervalMs, settings, workspaceIdx = 0, setWorkspaceIdx }) {
+
+export default function TaskListScreen({ navigate, repoRoot, height, tasks, loading, error, refresh, intervalMs, settings, workspaceIdx = 0, setWorkspaceIdx, workspaces, currentWorkspace }) {
   const { accent } = useTheme()
   const { unreadCount } = useNotifications(intervalMs)
   const [selectedIdx, setSelectedIdx] = useState(0)
   const [confirm, setConfirm] = useState(null)
   const [toast, setToast] = useState(null)
   const [actionLoading, setActionLoading] = useState(false)
-
-  // Build workspace list from task sourcePaths: unique repo roots, repoRoot first, then null = all
-  const knownWorkspaces = React.useMemo(() => {
-    const roots = new Set()
-    for (const t of tasks) {
-      if (t.sourcePath) roots.add(path.dirname(path.dirname(t.sourcePath)))
-    }
-    if (repoRoot) roots.delete(repoRoot)
-    return repoRoot ? [repoRoot, ...roots] : [...roots]
-  }, [tasks, repoRoot])
-  // workspaces: each known repo root + null (= all)
-  const workspaces = [...knownWorkspaces, null]
-  const currentWorkspace = workspaces[workspaceIdx % workspaces.length] ?? null
 
   const showToast = useCallback((message, type = 'info') => {
     setToast({ message, type })
@@ -214,7 +202,6 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
   }
 
   const workspaceLabel = currentWorkspace ? path.basename(currentWorkspace) : 'all workspaces'
-
   return React.createElement(
     Box,
     { flexDirection: 'column', height },
