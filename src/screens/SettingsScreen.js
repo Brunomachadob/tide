@@ -7,7 +7,6 @@ import KeyHints from '../components/KeyHints.js'
 import useTheme from '../hooks/useTheme.js'
 import { readSettings, writeSettings } from '../lib/settings.js'
 
-const FIELDS = ['refreshInterval']
 
 const REFRESH_INTERVALS = [2, 5, 10, 30, 60]
 
@@ -24,11 +23,11 @@ function PickerOptions({ items, selectedIdx }) {
   )
 }
 
-export default function SettingsScreen({ goBack, navigate, height, breadcrumb }) {
+export default function SettingsScreen({ goBack, _navigate, height, breadcrumb }) {
   const { accent } = useTheme()
   const contentWidth = (process.stdout.columns ?? 80) - 4 // 2 outer paddingX + 2 border
   const saved = readSettings()
-  const [field, setField] = useState('refreshInterval')
+  const [field] = useState('refreshInterval')
   const [refreshIntervalIdx, setRefreshIntervalIdx] = useState(
     Math.max(0, REFRESH_INTERVALS.indexOf(saved.refreshInterval ?? 5))
   )

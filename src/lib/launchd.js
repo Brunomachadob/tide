@@ -2,7 +2,6 @@
 import fs from 'fs'
 import { spawnSync, spawn } from 'child_process'
 import path from 'path'
-import os from 'os'
 import { fileURLToPath } from 'url'
 import { LAUNCH_AGENTS_DIR } from './constants.js'
 

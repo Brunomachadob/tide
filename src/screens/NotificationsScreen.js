@@ -9,7 +9,7 @@ import KeyHints from '../components/KeyHints.js'
 import RefreshIndicator from '../components/RefreshIndicator.js'
 import { formatDate } from '../lib/format.js'
 
-export default function NotificationsScreen({ navigate, goBack, height, breadcrumb, settings, intervalMs }) {
+export default function NotificationsScreen({ navigate, goBack, height, breadcrumb, intervalMs }) {
   const { notifications, loading, clear, clearRead, dismiss, markRead, markAllRead, unreadCount } = useNotifications(intervalMs)
   const [selectedIdx, setSelectedIdx] = useState(0)
   const [confirmClear, setConfirmClear] = useState(false)

@@ -1,6 +1,5 @@
 // Pure function: reads all tasks + status + run history. No side effects.
 // Used by useTasks (via worker) and directly in tests.
-import path from 'path'
 import { readTasks, taskDir } from './tasks.js'
 import { formatSchedule } from './format.js'
 import { getStatus } from './launchd.js'

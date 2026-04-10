@@ -6,12 +6,11 @@ import { useNotifications } from '../hooks/useNotifications.js'
 import useTheme from '../hooks/useTheme.js'
 import Header from '../components/Header.js'
 import StatusBadge from '../components/StatusBadge.js'
-import ResultBadge from '../components/ResultBadge.js'
 import ConfirmDialog from '../components/ConfirmDialog.js'
 import Toast from '../components/Toast.js'
 import KeyHints from '../components/KeyHints.js'
 import RefreshIndicator from '../components/RefreshIndicator.js'
-import { formatDate, formatRelativeTime } from '../lib/format.js'
+import { formatRelativeTime } from '../lib/format.js'
 import { kickstart } from '../lib/launchd.js'
 import { setEnabled, performDeleteTask } from '../lib/tasks.js'
 import { applyPending } from '../lib/taskfile.js'
@@ -30,7 +29,7 @@ function SyncBadge({ syncStatus }) {
 }
 
 
-export default function TaskListScreen({ navigate, repoRoot, height, tasks, loading, error, refresh, intervalMs, settings, workspaceIdx = 0, setWorkspaceIdx, workspaces, currentWorkspace }) {
+export default function TaskListScreen({ navigate, repoRoot, height, tasks, loading, error, refresh, intervalMs, _settings, setWorkspaceIdx, workspaces, currentWorkspace }) {
   const { accent } = useTheme()
   const { unreadCount } = useNotifications(intervalMs)
   const [selectedIdx, setSelectedIdx] = useState(0)
@@ -184,7 +183,6 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
     { label: 'LAST RUN',     width: 17 },
     { label: 'LAST RESULTS', width: 14 },
   ]
-  const totalWidth = COLS.reduce((s, c) => s + c.width, 0)
 
   function Sparkline({ results }) {
     if (!results || results.length === 0) return React.createElement(Text, { color: 'gray' }, '-')
