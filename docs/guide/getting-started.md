@@ -10,10 +10,10 @@
 Tide runs directly from GitHub — no install step needed:
 
 ```sh
-npx github:Brunomachadob/tide#v1.0.0 <!-- x-release-please-version -->
+npx github:Brunomachadob/tide#v1.0.0  # x-release-please-version
 ```
 
-This fetches the latest release and launches the TUI.
+This fetches the pinned release and launches the TUI.
 
 ## First launch
 
