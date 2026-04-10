@@ -1,6 +1,6 @@
 {
   "name": "tide-scheduler",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "macOS task scheduler with a terminal UI — run any command on a schedule using launchd",
   "type": "module",
   "bin": {
