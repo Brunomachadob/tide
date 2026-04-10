@@ -17,6 +17,8 @@
     "prepare": "simple-git-hooks"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
     "@eslint/js": "^10.0.1",
     "eslint": "^10.2.0",
     "lint-staged": "^16.4.0",
@@ -53,7 +55,8 @@
   "author": "Bruno Brandao",
   "license": "MIT",
   "simple-git-hooks": {
-    "pre-commit": "npx lint-staged"
+    "pre-commit": "npx lint-staged",
+    "commit-msg": "npx --no -- commitlint --edit $1"
   },
   "lint-staged": {
     "*.js": "eslint"
