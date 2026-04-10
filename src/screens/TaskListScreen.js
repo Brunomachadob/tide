@@ -3,6 +3,7 @@ import { Box, Text, useInput } from 'ink'
 import Spinner from 'ink-spinner'
 import path from 'path'
 import { useNotifications } from '../hooks/useNotifications.js'
+import useTheme from '../hooks/useTheme.js'
 import Header from '../components/Header.js'
 import StatusBadge from '../components/StatusBadge.js'
 import ResultBadge from '../components/ResultBadge.js'
@@ -29,6 +30,7 @@ function SyncBadge({ syncStatus }) {
 }
 
 export default function TaskListScreen({ navigate, repoRoot, height, tasks, loading, error, refresh, intervalMs, settings, workspaceIdx = 0, setWorkspaceIdx }) {
+  const { accent } = useTheme()
   const { unreadCount } = useNotifications(intervalMs)
   const [selectedIdx, setSelectedIdx] = useState(0)
   const [confirm, setConfirm] = useState(null)
@@ -275,7 +277,7 @@ export default function TaskListScreen({ navigate, repoRoot, height, tasks, load
                 )
               : null,
             React.createElement(Box, { width: 12 },
-              React.createElement(Text, { color: isSelected ? 'white' : 'cyan' },
+              React.createElement(Text, { color: isSelected ? 'white' : accent },
                 pad(task.scheduleLabel, 12),
               ),
             ),

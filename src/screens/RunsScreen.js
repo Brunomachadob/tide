@@ -7,6 +7,7 @@ import { useRuns } from '../hooks/useRuns.js'
 import { useRunLogs } from '../hooks/useLogs.js'
 import { renderMarkdown } from '../lib/markdown.js'
 import { useNotifications } from '../hooks/useNotifications.js'
+import useTheme from '../hooks/useTheme.js'
 import Header from '../components/Header.js'
 import ResultBadge from '../components/ResultBadge.js'
 import KeyHints from '../components/KeyHints.js'
@@ -66,6 +67,7 @@ function duration(run) {
 }
 
 function FollowUpDialog({ taskId, run, onSubmit, onCancel }) {
+  const { accent } = useTheme()
   const [message, setMessage] = useState('')
 
   useInput((input, key) => {
@@ -75,8 +77,8 @@ function FollowUpDialog({ taskId, run, onSubmit, onCancel }) {
 
   return React.createElement(
     Box,
-    { flexDirection: 'column', borderStyle: 'single', borderColor: 'cyan', paddingX: 1 },
-    React.createElement(Text, { bold: true, color: 'cyan' }, 'Follow-up message:'),
+    { flexDirection: 'column', borderStyle: 'single', borderColor: accent, paddingX: 1 },
+    React.createElement(Text, { bold: true, color: accent }, 'Follow-up message:'),
     React.createElement(Text, { color: 'gray' }, 'This will be appended after the original argument and run output.'),
     React.createElement(Box, { marginTop: 1 },
       React.createElement(Text, { color: 'gray' }, '> '),
@@ -95,6 +97,7 @@ function FollowUpDialog({ taskId, run, onSubmit, onCancel }) {
 }
 
 function RunDetail({ taskId, taskStatus, run, isLatest, navigate, onBack, height, breadcrumb, settings }) {
+  const { accent } = useTheme()
   const [tab, setTab] = useState('output')
   const [lineIdx, setLineIdx] = useState(0)
   const [followUp, setFollowUp] = useState(false)
@@ -194,11 +197,11 @@ function RunDetail({ taskId, taskStatus, run, isLatest, navigate, onBack, height
       Box,
       { paddingX: 1, gap: 2, marginBottom: 1 },
       React.createElement(Text,
-        { color: tab === 'output' ? 'cyan' : 'gray', underline: tab === 'output' },
+        { color: tab === 'output' ? accent : 'gray', underline: tab === 'output' },
         'OUTPUT',
       ),
       React.createElement(Text,
-        { color: tab === 'stderr' ? 'cyan' : 'gray', underline: tab === 'stderr' },
+        { color: tab === 'stderr' ? accent : 'gray', underline: tab === 'stderr' },
         'STDERR',
       ),
       inProgress
@@ -252,6 +255,7 @@ function RunDetail({ taskId, taskStatus, run, isLatest, navigate, onBack, height
 }
 
 export default function RunsScreen({ taskId, taskStatus, initialRunId, navigate, goBack, height, breadcrumb, settings }) {
+  const { accent } = useTheme()
   const [view, setView] = useState('list')
   const [countIdx, setCountIdx] = useState(0)
   const [selectedRunId, setSelectedRunId] = useState(null)
@@ -365,7 +369,7 @@ export default function RunsScreen({ taskId, taskStatus, initialRunId, navigate,
                   React.createElement(Text, { color: 'yellow' }, `${run.attempts} attempts`),
                 )
               : null,
-            React.createElement(Text, { color: isSelected ? 'cyan' : 'gray' }, '▶'),
+            React.createElement(Text, { color: isSelected ? accent : 'gray' }, '▶'),
           )
         }),
 

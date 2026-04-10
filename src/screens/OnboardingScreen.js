@@ -7,6 +7,7 @@ import Header from '../components/Header.js'
 import FieldBox from '../components/FieldBox.js'
 import Toast from '../components/Toast.js'
 import KeyHints from '../components/KeyHints.js'
+import useTheme from '../hooks/useTheme.js'
 import { readSettings, writeSettings } from '../lib/settings.js'
 
 const AGENTS = [
@@ -21,6 +22,7 @@ function ensureWriteSettings(data) {
 }
 
 export default function OnboardingScreen({ replaceWith, height, breadcrumb }) {
+  const { accent } = useTheme()
   const [selectedIdx, setSelectedIdx] = useState(0)
   const [checked, setChecked] = useState(new Set())
   const [toast, setToast] = useState(null)
@@ -68,7 +70,7 @@ export default function OnboardingScreen({ replaceWith, height, breadcrumb }) {
 
     React.createElement(Box, { flexDirection: 'column', paddingX: 1 },
       React.createElement(Box, { flexDirection: 'column', marginBottom: 1 },
-        React.createElement(Text, { color: 'cyan', bold: true }, 'Welcome to Tide'),
+        React.createElement(Text, { color: accent, bold: true }, 'Welcome to Tide'),
         React.createElement(Text, { color: 'gray' }, 'Select the agents you want to use. You can add more later by editing ~/.tide/settings.json.'),
       ),
       AGENTS.map((agent, i) =>
