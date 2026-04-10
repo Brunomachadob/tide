@@ -1,19 +1,7 @@
 {
   "packages": {
     ".": {
-      "release-type": "node",
-      "extra-files": [
-        {
-          "type": "generic",
-          "path": "README.md",
-          "search-by-regex": true
-        },
-        {
-          "type": "generic",
-          "path": "docs/guide/getting-started.md",
-          "search-by-regex": true
-        }
-      ]
+      "release-type": "node"
     }
   }
 }
