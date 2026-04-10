@@ -8,13 +8,19 @@
   },
   "scripts": {
     "start": "node index.js",
+    "lint": "eslint src/ test/ scripts/",
     "test": "node --test test/*.test.js",
     "test:ci": "node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=tap --test-reporter-destination=tap-output.txt test/*.test.js",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "docs:preview": "vitepress preview docs",
+    "prepare": "simple-git-hooks"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.2.0",
+    "lint-staged": "^16.4.0",
+    "simple-git-hooks": "^2.13.1",
     "vitepress": "^1.6.4",
     "vitepress-plugin-tabs": "^0.8.0"
   },
@@ -45,5 +51,11 @@
     "tui"
   ],
   "author": "Bruno Brandao",
-  "license": "MIT"
+  "license": "MIT",
+  "simple-git-hooks": {
+    "pre-commit": "npx lint-staged"
+  },
+  "lint-staged": {
+    "*.js": "eslint"
+  }
 }

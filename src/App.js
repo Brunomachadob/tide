@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react'
-import { Box, useInput, useApp, useStdout } from 'ink'
+import { useInput, useApp, useStdout } from 'ink'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'

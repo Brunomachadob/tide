@@ -36,7 +36,7 @@ function formatDiffValue(val) {
   return String(val)
 }
 
-export default function TaskDetailScreen({ taskId, navigate, goBack, repoRoot, height, tasks, loading, refresh, intervalMs, settings, breadcrumb }) {
+export default function TaskDetailScreen({ taskId, navigate, goBack, _repoRoot, height, tasks, loading, refresh, intervalMs, _settings, breadcrumb }) {
   const task = tasks?.find(t => t.id === taskId) ?? null
   const { unreadCount } = useNotifications(intervalMs)
   const [confirm, setConfirm] = useState(null)

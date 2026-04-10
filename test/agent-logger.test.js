@@ -1,4 +1,4 @@
-import { test, describe, beforeEach, afterEach } from 'node:test'
+import { test, describe, beforeEach } from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import os from 'node:os'

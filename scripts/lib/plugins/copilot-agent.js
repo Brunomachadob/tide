@@ -12,7 +12,7 @@ import { CopilotClient, approveAll } from '@github/copilot-sdk'
  * @param {object}         opts.sdkOptions        — { clientOptions?, sessionOptions?, ... }
  * @returns {Promise<{ exitCode: number }>}
  */
-export async function runOnce({ argument, workingDirectory, outputStream, sdkOptions = {}, log, logError }) {
+export async function runOnce({ argument, workingDirectory, outputStream, sdkOptions = {}, log, _logError }) {
   const { clientOptions = {}, sessionOptions = {}, ...restSdkOptions } = sdkOptions
   log(`working directory: ${workingDirectory}`)
 

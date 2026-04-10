@@ -133,7 +133,7 @@ if (!acquired) {
   process.exit(0)
 }
 
-let exitCode = 1
+let exitCode = 1 // eslint-disable-line no-useless-assignment -- default for unexpected crash paths
 
 process.on('exit', () => { releaseLock(tDir) })
 process.on('SIGINT', () => process.exit(1))
@@ -157,7 +157,7 @@ if (jitterSeconds > 0 && process.env.TIDE_NO_JITTER !== '1') {
 // ─── Initialize run ───────────────────────────────────────────────────────────
 
 const startedAt = now()
-const { runDir, runFile, outputLog, stderrLog } =
+const { runFile, outputLog, stderrLog } =
   initRun(TIDE_DIR, taskId, taskName, runId, startedAt, argument, parentRunId)
 
 configureLogger({ outputLog, stderrLog, prefix: ` [${taskName}] [${runId}]` })

@@ -12,7 +12,7 @@ import Header from '../components/Header.js'
 import ResultBadge from '../components/ResultBadge.js'
 import KeyHints from '../components/KeyHints.js'
 import TextInput from '../components/TextInput.js'
-import { formatDate, formatRelativeTime } from '../lib/format.js'
+import { formatDate } from '../lib/format.js'
 import { TASKS_DIR } from '../lib/tasks.js'
 import { getRunOutputLogFull } from '../lib/logs.js'
 import { kickstart } from '../lib/launchd.js'
@@ -66,7 +66,7 @@ function duration(run) {
   return `${(ms / 1000).toFixed(1)}s`
 }
 
-function FollowUpDialog({ taskId, run, onSubmit, onCancel }) {
+function FollowUpDialog({ _taskId, _run, onSubmit, onCancel }) {
   const { accent } = useTheme()
   const [message, setMessage] = useState('')
 
@@ -96,7 +96,7 @@ function FollowUpDialog({ taskId, run, onSubmit, onCancel }) {
   )
 }
 
-function RunDetail({ taskId, taskStatus, run, isLatest, navigate, onBack, height, breadcrumb, settings }) {
+function RunDetail({ taskId, _taskStatus, run, _isLatest, navigate, onBack, height, breadcrumb, _settings }) {
   const { accent } = useTheme()
   const [tab, setTab] = useState('output')
   const [lineIdx, setLineIdx] = useState(0)
