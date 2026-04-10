@@ -13,18 +13,22 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
+        if: github.head_ref != 'release-please--branches--main'
         with:
           node-version: '20'
           cache: npm
 
       - run: npm ci
+        if: github.head_ref != 'release-please--branches--main'
 
       - name: Lint
+        if: github.head_ref != 'release-please--branches--main'
         run: npm run lint
 
       - name: Run tests
+        if: github.head_ref != 'release-please--branches--main'
         run: npm run test:ci
 
       - name: Write test summary
-        if: always()
+        if: always() && github.head_ref != 'release-please--branches--main'
         run: node test/ci-summary.js
