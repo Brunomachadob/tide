@@ -7,9 +7,32 @@ User-facing docs live in `docs/` and are published to https://brunomb.com/tide/ 
 **Main is protected — all changes must go through a branch and PR.**
 
 1. Create a branch: `git checkout -b <short-description>`
-2. Make changes, commit
+2. Make changes, commit using **conventional commit** format (see below)
 3. Push and open a PR: `gh pr create`
-4. The `test` CI check must pass before merging
+4. The `test` and `lint` CI checks must pass before merging
+
+### Commit messages
+
+All commits must follow the [Conventional Commits](https://www.conventionalcommits.org/) format — enforced locally by a `commit-msg` hook via commitlint:
+
+```
+<type>: <description>
+
+# Examples:
+feat: add workspace color to header
+fix: prevent crash when task file is missing
+chore: update dependencies
+docs: clarify ADR template
+refactor: extract workspace derivation to App
+```
+
+Common types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `perf`, `ci`, `style`, `revert`
+
+Semver impact: `fix` → patch, `feat` → minor, `BREAKING CHANGE` footer → major.
+
+### Releases
+
+Releases are automated via **Release Please**. On every merge to `main`, it reads the commit history and opens a release PR that bumps `package.json` version and updates `CHANGELOG.md`. Merging that PR creates the git tag and GitHub release.
 
 ## Architecture
 
