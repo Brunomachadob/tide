@@ -1,6 +1,8 @@
 import React from 'react'
 import { Box, Text } from 'ink'
 import useTheme from '../hooks/useTheme.js'
+import { createRequire } from 'module'
+const { version } = createRequire(import.meta.url)('../../package.json')
 
 // workspaceToggle: { label: string } — renders a workspace indicator in the subtitle line
 export default function Header({ breadcrumb, workspaceToggle, notificationCount = 0 }) {
@@ -29,7 +31,10 @@ export default function Header({ breadcrumb, workspaceToggle, notificationCount 
     React.createElement(
       Box,
       { justifyContent: 'space-between' },
-      React.createElement(Text, { bold: true, color: accent }, '≋ Tide'),
+      React.createElement(Box, { gap: 1 },
+        React.createElement(Text, { bold: true, color: accent }, '≋ Tide'),
+        React.createElement(Text, { color: 'gray' }, `v${version}`),
+      ),
       React.createElement(
         Box,
         { gap: 2 },
