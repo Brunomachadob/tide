@@ -14,7 +14,14 @@ import NotificationsScreen from './screens/NotificationsScreen.js'
 import SettingsScreen from './screens/SettingsScreen.js'
 import OnboardingScreen from './screens/OnboardingScreen.js'
 
-const theme = { accent: 'cyan' }
+const WORKSPACE_COLORS = ['cyan', 'magenta', 'blue', 'yellow', 'green']
+
+function workspaceColorFor(workspacePath) {
+  if (!workspacePath) return WORKSPACE_COLORS[0]
+  let h = 5381
+  for (let i = 0; i < workspacePath.length; i++) h = (h * 33) ^ workspacePath.charCodeAt(i)
+  return WORKSPACE_COLORS[Math.abs(h) % WORKSPACE_COLORS.length]
+}
 
 const SETTINGS_FILE = path.join(os.homedir(), '.tide', 'settings.json')
 
@@ -31,6 +38,18 @@ export default function App() {
     return [{ screen: isFirstLaunch ? 'onboarding' : 'list', props: {} }]
   })
   const [workspaceIdx, setWorkspaceIdx] = useState(0)
+
+  const knownWorkspaces = React.useMemo(() => {
+    const roots = new Set()
+    for (const t of tasks) {
+      if (t.sourcePath) roots.add(path.dirname(path.dirname(t.sourcePath)))
+    }
+    if (repoRoot) roots.delete(repoRoot)
+    return repoRoot ? [repoRoot, ...roots] : [...roots]
+  }, [tasks, repoRoot])
+  const workspaces = [...knownWorkspaces, null]
+  const currentWorkspace = workspaces[workspaceIdx % workspaces.length] ?? null
+  const theme = { accent: 'cyan', workspaceColor: workspaceColorFor(currentWorkspace) }
 
   const navigate = useCallback((screen, props = {}) => {
     setStack(s => [...s, { screen, props }])
@@ -85,7 +104,7 @@ export default function App() {
     return parts.length ? parts.join(' › ') : null
   })()
 
-  const screenProps = { navigate, goBack, replaceWith, repoRoot, height: stdout?.rows ? stdout.rows - 1 : undefined, tasks, loading, error, refresh, intervalMs, settings, breadcrumb, workspaceIdx, setWorkspaceIdx }
+  const screenProps = { navigate, goBack, replaceWith, repoRoot, height: stdout?.rows ? stdout.rows - 1 : undefined, tasks, loading, error, refresh, intervalMs, settings, breadcrumb, workspaceIdx, setWorkspaceIdx, workspaces, currentWorkspace }
 
   let screen
   switch (current.screen) {
